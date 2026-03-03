@@ -42,32 +42,32 @@ export default function HomePage() {
     <div className="space-y-4">
       <div
         className="relative rounded-2xl overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #0D9488 0%, #0F766E 50%, #115E59 100%)" }}
+        style={{ background: "linear-gradient(135deg, #34737A 0%, #2C6169 50%, #1F4F49 100%)" }}
         data-testid="hero-banner"
       >
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{ background: "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.2) 0%, transparent 60%)" }} />
         </div>
         <div className="relative px-5 py-6">
-          <p className="text-teal-100 text-xs font-medium tracking-wider uppercase mb-1">SJP Community</p>
+          <p className="text-white/70 text-xs font-medium tracking-wider uppercase mb-1">SJP Community</p>
           <h1 className="text-xl font-bold text-white" data-testid="text-greeting">
             Welcome back, {user?.firstName}.
           </h1>
-          <p className="text-teal-100 text-sm mt-2 leading-relaxed">
+          <p className="text-white/70 text-sm mt-2 leading-relaxed">
             You're here not because you're broken, but because you're strong.
           </p>
-          <p className="text-teal-200/60 text-xs mt-3 font-medium">Building community. Changing lives.</p>
+          <p className="text-white/40 text-xs mt-3 font-medium">Building community. Changing lives.</p>
         </div>
       </div>
 
       {stories && stories.length > 0 && (
         <div data-testid="stories-carousel">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-[#111827]">Stories of Change</h2>
+            <h2 className="text-sm font-bold text-[#302D2E]">Stories of Change</h2>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setStoryIndex(Math.max(0, storyIndex - 1))}
-                className="p-1 rounded-full text-[#6B7280] hover:bg-[#F3F4F6] transition-colors disabled:opacity-30"
+                className="p-1 rounded-full text-[#868180] hover:bg-[#F1EFEF] transition-colors disabled:opacity-30"
                 disabled={storyIndex === 0}
                 data-testid="button-story-prev"
               >
@@ -75,7 +75,7 @@ export default function HomePage() {
               </button>
               <button
                 onClick={() => setStoryIndex(Math.min((stories?.length || 1) - 1, storyIndex + 1))}
-                className="p-1 rounded-full text-[#6B7280] hover:bg-[#F3F4F6] transition-colors disabled:opacity-30"
+                className="p-1 rounded-full text-[#868180] hover:bg-[#F1EFEF] transition-colors disabled:opacity-30"
                 disabled={storyIndex >= (stories?.length || 1) - 1}
                 data-testid="button-story-next"
               >
@@ -95,30 +95,30 @@ export default function HomePage() {
                     <div className="flex items-center gap-2 mb-2">
                       <AvatarCircle firstName={story.author.firstName} color={story.author.avatarColor} size="sm" />
                       <div>
-                        <span className="text-sm font-semibold text-[#111827]">{story.author.firstName}</span>
+                        <span className="text-sm font-semibold text-[#302D2E]">{story.author.firstName}</span>
                         <div className="flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-[#0D9488]" />
-                          <span className="text-[10px] font-medium text-[#0D9488]">Featured Story</span>
+                          <Sparkles className="w-3 h-3 text-[#34737A]" />
+                          <span className="text-[10px] font-medium text-[#34737A]">Featured Story</span>
                         </div>
                       </div>
                     </div>
                     {expandedStory === story.id ? (
                       <div className="space-y-3 mt-2">
                         <div>
-                          <p className="text-[10px] font-bold text-[#0D9488] uppercase tracking-wider mb-0.5">Where were you?</p>
-                          <p className="text-xs text-[#111827] leading-relaxed">{story.step1Content}</p>
+                          <p className="text-[10px] font-bold text-[#34737A] uppercase tracking-wider mb-0.5">Where were you?</p>
+                          <p className="text-xs text-[#302D2E] leading-relaxed">{story.step1Content}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-[#0D9488] uppercase tracking-wider mb-0.5">What changed?</p>
-                          <p className="text-xs text-[#111827] leading-relaxed">{story.step2Content}</p>
+                          <p className="text-[10px] font-bold text-[#34737A] uppercase tracking-wider mb-0.5">What changed?</p>
+                          <p className="text-xs text-[#302D2E] leading-relaxed">{story.step2Content}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-[#0D9488] uppercase tracking-wider mb-0.5">Where are you now?</p>
-                          <p className="text-xs text-[#111827] leading-relaxed">{story.step3Content}</p>
+                          <p className="text-[10px] font-bold text-[#34737A] uppercase tracking-wider mb-0.5">Where are you now?</p>
+                          <p className="text-xs text-[#302D2E] leading-relaxed">{story.step3Content}</p>
                         </div>
                         <button
                           onClick={() => setExpandedStory(null)}
-                          className="text-xs font-medium text-[#0D9488]"
+                          className="text-xs font-medium text-[#34737A]"
                           data-testid={`button-collapse-story-${story.id}`}
                         >
                           Show less
@@ -126,10 +126,10 @@ export default function HomePage() {
                       </div>
                     ) : (
                       <>
-                        <p className="text-xs text-[#6B7280] line-clamp-2 leading-relaxed">{story.step3Content}</p>
+                        <p className="text-xs text-[#868180] line-clamp-2 leading-relaxed">{story.step3Content}</p>
                         <button
                           onClick={() => setExpandedStory(story.id)}
-                          className="text-xs font-medium text-[#0D9488] mt-1"
+                          className="text-xs font-medium text-[#34737A] mt-1"
                           data-testid={`button-read-story-${story.id}`}
                         >
                           Read more
@@ -147,7 +147,7 @@ export default function HomePage() {
               <button
                 key={i}
                 onClick={() => setStoryIndex(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === storyIndex ? "bg-[#0D9488]" : "bg-[#E5E7EB]"}`}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === storyIndex ? "bg-[#34737A]" : "bg-[#C7C2BF]"}`}
                 data-testid={`button-story-dot-${i}`}
               />
             ))}
@@ -158,12 +158,12 @@ export default function HomePage() {
       {isAlumni && (
         <div
           className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
-          style={{ background: "linear-gradient(135deg, #0D9488, #0F766E)" }}
+          style={{ background: "linear-gradient(135deg, #34737A, #2C6169)" }}
           data-testid="share-story-bar"
         >
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-white">Share your story</h3>
-            <p className="text-xs text-teal-100 mt-0.5">Your journey can inspire someone who's just starting</p>
+            <p className="text-xs text-white/70 mt-0.5">Your journey can inspire someone who's just starting</p>
           </div>
           <Button
             size="sm"
@@ -182,11 +182,11 @@ export default function HomePage() {
       {nextEvent && (
         <div className="bg-white rounded-xl p-4" data-testid="next-event-card">
           <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4 text-[#0D9488]" />
-            <span className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">Next Event</span>
+            <Calendar className="w-4 h-4 text-[#34737A]" />
+            <span className="text-xs font-bold text-[#868180] uppercase tracking-wider">Next Event</span>
           </div>
-          <h3 className="text-sm font-semibold text-[#111827]">{nextEvent.name}</h3>
-          <p className="text-xs text-[#6B7280] mt-1">
+          <h3 className="text-sm font-semibold text-[#302D2E]">{nextEvent.name}</h3>
+          <p className="text-xs text-[#868180] mt-1">
             {format(new Date(nextEvent.date + "T00:00:00"), "EEEE, MMM d")} at {nextEvent.startTime?.slice(0, 5)} - {nextEvent.location}
           </p>
         </div>

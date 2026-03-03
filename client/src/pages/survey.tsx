@@ -79,14 +79,14 @@ export default function SurveyPage() {
   if (submitted) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center" data-testid="survey-confirmation">
-        <div className="w-16 h-16 rounded-full bg-[#0D9488]/10 flex items-center justify-center mb-4">
-          <CheckCircle2 className="w-8 h-8 text-[#0D9488]" />
+        <div className="w-16 h-16 rounded-full bg-[#34737A]/10 flex items-center justify-center mb-4">
+          <CheckCircle2 className="w-8 h-8 text-[#34737A]" />
         </div>
-        <h1 className="text-xl font-bold text-[#111827] mb-2">Thank you for checking in!</h1>
-        <p className="text-sm text-[#6B7280] max-w-xs">
+        <h1 className="text-xl font-bold text-[#302D2E] mb-2">Thank you for checking in!</h1>
+        <p className="text-sm text-[#868180] max-w-xs">
           Your responses help us serve the community better.
         </p>
-        <Button className="bg-[#0D9488] text-white mt-6" onClick={() => navigate("/")} data-testid="button-survey-return-home">
+        <Button className="bg-[#34737A] text-white mt-6" onClick={() => navigate("/")} data-testid="button-survey-return-home">
           Return Home
         </Button>
       </div>
@@ -97,9 +97,9 @@ export default function SurveyPage() {
     <div>
       <div className="flex items-center gap-3 mb-4">
         <button onClick={() => navigate("/")} data-testid="button-back-survey">
-          <ArrowLeft className="w-5 h-5 text-[#6B7280]" />
+          <ArrowLeft className="w-5 h-5 text-[#868180]" />
         </button>
-        <h1 className="text-lg font-bold text-[#111827]" data-testid="text-survey-title">
+        <h1 className="text-lg font-bold text-[#302D2E]" data-testid="text-survey-title">
           {dueInterval}-Month Check-in
         </h1>
       </div>
@@ -108,13 +108,13 @@ export default function SurveyPage() {
         <div className="bg-white rounded-xl p-4 space-y-3" data-testid="survey-form">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-[#111827]">Are you still employed?</label>
+              <label className="text-sm font-medium text-[#302D2E]">Are you still employed?</label>
               <Switch checked={stillEmployed} onCheckedChange={setStillEmployed} data-testid="toggle-employed" />
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-[#111827] block mb-1">Current job title</label>
+            <label className="text-sm font-medium text-[#302D2E] block mb-1">Current job title</label>
             <Input
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
@@ -125,14 +125,14 @@ export default function SurveyPage() {
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-[#111827]">Have you received a raise or promotion?</label>
+              <label className="text-sm font-medium text-[#302D2E]">Have you received a raise or promotion?</label>
               <Switch checked={raiseOrPromotion} onCheckedChange={setRaiseOrPromotion} data-testid="toggle-raise" />
             </div>
           </div>
 
           {raiseOrPromotion && (
             <div>
-              <label className="text-sm font-medium text-[#111827] block mb-1">Details</label>
+              <label className="text-sm font-medium text-[#302D2E] block mb-1">Details</label>
               <Input
                 value={promotionDetails}
                 onChange={(e) => setPromotionDetails(e.target.value)}
@@ -143,7 +143,7 @@ export default function SurveyPage() {
           )}
 
           <div>
-            <label className="text-sm font-medium text-[#111827] block mb-1">Housing status</label>
+            <label className="text-sm font-medium text-[#302D2E] block mb-1">Housing status</label>
             <Select value={housingStatus} onValueChange={setHousingStatus}>
               <SelectTrigger data-testid="select-housing-status"><SelectValue placeholder="Select status" /></SelectTrigger>
               <SelectContent>
@@ -155,7 +155,7 @@ export default function SurveyPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-[#111827] block mb-1">What support do you need right now?</label>
+            <label className="text-sm font-medium text-[#302D2E] block mb-1">What support do you need right now?</label>
             <Textarea
               value={supportNeeds}
               onChange={(e) => setSupportNeeds(e.target.value)}
@@ -167,7 +167,7 @@ export default function SurveyPage() {
         </div>
 
         <Button
-          className="w-full bg-[#0D9488] text-white"
+          className="w-full bg-[#34737A] text-white"
           onClick={() => submitSurvey.mutate()}
           disabled={!housingStatus || submitSurvey.isPending}
           data-testid="button-submit-survey"

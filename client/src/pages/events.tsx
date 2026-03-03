@@ -20,7 +20,7 @@ const eventTypeLabels: Record<string, string> = {
 };
 
 const eventTypeColors: Record<string, string> = {
-  community_meeting: "bg-[#0D9488]/10 text-[#0D9488]",
+  community_meeting: "bg-[#34737A]/10 text-[#34737A]",
   workshop: "bg-blue-100 text-blue-700",
   celebration: "bg-purple-100 text-purple-700",
   class: "bg-amber-100 text-amber-700",
@@ -76,9 +76,9 @@ export default function EventsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg font-bold text-[#111827]" data-testid="text-events-title">Events</h1>
+        <h1 className="text-lg font-bold text-[#302D2E]" data-testid="text-events-title">Events</h1>
         {isStaffOrAdmin && (
-          <Button size="sm" className="bg-[#0D9488] text-white" onClick={() => setShowForm(!showForm)} data-testid="button-add-event">
+          <Button size="sm" className="bg-[#34737A] text-white" onClick={() => setShowForm(!showForm)} data-testid="button-add-event">
             <Plus className="w-4 h-4 mr-1" /> Add
           </Button>
         )}
@@ -87,8 +87,8 @@ export default function EventsPage() {
       {showForm && (
         <div className="bg-white rounded-xl p-4 mb-4 space-y-3" data-testid="event-form">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[#111827]">Add Event</h2>
-            <button onClick={() => setShowForm(false)}><X className="w-4 h-4 text-[#9CA3AF]" /></button>
+            <h2 className="text-sm font-semibold text-[#302D2E]">Add Event</h2>
+            <button onClick={() => setShowForm(false)}><X className="w-4 h-4 text-[#C7C2BF]" /></button>
           </div>
           <Input placeholder="Event name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} data-testid="input-event-name" />
           <Select value={formData.eventType} onValueChange={(v) => setFormData({ ...formData, eventType: v })}>
@@ -107,7 +107,7 @@ export default function EventsPage() {
           <Input placeholder="Location" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} data-testid="input-location" />
           <Textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="min-h-[60px] resize-none" data-testid="input-event-description" />
           <div className="flex items-center gap-4">
-            <span className="text-xs text-[#6B7280]">Stages:</span>
+            <span className="text-xs text-[#868180]">Stages:</span>
             <label className="flex items-center gap-1.5 text-xs">
               <Checkbox checked={formData.stages.client} onCheckedChange={(c) => setFormData({ ...formData, stages: { ...formData.stages, client: !!c } })} />
               Client
@@ -117,14 +117,14 @@ export default function EventsPage() {
               Alumni
             </label>
           </div>
-          <Button className="w-full bg-[#0D9488] text-white" onClick={() => createEvent.mutate()} disabled={!formData.name || !formData.eventType || !formData.date || createEvent.isPending} data-testid="button-save-event">
+          <Button className="w-full bg-[#34737A] text-white" onClick={() => createEvent.mutate()} disabled={!formData.name || !formData.eventType || !formData.date || createEvent.isPending} data-testid="button-save-event">
             {createEvent.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
           </Button>
         </div>
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#0D9488]" /></div>
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
       ) : (
         <div className="space-y-3">
           {events?.map((event: any) => {
@@ -133,8 +133,8 @@ export default function EventsPage() {
             const dayStr = format(eventDate, "d");
             return (
               <div key={event.id} className="bg-white rounded-xl p-4 flex gap-3" data-testid={`event-card-${event.id}`}>
-                <div className="w-14 h-14 rounded-lg bg-[#0D9488] flex flex-col items-center justify-center shrink-0">
-                  <span className="text-[10px] font-bold text-teal-100 uppercase">{monthStr}</span>
+                <div className="w-14 h-14 rounded-lg bg-[#34737A] flex flex-col items-center justify-center shrink-0">
+                  <span className="text-[10px] font-bold text-white/70 uppercase">{monthStr}</span>
                   <span className="text-lg font-bold text-white leading-tight">{dayStr}</span>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -143,8 +143,8 @@ export default function EventsPage() {
                       {eventTypeLabels[event.eventType] || event.eventType}
                     </span>
                   </div>
-                  <h3 className="text-sm font-semibold text-[#111827]">{event.name}</h3>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-[#6B7280] flex-wrap">
+                  <h3 className="text-sm font-semibold text-[#302D2E]">{event.name}</h3>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-[#868180] flex-wrap">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" /> {formatTime(event.startTime)} - {formatTime(event.endTime)}
                     </span>
@@ -155,12 +155,12 @@ export default function EventsPage() {
                     )}
                   </div>
                   {event.description && (
-                    <p className="text-xs text-[#9CA3AF] mt-1.5 leading-relaxed line-clamp-2">{event.description}</p>
+                    <p className="text-xs text-[#C7C2BF] mt-1.5 leading-relaxed line-clamp-2">{event.description}</p>
                   )}
                   {isStaffOrAdmin && (
                     <div className="flex gap-1 mt-2">
                       {event.applicableStages?.map((s: string) => (
-                        <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F3F4F6] text-[#6B7280] font-medium">
+                        <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F1EFEF] text-[#868180] font-medium">
                           {s.charAt(0).toUpperCase() + s.slice(1)}
                         </span>
                       ))}
@@ -171,7 +171,7 @@ export default function EventsPage() {
             );
           })}
           {events?.length === 0 && (
-            <div className="text-center py-8 text-sm text-[#9CA3AF]">No upcoming events.</div>
+            <div className="text-center py-8 text-sm text-[#C7C2BF]">No upcoming events.</div>
           )}
         </div>
       )}

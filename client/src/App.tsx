@@ -21,10 +21,10 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
+      <div className="min-h-screen flex items-center justify-center bg-[#FFFBF9]">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#0D9488] mx-auto" />
-          <p className="text-sm text-[#6B7280] mt-2">Loading...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-[#34737A] mx-auto" />
+          <p className="text-sm text-[#868180] mt-2">Loading...</p>
         </div>
       </div>
     );
@@ -35,7 +35,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
+    <div className="min-h-screen bg-[#FFFBF9]">
       <div className="max-w-[430px] mx-auto px-4 pt-4 pb-20">
         <Switch>
           <Route path="/" component={HomePage} />

@@ -42,7 +42,7 @@ type PostType = {
 };
 
 const postTypeBadgeColors: Record<string, string> = {
-  update: "bg-[#E5E7EB] text-[#111827]",
+  update: "bg-[#C7C2BF] text-[#302D2E]",
   win: "bg-emerald-100 text-emerald-800",
   question: "bg-amber-100 text-amber-800",
   need: "bg-red-100 text-red-800",
@@ -116,7 +116,7 @@ export function PostCard({ post }: { post: PostType }) {
 
   const userReaction = postReactions?.find(r => r.userId === user?.id);
 
-  const leftBorderColor = post.postType === "need" ? "#FF6B6B" : post.postType === "question" ? "#F5A623" : "transparent";
+  const leftBorderColor = post.postType === "need" ? "#D32027" : post.postType === "question" ? "#979DB6" : "transparent";
 
   return (
     <div
@@ -128,7 +128,7 @@ export function PostCard({ post }: { post: PostType }) {
         <AvatarCircle firstName={post.author.firstName} color={post.author.avatarColor} size="sm" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm text-[#111827]">{post.author.firstName}</span>
+            <span className="font-semibold text-sm text-[#302D2E]">{post.author.firstName}</span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${roleBadgeColors[post.author.role]}`}>
               {capitalize(post.author.role)}
             </span>
@@ -136,10 +136,10 @@ export function PostCard({ post }: { post: PostType }) {
               {capitalize(post.postType)}
             </span>
             {post.pinned && (
-              <Pin className="w-3 h-3 text-[#0D9488]" />
+              <Pin className="w-3 h-3 text-[#34737A]" />
             )}
           </div>
-          <p className="text-sm text-[#111827] mt-1.5 leading-relaxed">{post.content}</p>
+          <p className="text-sm text-[#302D2E] mt-1.5 leading-relaxed">{post.content}</p>
 
           {Object.keys(reactionCounts).length > 0 && (
             <div className="flex items-center gap-1.5 mt-2 flex-wrap" data-testid={`reactions-display-${post.id}`}>
@@ -149,26 +149,26 @@ export function PostCard({ post }: { post: PostType }) {
                   onClick={() => reactMutation.mutate(type)}
                   className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-colors ${
                     userReaction?.reactionType === type
-                      ? "bg-[#0D9488]/10 border border-[#0D9488]/30"
-                      : "bg-[#F3F4F6] border border-transparent"
+                      ? "bg-[#34737A]/10 border border-[#34737A]/30"
+                      : "bg-[#F1EFEF] border border-transparent"
                   }`}
                   data-testid={`reaction-badge-${type}-${post.id}`}
                 >
                   <span className="text-sm">{reactionEmojis[type]}</span>
-                  <span className="text-[10px] font-medium text-[#6B7280]">{count}</span>
+                  <span className="text-[10px] font-medium text-[#868180]">{count}</span>
                 </button>
               ))}
             </div>
           )}
 
           <div className="flex items-center gap-3 mt-2">
-            <span className="text-xs text-[#9CA3AF]">
+            <span className="text-xs text-[#C7C2BF]">
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
             </span>
             <div className="relative">
               <button
                 onClick={() => setShowReactionPicker(!showReactionPicker)}
-                className="text-xs text-[#6B7280] flex items-center gap-1 transition-colors"
+                className="text-xs text-[#868180] flex items-center gap-1 transition-colors"
                 data-testid={`button-react-${post.id}`}
               >
                 <span className="text-sm">😊</span>
@@ -176,15 +176,15 @@ export function PostCard({ post }: { post: PostType }) {
               </button>
               {showReactionPicker && (
                 <div
-                  className="absolute bottom-full left-0 mb-1 flex gap-1 bg-white rounded-xl shadow-lg border border-[#E5E7EB] p-1.5 z-10"
+                  className="absolute bottom-full left-0 mb-1 flex gap-1 bg-white rounded-xl shadow-lg border border-[#C7C2BF] p-1.5 z-10"
                   data-testid={`reaction-picker-${post.id}`}
                 >
                   {Object.entries(reactionEmojis).map(([type, emoji]) => (
                     <button
                       key={type}
                       onClick={() => reactMutation.mutate(type)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F3F4F6] transition-colors text-lg ${
-                        userReaction?.reactionType === type ? "bg-[#0D9488]/10" : ""
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F1EFEF] transition-colors text-lg ${
+                        userReaction?.reactionType === type ? "bg-[#34737A]/10" : ""
                       }`}
                       data-testid={`reaction-option-${type}-${post.id}`}
                     >
@@ -196,7 +196,7 @@ export function PostCard({ post }: { post: PostType }) {
             </div>
             <button
               onClick={() => setShowReplies(!showReplies)}
-              className="text-xs text-[#6B7280] flex items-center gap-1 transition-colors"
+              className="text-xs text-[#868180] flex items-center gap-1 transition-colors"
               data-testid={`button-reply-${post.id}`}
             >
               <MessageCircle className="w-3.5 h-3.5" />
@@ -205,7 +205,7 @@ export function PostCard({ post }: { post: PostType }) {
             {isStaffOrAdmin && (
               <button
                 onClick={() => pinMutation.mutate()}
-                className="text-xs text-[#6B7280] flex items-center gap-1"
+                className="text-xs text-[#868180] flex items-center gap-1"
                 data-testid={`button-pin-${post.id}`}
               >
                 <Pin className="w-3.5 h-3.5" />
@@ -223,12 +223,12 @@ export function PostCard({ post }: { post: PostType }) {
               <AvatarCircle firstName={reply.author.firstName} color={reply.author.avatarColor} size="sm" />
               <div className="flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-xs text-[#111827]">{reply.author.firstName}</span>
-                  <span className="text-[10px] text-[#9CA3AF]">
+                  <span className="font-semibold text-xs text-[#302D2E]">{reply.author.firstName}</span>
+                  <span className="text-[10px] text-[#C7C2BF]">
                     {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
                   </span>
                 </div>
-                <p className="text-xs text-[#111827] mt-0.5 leading-relaxed">{reply.content}</p>
+                <p className="text-xs text-[#302D2E] mt-0.5 leading-relaxed">{reply.content}</p>
               </div>
             </div>
           ))}
@@ -244,7 +244,7 @@ export function PostCard({ post }: { post: PostType }) {
               size="sm"
               onClick={() => replyMutation.mutate()}
               disabled={!replyText.trim() || replyMutation.isPending}
-              className="bg-[#0D9488] text-white self-end"
+              className="bg-[#34737A] text-white self-end"
               data-testid={`button-submit-reply-${post.id}`}
             >
               Send

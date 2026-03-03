@@ -23,7 +23,7 @@ function getResourceAge(createdAt: string | null): string {
 
 const pillars = ["all", "community", "confidence", "resilience", "readiness", "wellness"];
 const pillarColors: Record<string, string> = {
-  community: "#0D9488",
+  community: "#34737A",
   confidence: "#F59E0B",
   resilience: "#EF4444",
   readiness: "#3B82F6",
@@ -78,9 +78,9 @@ export default function ResourcesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg font-bold text-[#111827]" data-testid="text-resources-title">Resources</h1>
+        <h1 className="text-lg font-bold text-[#302D2E]" data-testid="text-resources-title">Resources</h1>
         {isStaffOrAdmin && (
-          <Button size="sm" className="bg-[#0D9488] text-white" onClick={() => setShowForm(!showForm)} data-testid="button-add-resource">
+          <Button size="sm" className="bg-[#34737A] text-white" onClick={() => setShowForm(!showForm)} data-testid="button-add-resource">
             <Plus className="w-4 h-4 mr-1" /> Add
           </Button>
         )}
@@ -89,8 +89,8 @@ export default function ResourcesPage() {
       {showForm && (
         <div className="bg-white rounded-xl p-4 mb-4 space-y-3" data-testid="resource-form">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[#111827]">Add Resource</h2>
-            <button onClick={() => setShowForm(false)}><X className="w-4 h-4 text-[#9CA3AF]" /></button>
+            <h2 className="text-sm font-semibold text-[#302D2E]">Add Resource</h2>
+            <button onClick={() => setShowForm(false)}><X className="w-4 h-4 text-[#C7C2BF]" /></button>
           </div>
           <Input placeholder="Resource name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} data-testid="input-resource-name" />
           <Textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="min-h-[60px] resize-none" data-testid="input-resource-description" />
@@ -118,7 +118,7 @@ export default function ResourcesPage() {
             <Input placeholder="Website (optional)" value={formData.websiteUrl} onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })} data-testid="input-website" />
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-[#6B7280]">Stages:</span>
+            <span className="text-xs text-[#868180]">Stages:</span>
             <label className="flex items-center gap-1.5 text-xs">
               <Checkbox checked={formData.stages.client} onCheckedChange={(c) => setFormData({ ...formData, stages: { ...formData.stages, client: !!c } })} />
               Client
@@ -128,7 +128,7 @@ export default function ResourcesPage() {
               Alumni
             </label>
           </div>
-          <Button className="w-full bg-[#0D9488] text-white" onClick={() => createResource.mutate()} disabled={!formData.name || !formData.pillar || !formData.type || createResource.isPending} data-testid="button-save-resource">
+          <Button className="w-full bg-[#34737A] text-white" onClick={() => createResource.mutate()} disabled={!formData.name || !formData.pillar || !formData.type || createResource.isPending} data-testid="button-save-resource">
             {createResource.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
           </Button>
         </div>
@@ -141,7 +141,7 @@ export default function ResourcesPage() {
               key={s}
               onClick={() => setStageFilter(s)}
               className={`text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors ${
-                stageFilter === s ? "bg-[#0D9488] text-white" : "bg-white text-[#6B7280]"
+                stageFilter === s ? "bg-[#34737A] text-white" : "bg-white text-[#868180]"
               }`}
               data-testid={`button-stage-${s}`}
             >
@@ -157,7 +157,7 @@ export default function ResourcesPage() {
             key={p}
             onClick={() => setPillarFilter(p)}
             className={`text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors ${
-              pillarFilter === p ? "bg-[#0D9488] text-white" : "bg-white text-[#6B7280]"
+              pillarFilter === p ? "bg-[#34737A] text-white" : "bg-white text-[#868180]"
             }`}
             data-testid={`button-pillar-${p}`}
           >
@@ -167,29 +167,29 @@ export default function ResourcesPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#0D9488]" /></div>
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
       ) : (
         <div className="space-y-3">
           {resources?.map((r: any) => (
             <div key={r.id} className="bg-white rounded-xl p-4" data-testid={`resource-card-${r.id}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: pillarColors[r.pillar] || "#0D9488" }}>
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: pillarColors[r.pillar] || "#34737A" }}>
                     {r.pillar}
                   </span>
-                  <h3 className="text-sm font-semibold text-[#111827] mt-0.5">{r.name}</h3>
-                  <p className="text-xs text-[#6B7280] mt-1 leading-relaxed line-clamp-3">{r.description}</p>
+                  <h3 className="text-sm font-semibold text-[#302D2E] mt-0.5">{r.name}</h3>
+                  <p className="text-xs text-[#868180] mt-1 leading-relaxed line-clamp-3">{r.description}</p>
                   {r.providerName && (
-                    <p className="text-xs text-[#9CA3AF] mt-1.5">{r.providerName}</p>
+                    <p className="text-xs text-[#C7C2BF] mt-1.5">{r.providerName}</p>
                   )}
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
                     {r.phone && (
-                      <a href={`tel:${r.phone}`} className="flex items-center gap-1 text-xs text-[#0D9488] font-medium" data-testid={`link-phone-${r.id}`}>
+                      <a href={`tel:${r.phone}`} className="flex items-center gap-1 text-xs text-[#34737A] font-medium" data-testid={`link-phone-${r.id}`}>
                         <Phone className="w-3 h-3" /> {r.phone}
                       </a>
                     )}
                     {r.websiteUrl && (
-                      <a href={r.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[#0D9488] font-medium" data-testid={`link-website-${r.id}`}>
+                      <a href={r.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[#34737A] font-medium" data-testid={`link-website-${r.id}`}>
                         <Globe className="w-3 h-3" /> Website
                       </a>
                     )}
@@ -200,14 +200,14 @@ export default function ResourcesPage() {
                 {isStaffOrAdmin ? (
                   <div className="flex gap-1">
                     {r.applicableStages?.map((s: string) => (
-                      <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F3F4F6] text-[#6B7280] font-medium">
+                      <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F1EFEF] text-[#868180] font-medium">
                         {s.charAt(0).toUpperCase() + s.slice(1)}
                       </span>
                     ))}
                   </div>
                 ) : <div />}
                 {r.createdAt && (
-                  <span className="text-[10px] text-[#9CA3AF]" data-testid={`resource-age-${r.id}`}>
+                  <span className="text-[10px] text-[#C7C2BF]" data-testid={`resource-age-${r.id}`}>
                     {getResourceAge(r.createdAt)}
                   </span>
                 )}
@@ -215,7 +215,7 @@ export default function ResourcesPage() {
             </div>
           ))}
           {resources?.length === 0 && (
-            <div className="text-center py-8 text-sm text-[#9CA3AF]">No resources found.</div>
+            <div className="text-center py-8 text-sm text-[#C7C2BF]">No resources found.</div>
           )}
         </div>
       )}

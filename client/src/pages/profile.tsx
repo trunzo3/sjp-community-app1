@@ -64,7 +64,7 @@ export default function ProfilePage() {
           <AvatarCircle firstName={user.firstName} color={user.avatarColor} size="lg" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-[#111827]" data-testid="text-profile-name">{user.firstName}</h1>
+              <h1 className="text-xl font-bold text-[#302D2E]" data-testid="text-profile-name">{user.firstName}</h1>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${roleBadgeColors[user.role]}`}>
                 {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
               </span>
@@ -78,7 +78,7 @@ export default function ProfilePage() {
                   data-testid="input-bio"
                 />
                 <div className="flex gap-2">
-                  <Button size="sm" className="bg-[#0D9488] text-white" onClick={() => updateBio.mutate()} disabled={updateBio.isPending} data-testid="button-save-bio">
+                  <Button size="sm" className="bg-[#34737A] text-white" onClick={() => updateBio.mutate()} disabled={updateBio.isPending} data-testid="button-save-bio">
                     <Check className="w-3 h-3 mr-1" /> Save
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => { setEditingBio(false); setBio(user.bio || ""); }} data-testid="button-cancel-bio">
@@ -88,13 +88,13 @@ export default function ProfilePage() {
               </div>
             ) : (
               <>
-                {user.bio && <p className="text-sm text-[#6B7280] mt-1">{user.bio}</p>}
-                <button onClick={() => setEditingBio(true)} className="mt-1 flex items-center gap-1 text-xs text-[#0D9488] font-medium" data-testid="button-edit-bio">
+                {user.bio && <p className="text-sm text-[#868180] mt-1">{user.bio}</p>}
+                <button onClick={() => setEditingBio(true)} className="mt-1 flex items-center gap-1 text-xs text-[#34737A] font-medium" data-testid="button-edit-bio">
                   <Pencil className="w-3 h-3" /> {user.bio ? "Edit bio" : "Add a bio"}
                 </button>
               </>
             )}
-            <div className="mt-3 space-y-1 text-xs text-[#9CA3AF]">
+            <div className="mt-3 space-y-1 text-xs text-[#C7C2BF]">
               <p data-testid="text-graduation-date">
                 Graduation: {user.graduationDate ? format(new Date(user.graduationDate + "T00:00:00"), "MMMM d, yyyy") : "TBD"}
               </p>
@@ -104,8 +104,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-        <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
-          <p className="text-[10px] text-[#9CA3AF] italic">Your profile is visible only to the SJP community.</p>
+        <div className="mt-3 pt-3 border-t border-[#C7C2BF]">
+          <p className="text-[10px] text-[#C7C2BF] italic">Your profile is visible only to the SJP community.</p>
         </div>
       </div>
 
@@ -116,12 +116,12 @@ export default function ProfilePage() {
             onClick={() => navigate("/share-story")}
             data-testid="button-share-story"
           >
-            <div className="w-9 h-9 rounded-lg bg-[#0D9488]/10 flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-[#0D9488]" />
+            <div className="w-9 h-9 rounded-lg bg-[#34737A]/10 flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-[#34737A]" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#111827]">Share Your Story</p>
-              <p className="text-xs text-[#6B7280]">Your journey can inspire someone</p>
+              <p className="text-sm font-semibold text-[#302D2E]">Share Your Story</p>
+              <p className="text-xs text-[#868180]">Your journey can inspire someone</p>
             </div>
           </button>
         )}
@@ -136,11 +136,11 @@ export default function ProfilePage() {
               <Shield className="w-4 h-4 text-purple-600" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-[#111827]">Admin Panel</p>
-              <p className="text-xs text-[#6B7280]">Manage stories, users & content</p>
+              <p className="text-sm font-semibold text-[#302D2E]">Admin Panel</p>
+              <p className="text-xs text-[#868180]">Manage stories, users & content</p>
             </div>
             {pendingCount && pendingCount.count > 0 && (
-              <div className="w-5 h-5 rounded-full bg-[#FF6B6B] flex items-center justify-center" data-testid="badge-pending-count">
+              <div className="w-5 h-5 rounded-full bg-[#D32027] flex items-center justify-center" data-testid="badge-pending-count">
                 <span className="text-[10px] font-bold text-white">{pendingCount.count}</span>
               </div>
             )}
@@ -156,8 +156,8 @@ export default function ProfilePage() {
             <FileText className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-[#111827]">My Posts</p>
-            <p className="text-xs text-[#6B7280]">See your community posts</p>
+            <p className="text-sm font-semibold text-[#302D2E]">My Posts</p>
+            <p className="text-xs text-[#868180]">See your community posts</p>
           </div>
         </button>
 
@@ -169,19 +169,19 @@ export default function ProfilePage() {
           <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center">
             <LogOut className="w-4 h-4 text-red-600" />
           </div>
-          <p className="text-sm font-semibold text-[#111827]">Sign Out</p>
+          <p className="text-sm font-semibold text-[#302D2E]">Sign Out</p>
         </button>
       </div>
 
       {showMyPosts && (
         <div className="space-y-3">
-          <h2 className="text-sm font-bold text-[#111827]">Your Posts</h2>
+          <h2 className="text-sm font-bold text-[#302D2E]">Your Posts</h2>
           {postsLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#0D9488]" /></div>
+            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
           ) : (
             <>
               {myPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
-              {myPosts?.length === 0 && <p className="text-center text-sm text-[#9CA3AF] py-4">No posts yet.</p>}
+              {myPosts?.length === 0 && <p className="text-center text-sm text-[#C7C2BF] py-4">No posts yet.</p>}
             </>
           )}
         </div>

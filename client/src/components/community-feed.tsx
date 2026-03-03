@@ -42,11 +42,11 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
   return (
     <div className="space-y-4">
       {showPrivacyBanner && (
-        <div className="bg-[#F0FDFA] rounded-xl px-4 py-3 flex items-center gap-2" data-testid="privacy-banner">
-          <svg className="w-4 h-4 text-[#0D9488] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="bg-[#34737A]/5 rounded-xl px-4 py-3 flex items-center gap-2" data-testid="privacy-banner">
+          <svg className="w-4 h-4 text-[#34737A] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <p className="text-xs text-[#0D9488] font-medium">
+          <p className="text-xs text-[#34737A] font-medium">
             Private space for the SJP community. What's shared here stays here.
           </p>
         </div>
@@ -57,7 +57,7 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Share something with the community..."
-          className="min-h-[80px] resize-none text-sm border-[#E5E7EB]"
+          className="min-h-[80px] resize-none text-sm border-[#C7C2BF]"
           data-testid="input-post-content"
         />
         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -68,8 +68,8 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
                 onClick={() => setPostType(pt)}
                 className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                   postType === pt
-                    ? "bg-[#0D9488] text-white"
-                    : "bg-[#F3F4F6] text-[#6B7280]"
+                    ? "bg-[#34737A] text-white"
+                    : "bg-[#F1EFEF] text-[#868180]"
                 }`}
                 data-testid={`button-type-${pt}`}
               >
@@ -81,7 +81,7 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
             size="sm"
             onClick={() => createPost.mutate()}
             disabled={!content.trim() || createPost.isPending}
-            className="bg-[#0D9488] text-white"
+            className="bg-[#34737A] text-white"
             data-testid="button-share-post"
           >
             {createPost.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Share"}
@@ -96,8 +96,8 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
             onClick={() => setFilter(f)}
             className={`text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors ${
               filter === f
-                ? "bg-[#0D9488] text-white"
-                : "bg-white text-[#6B7280]"
+                ? "bg-[#34737A] text-white"
+                : "bg-white text-[#868180]"
             }`}
             data-testid={`button-filter-${f}`}
           >
@@ -108,7 +108,7 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
 
       {isLoading ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-[#0D9488]" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#34737A]" />
         </div>
       ) : (
         <div className="space-y-3">
@@ -116,7 +116,7 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
             <PostCard key={post.id} post={post} />
           ))}
           {posts?.length === 0 && (
-            <div className="text-center py-8 text-sm text-[#9CA3AF]">No posts yet. Be the first to share!</div>
+            <div className="text-center py-8 text-sm text-[#C7C2BF]">No posts yet. Be the first to share!</div>
           )}
         </div>
       )}

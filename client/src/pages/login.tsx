@@ -60,18 +60,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #0D9488 0%, #0F766E 40%, #115E59 100%)" }}>
+    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #34737A 0%, #2C6169 40%, #1F4F49 100%)" }}>
       <div className="max-w-[430px] mx-auto px-4 py-8">
         <div className="text-center mb-6 pt-4">
           <img src={sjpLogo} alt="Saint John's Program for Real Change" className="mx-auto mb-4" style={{ height: "217.6px" }} data-testid="img-sjp-logo" />
           <h1 className="text-3xl font-bold text-white tracking-tight" data-testid="text-app-title">SJP Community</h1>
-          <p className="text-teal-100 text-sm mt-1">Building community. Changing lives.</p>
+          <p className="text-white/70 text-sm mt-1">Building community. Changing lives.</p>
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-xl" data-testid="login-card">
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-[#111827] mb-1 block">Email address</label>
+              <label className="text-sm font-medium text-[#302D2E] mb-1 block">Email address</label>
               <Input
                 type="email"
                 value={email}
@@ -81,7 +81,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-[#111827] mb-1 block">Password</label>
+              <label className="text-sm font-medium text-[#302D2E] mb-1 block">Password</label>
               <Input
                 type="password"
                 value={password}
@@ -92,7 +92,7 @@ export default function LoginPage() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-[#0D9488] text-white font-semibold"
+              className="w-full bg-[#34737A] text-white font-semibold"
               disabled={loading}
               data-testid="button-sign-in"
             >
@@ -104,13 +104,13 @@ export default function LoginPage() {
         <div className="mt-8">
           <div className="flex items-center gap-3 mb-5">
             <div className="flex-1 h-px bg-white/20" />
-            <span className="text-xs text-teal-200 font-medium whitespace-nowrap">Demo accounts (password: password123)</span>
+            <span className="text-xs text-white/60 font-medium whitespace-nowrap">Demo accounts (password: password123)</span>
             <div className="flex-1 h-px bg-white/20" />
           </div>
 
           {Object.entries(demoUsers).map(([group, users]) => (
             <div key={group} className="mb-4">
-              <h3 className="text-[10px] font-bold text-teal-200 tracking-widest mb-2 uppercase">{group}</h3>
+              <h3 className="text-[10px] font-bold text-white/60 tracking-widest mb-2 uppercase">{group}</h3>
               <div className="grid grid-cols-2 gap-2">
                 {users.map((u) => (
                   <button
@@ -128,7 +128,7 @@ export default function LoginPage() {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-white">{u.name}</div>
-                      <div className="text-[10px] text-teal-200">{u.label}</div>
+                      <div className="text-[10px] text-white/60">{u.label}</div>
                     </div>
                   </button>
                 ))}

@@ -14,7 +14,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] z-50"
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#C7C2BF] z-50"
       style={{ height: 64 }}
       data-testid="bottom-nav"
     >
@@ -27,7 +27,7 @@ export function BottomNav() {
             <Link key={tab.path} href={tab.path}>
               <button
                 className={`flex flex-col items-center justify-center gap-1 py-1 px-3 transition-colors ${
-                  isActive ? "text-[#0D9488]" : "text-[#9CA3AF]"
+                  isActive ? "text-[#34737A]" : "text-[#C7C2BF]"
                 }`}
                 data-testid={`nav-${tab.label.toLowerCase()}`}
               >

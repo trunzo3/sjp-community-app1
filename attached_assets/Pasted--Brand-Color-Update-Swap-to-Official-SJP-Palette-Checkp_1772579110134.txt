@@ -1,0 +1,102 @@
+# Brand Color Update — Swap to Official SJP Palette
+
+**Checkpoint before running: "pre-brand-colors"**
+
+Replace all colors in the app with the official Saint John's brand palette. This is a global color swap — every page, every component. Do not change layout, functionality, or content.
+
+---
+
+## Primary Colors (80% of the design)
+
+These replace the current bright teal (#0D9488) used throughout the app.
+
+- **Dark teal #34737A** — Use for: Sign In button, active bottom nav tab, active filter pills, primary action buttons ("+ Add", "Share", "Save"), links, the "SJP Community" heading on the login page
+- **Sage green #5DA592** — Use for: login page gradient (blend #34737A to #5DA592), hero banner gradient, the Share Your Story bar background, secondary accents where a lighter green is needed
+
+The login page gradient and hero banner should use both primaries — dark teal at top blending to sage green at bottom.
+
+## Saint John's Red (10% — use sparingly)
+
+- **#D32027** — Use for: Need post left border (replaces #FF6B6B), Admin Panel badge counter dot, heart reaction fill when active, the "SJP COMMUNITY" small caps label on the hero banner if present. That's it. Do not use red for any other element.
+
+## Secondary Colors (20% of the design)
+
+Use these for pillar labels, post type badges, and visual variety:
+
+- **Dusty lavender #979DB6** — Use for: Question post left border (replaces amber #F5A623), Confidence pillar label, Question post type badge
+- **Peach #EEBBA7** — Use for: Wellness pillar label, Milestone post type badge
+- **Peach tint #FAE8DF** — Use for: subtle background differentiation where needed (e.g., post composer area background, or alternating section backgrounds)
+
+## Pillar Label Colors
+
+Each pillar gets its own color on resource cards and filter labels:
+
+- **Community:** #34737A (dark teal)
+- **Confidence:** #979DB6 (dusty lavender)
+- **Resilience:** #D32027 (Saint John's Red)
+- **Readiness:** #5DA592 (sage green)
+- **Wellness:** #EEBBA7 (peach) — if this is too light for text legibility, darken to #D4A08A
+
+## Post Type Badge Colors
+
+- **Update:** #34737A (dark teal)
+- **Win:** #5DA592 (sage green)
+- **Question:** #979DB6 (dusty lavender)
+- **Need:** #D32027 (Saint John's Red)
+- **Milestone:** #EEBBA7 (peach) — darken to #D4A08A if needed for legibility
+
+## Backgrounds — Shift Warm
+
+Replace all cool grays with warm tones:
+
+- **Page background:** #FFFBF9 (warm white — replaces #F9FAFB)
+- **Card background:** #FFFFFF (keep white)
+- **Cream accent background:** #FCF3EE (use for subtle section differentiation — hero banner overlay, post composer background, or alternating sections)
+- **Light gray background:** #F1EFEF (replaces any light gray sections like the profile page background or divider areas)
+
+## Text Colors — Shift Warm
+
+- **Primary text:** #302D2E (warm near-black — replaces #111827)
+- **Secondary text:** #868180 (warm gray — replaces #6B7280)
+- **Muted text:** #C7C2BF (warm light gray — replaces #9CA3AF). If this is too light for the age indicator on resource cards, use #868180 instead.
+
+## Border Color
+
+- **Card borders and dividers:** #C7C2BF (warm gray — replaces #E5E7EB)
+
+## Avatar Colors on Demo Login Buttons
+
+Replace the current random bright colors with brand palette colors. Rotate through these five:
+
+- #34737A (dark teal)
+- #5DA592 (sage green)
+- #D32027 (Saint John's Red)
+- #979DB6 (dusty lavender)
+- #EEBBA7 (peach)
+
+Assign them so adjacent buttons in the grid don't share the same color.
+
+## Event Date Block
+
+The colored date squares on event cards (showing "MAR 3" etc.) should use #34737A (dark teal) with white text.
+
+## Summary of What's Replaced
+
+| Element | Old Color | New Color |
+|---|---|---|
+| Primary teal | #0D9488 | #34737A |
+| Primary teal hover/dark | #0F766E | #2C6169 (darken #34737A ~15%) |
+| Sage green accent | — | #5DA592 |
+| Need border / red accent | #FF6B6B | #D32027 |
+| Question border | #F5A623 | #979DB6 |
+| Heart reaction fill | #FF6B6B | #D32027 |
+| Badge counter | #FF6B6B | #D32027 |
+| Page background | #F9FAFB | #FFFBF9 |
+| Primary text | #111827 | #302D2E |
+| Secondary text | #6B7280 | #868180 |
+| Muted text | #9CA3AF | #C7C2BF |
+| Borders | #E5E7EB | #C7C2BF |
+
+## Do not change
+
+Layout, spacing, functionality, content, seed data, sort order, or any feature behavior. This is a color-only change.

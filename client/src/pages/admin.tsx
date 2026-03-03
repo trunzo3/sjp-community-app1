@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const pillarColors: Record<string, string> = {
-  community: "#0D9488", confidence: "#F59E0B", resilience: "#EF4444", readiness: "#3B82F6", wellness: "#8B5CF6",
+  community: "#34737A", confidence: "#F59E0B", resilience: "#EF4444", readiness: "#3B82F6", wellness: "#8B5CF6",
 };
 
 const eventTypeLabels: Record<string, string> = {
@@ -102,9 +102,9 @@ export default function AdminPage() {
     <div>
       <div className="flex items-center gap-3 mb-4">
         <button onClick={() => navigate("/profile")} data-testid="button-back-profile">
-          <ArrowLeft className="w-5 h-5 text-[#6B7280]" />
+          <ArrowLeft className="w-5 h-5 text-[#868180]" />
         </button>
-        <h1 className="text-lg font-bold text-[#111827]" data-testid="text-admin-title">Admin Panel</h1>
+        <h1 className="text-lg font-bold text-[#302D2E]" data-testid="text-admin-title">Admin Panel</h1>
       </div>
 
       <div className="flex gap-1 overflow-x-auto pb-2 mb-4" data-testid="admin-tabs">
@@ -113,7 +113,7 @@ export default function AdminPage() {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`text-xs px-3 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              tab === t.key ? "bg-[#0D9488] text-white" : "bg-white text-[#6B7280]"
+              tab === t.key ? "bg-[#34737A] text-white" : "bg-white text-[#868180]"
             }`}
             data-testid={`tab-${t.key}`}
           >
@@ -194,12 +194,12 @@ function ResourcesTab() {
         <div className="flex gap-1 overflow-x-auto">
           {["all", "community", "confidence", "resilience", "readiness", "wellness"].map((p) => (
             <button key={p} onClick={() => setPillarFilter(p)}
-              className={`text-[10px] px-2 py-1 rounded-full font-medium whitespace-nowrap ${pillarFilter === p ? "bg-[#0D9488] text-white" : "bg-[#F3F4F6] text-[#6B7280]"}`}
+              className={`text-[10px] px-2 py-1 rounded-full font-medium whitespace-nowrap ${pillarFilter === p ? "bg-[#34737A] text-white" : "bg-[#F1EFEF] text-[#868180]"}`}
               data-testid={`admin-filter-pillar-${p}`}
             >{p === "all" ? "All" : p.charAt(0).toUpperCase() + p.slice(1)}</button>
           ))}
         </div>
-        <Button size="sm" className="bg-[#0D9488] text-white shrink-0 ml-2" onClick={() => { setEditId(null); setFormData(emptyResourceForm); setShowForm(true); }} data-testid="button-admin-new-resource">
+        <Button size="sm" className="bg-[#34737A] text-white shrink-0 ml-2" onClick={() => { setEditId(null); setFormData(emptyResourceForm); setShowForm(true); }} data-testid="button-admin-new-resource">
           <Plus className="w-3 h-3 mr-1" /> New
         </Button>
       </div>
@@ -207,8 +207,8 @@ function ResourcesTab() {
       {showForm && (
         <div className="bg-white rounded-xl p-4 mb-3 space-y-2" data-testid="admin-resource-form">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[#111827]">{editId ? "Edit Resource" : "Add Resource"}</h2>
-            <button onClick={() => { setShowForm(false); setEditId(null); }}><X className="w-4 h-4 text-[#9CA3AF]" /></button>
+            <h2 className="text-sm font-semibold text-[#302D2E]">{editId ? "Edit Resource" : "Add Resource"}</h2>
+            <button onClick={() => { setShowForm(false); setEditId(null); }}><X className="w-4 h-4 text-[#C7C2BF]" /></button>
           </div>
           <Input placeholder="Resource name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} data-testid="admin-input-resource-name" />
           <Textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="min-h-[60px] resize-none" data-testid="admin-input-resource-desc" />
@@ -236,7 +236,7 @@ function ResourcesTab() {
             <Input placeholder="Website" value={formData.websiteUrl} onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })} />
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-[#6B7280]">Stages:</span>
+            <span className="text-xs text-[#868180]">Stages:</span>
             <label className="flex items-center gap-1.5 text-xs">
               <Checkbox checked={formData.stages.client} onCheckedChange={(c) => setFormData({ ...formData, stages: { ...formData.stages, client: !!c } })} />
               Client
@@ -246,14 +246,14 @@ function ResourcesTab() {
               Alumni
             </label>
           </div>
-          <Button className="w-full bg-[#0D9488] text-white" onClick={() => saveMutation.mutate()} disabled={!formData.name || !formData.pillar || !formData.type || saveMutation.isPending} data-testid="button-admin-save-resource">
+          <Button className="w-full bg-[#34737A] text-white" onClick={() => saveMutation.mutate()} disabled={!formData.name || !formData.pillar || !formData.type || saveMutation.isPending} data-testid="button-admin-save-resource">
             {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : editId ? "Update" : "Save"}
           </Button>
         </div>
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#0D9488]" /></div>
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
       ) : (
         <div className="space-y-2">
           {filtered?.map((r: any) => (
@@ -261,24 +261,24 @@ function ResourcesTab() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: pillarColors[r.pillar] }}>{r.pillar}</span>
-                  <span className="text-[10px] text-[#9CA3AF]">{r.type}</span>
+                  <span className="text-[10px] text-[#C7C2BF]">{r.type}</span>
                 </div>
-                <p className="text-sm font-medium text-[#111827] truncate">{r.name}</p>
+                <p className="text-sm font-medium text-[#302D2E] truncate">{r.name}</p>
                 {r.createdAt && (
-                  <span className="text-[10px] text-[#9CA3AF]" data-testid={`admin-resource-age-${r.id}`}>
+                  <span className="text-[10px] text-[#C7C2BF]" data-testid={`admin-resource-age-${r.id}`}>
                     {getResourceAge(r.createdAt)}
                   </span>
                 )}
               </div>
-              <button onClick={() => openEdit(r)} className="p-2 rounded-lg hover:bg-[#F3F4F6]" data-testid={`button-edit-resource-${r.id}`}>
-                <Pencil className="w-4 h-4 text-[#6B7280]" />
+              <button onClick={() => openEdit(r)} className="p-2 rounded-lg hover:bg-[#F1EFEF]" data-testid={`button-edit-resource-${r.id}`}>
+                <Pencil className="w-4 h-4 text-[#868180]" />
               </button>
               <button onClick={() => setDeleteId(r.id)} className="p-2 rounded-lg hover:bg-red-50" data-testid={`button-delete-resource-${r.id}`}>
                 <Trash2 className="w-4 h-4 text-red-400" />
               </button>
             </div>
           ))}
-          {filtered?.length === 0 && <p className="text-center py-6 text-sm text-[#9CA3AF]">No resources found.</p>}
+          {filtered?.length === 0 && <p className="text-center py-6 text-sm text-[#C7C2BF]">No resources found.</p>}
         </div>
       )}
 
@@ -356,8 +356,8 @@ function EventsTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs text-[#6B7280]">{events?.length || 0} events</p>
-        <Button size="sm" className="bg-[#0D9488] text-white" onClick={() => { setEditId(null); setFormData(emptyEventForm); setShowForm(true); }} data-testid="button-admin-new-event">
+        <p className="text-xs text-[#868180]">{events?.length || 0} events</p>
+        <Button size="sm" className="bg-[#34737A] text-white" onClick={() => { setEditId(null); setFormData(emptyEventForm); setShowForm(true); }} data-testid="button-admin-new-event">
           <Plus className="w-3 h-3 mr-1" /> New
         </Button>
       </div>
@@ -365,8 +365,8 @@ function EventsTab() {
       {showForm && (
         <div className="bg-white rounded-xl p-4 mb-3 space-y-2" data-testid="admin-event-form">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[#111827]">{editId ? "Edit Event" : "Add Event"}</h2>
-            <button onClick={() => { setShowForm(false); setEditId(null); }}><X className="w-4 h-4 text-[#9CA3AF]" /></button>
+            <h2 className="text-sm font-semibold text-[#302D2E]">{editId ? "Edit Event" : "Add Event"}</h2>
+            <button onClick={() => { setShowForm(false); setEditId(null); }}><X className="w-4 h-4 text-[#C7C2BF]" /></button>
           </div>
           <Input placeholder="Event name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} data-testid="admin-input-event-name" />
           <Select value={formData.eventType} onValueChange={(v) => setFormData({ ...formData, eventType: v })}>
@@ -385,7 +385,7 @@ function EventsTab() {
           <Input placeholder="Location" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
           <Textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="min-h-[60px] resize-none" />
           <div className="flex items-center gap-4">
-            <span className="text-xs text-[#6B7280]">Stages:</span>
+            <span className="text-xs text-[#868180]">Stages:</span>
             <label className="flex items-center gap-1.5 text-xs">
               <Checkbox checked={formData.stages.client} onCheckedChange={(c) => setFormData({ ...formData, stages: { ...formData.stages, client: !!c } })} />
               Client
@@ -395,34 +395,34 @@ function EventsTab() {
               Alumni
             </label>
           </div>
-          <Button className="w-full bg-[#0D9488] text-white" onClick={() => saveMutation.mutate()} disabled={!formData.name || !formData.eventType || !formData.date || saveMutation.isPending} data-testid="button-admin-save-event">
+          <Button className="w-full bg-[#34737A] text-white" onClick={() => saveMutation.mutate()} disabled={!formData.name || !formData.eventType || !formData.date || saveMutation.isPending} data-testid="button-admin-save-event">
             {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : editId ? "Update" : "Save"}
           </Button>
         </div>
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#0D9488]" /></div>
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
       ) : (
         <div className="space-y-2">
           {events?.map((e: any) => (
             <div key={e.id} className="bg-white rounded-xl p-3 flex items-center gap-3" data-testid={`admin-event-${e.id}`}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-[#9CA3AF]">{eventTypeLabels[e.eventType] || e.eventType}</span>
-                  <span className="text-[10px] text-[#9CA3AF]">{e.date}</span>
+                  <span className="text-[10px] font-medium text-[#C7C2BF]">{eventTypeLabels[e.eventType] || e.eventType}</span>
+                  <span className="text-[10px] text-[#C7C2BF]">{e.date}</span>
                 </div>
-                <p className="text-sm font-medium text-[#111827] truncate">{e.name}</p>
+                <p className="text-sm font-medium text-[#302D2E] truncate">{e.name}</p>
               </div>
-              <button onClick={() => openEdit(e)} className="p-2 rounded-lg hover:bg-[#F3F4F6]" data-testid={`button-edit-event-${e.id}`}>
-                <Pencil className="w-4 h-4 text-[#6B7280]" />
+              <button onClick={() => openEdit(e)} className="p-2 rounded-lg hover:bg-[#F1EFEF]" data-testid={`button-edit-event-${e.id}`}>
+                <Pencil className="w-4 h-4 text-[#868180]" />
               </button>
               <button onClick={() => setDeleteId(e.id)} className="p-2 rounded-lg hover:bg-red-50" data-testid={`button-delete-event-${e.id}`}>
                 <Trash2 className="w-4 h-4 text-red-400" />
               </button>
             </div>
           ))}
-          {events?.length === 0 && <p className="text-center py-6 text-sm text-[#9CA3AF]">No events found.</p>}
+          {events?.length === 0 && <p className="text-center py-6 text-sm text-[#C7C2BF]">No events found.</p>}
         </div>
       )}
 
@@ -490,44 +490,44 @@ function StoriesTab() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#0D9488]" /></div>
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
       ) : (
         <div className="space-y-3">
           {stories?.map((story: any) => (
             <div key={story.id} className="bg-white rounded-xl p-4" data-testid={`admin-story-${story.id}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-[#111827]">{story.author?.firstName}</span>
+                  <span className="text-sm font-semibold text-[#302D2E]">{story.author?.firstName}</span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${approvalBadgeColors[story.approvalStatus] || "bg-orange-100 text-orange-700"}`}>
                     {getStatusLabel(story.approvalStatus)}
                   </span>
                 </div>
                 <button onClick={() => setExpandedId(expandedId === story.id ? null : story.id)} className="p-1">
-                  {expandedId === story.id ? <ChevronUp className="w-4 h-4 text-[#6B7280]" /> : <ChevronDown className="w-4 h-4 text-[#6B7280]" />}
+                  {expandedId === story.id ? <ChevronUp className="w-4 h-4 text-[#868180]" /> : <ChevronDown className="w-4 h-4 text-[#868180]" />}
                 </button>
               </div>
 
               {expandedId !== story.id && (
                 <div className="space-y-1">
-                  {story.step1Content && <p className="text-xs text-[#6B7280] line-clamp-1"><span className="font-medium text-[#0D9488]">Before: </span>{story.step1Content}</p>}
-                  {story.step2Content && <p className="text-xs text-[#6B7280] line-clamp-1"><span className="font-medium text-[#0D9488]">Change: </span>{story.step2Content}</p>}
-                  {story.step3Content && <p className="text-xs text-[#6B7280] line-clamp-1"><span className="font-medium text-[#0D9488]">Now: </span>{story.step3Content}</p>}
+                  {story.step1Content && <p className="text-xs text-[#868180] line-clamp-1"><span className="font-medium text-[#34737A]">Before: </span>{story.step1Content}</p>}
+                  {story.step2Content && <p className="text-xs text-[#868180] line-clamp-1"><span className="font-medium text-[#34737A]">Change: </span>{story.step2Content}</p>}
+                  {story.step3Content && <p className="text-xs text-[#868180] line-clamp-1"><span className="font-medium text-[#34737A]">Now: </span>{story.step3Content}</p>}
                 </div>
               )}
 
               {expandedId === story.id && (
                 <div className="space-y-3">
                   <div>
-                    <p className="text-[10px] font-bold text-[#0D9488] uppercase tracking-wider mb-0.5">Where were you?</p>
-                    <p className="text-xs text-[#111827] leading-relaxed">{story.step1Content}</p>
+                    <p className="text-[10px] font-bold text-[#34737A] uppercase tracking-wider mb-0.5">Where were you?</p>
+                    <p className="text-xs text-[#302D2E] leading-relaxed">{story.step1Content}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-[#0D9488] uppercase tracking-wider mb-0.5">What changed?</p>
-                    <p className="text-xs text-[#111827] leading-relaxed">{story.step2Content}</p>
+                    <p className="text-[10px] font-bold text-[#34737A] uppercase tracking-wider mb-0.5">What changed?</p>
+                    <p className="text-xs text-[#302D2E] leading-relaxed">{story.step2Content}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-[#0D9488] uppercase tracking-wider mb-0.5">Where are you now?</p>
-                    <p className="text-xs text-[#111827] leading-relaxed">{story.step3Content}</p>
+                    <p className="text-[10px] font-bold text-[#34737A] uppercase tracking-wider mb-0.5">Where are you now?</p>
+                    <p className="text-xs text-[#302D2E] leading-relaxed">{story.step3Content}</p>
                   </div>
                 </div>
               )}
@@ -572,7 +572,7 @@ function StoriesTab() {
               )}
 
               <div className="flex items-center justify-between mt-3">
-                <span className="text-[10px] text-[#9CA3AF]">
+                <span className="text-[10px] text-[#C7C2BF]">
                   {story.createdAt ? format(new Date(story.createdAt), "MMM d, yyyy") : ""}
                 </span>
                 {(story.approvalStatus === "pending" || story.approvalStatus === "revision_requested") && (
@@ -593,7 +593,7 @@ function StoriesTab() {
               </div>
             </div>
           ))}
-          {stories?.length === 0 && <p className="text-center py-6 text-sm text-[#9CA3AF]">No stories submitted yet.</p>}
+          {stories?.length === 0 && <p className="text-center py-6 text-sm text-[#C7C2BF]">No stories submitted yet.</p>}
         </div>
       )}
     </div>
@@ -613,59 +613,59 @@ function SurveysTab() {
     <div>
       <div className="grid grid-cols-3 gap-2 mb-4">
         <div className="bg-white rounded-xl p-3 text-center" data-testid="stat-total-surveys">
-          <p className="text-2xl font-bold text-[#0D9488]">{totalSurveys}</p>
-          <p className="text-[10px] text-[#6B7280] mt-0.5">Surveys</p>
+          <p className="text-2xl font-bold text-[#34737A]">{totalSurveys}</p>
+          <p className="text-[10px] text-[#868180] mt-0.5">Surveys</p>
         </div>
         <div className="bg-white rounded-xl p-3 text-center" data-testid="stat-employed">
-          <p className="text-2xl font-bold text-[#0D9488]">{employedPct}%</p>
-          <p className="text-[10px] text-[#6B7280] mt-0.5">Employed</p>
+          <p className="text-2xl font-bold text-[#34737A]">{employedPct}%</p>
+          <p className="text-[10px] text-[#868180] mt-0.5">Employed</p>
         </div>
         <div className="bg-white rounded-xl p-3 text-center" data-testid="stat-housing">
-          <p className="text-2xl font-bold text-[#0D9488]">{housingPct}%</p>
-          <p className="text-[10px] text-[#6B7280] mt-0.5">Stable Housing</p>
+          <p className="text-2xl font-bold text-[#34737A]">{housingPct}%</p>
+          <p className="text-[10px] text-[#868180] mt-0.5">Stable Housing</p>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#0D9488]" /></div>
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
       ) : (
         <div className="space-y-3">
           {surveys?.map((survey: any) => (
             <div key={survey.id} className="bg-white rounded-xl p-4" data-testid={`admin-survey-${survey.id}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-[#111827]">{survey.user?.firstName}</span>
+                  <span className="text-sm font-semibold text-[#302D2E]">{survey.user?.firstName}</span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${intervalBadgeColors[survey.intervalMonths] || "bg-gray-100 text-gray-600"}`}>
                     {survey.intervalMonths}-Month
                   </span>
                 </div>
-                <span className="text-[10px] text-[#9CA3AF]">
+                <span className="text-[10px] text-[#C7C2BF]">
                   {survey.submittedAt ? format(new Date(survey.submittedAt), "MMM d, yyyy") : ""}
                 </span>
               </div>
-              <div className="space-y-1.5 text-xs text-[#6B7280]">
+              <div className="space-y-1.5 text-xs text-[#868180]">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-[#111827] w-24">Employment:</span>
+                  <span className="font-medium text-[#302D2E] w-24">Employment:</span>
                   <span>{survey.stillEmployed ? "Yes" : "No"}{survey.jobTitle ? ` — ${survey.jobTitle}` : ""}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-[#111827] w-24">Housing:</span>
+                  <span className="font-medium text-[#302D2E] w-24">Housing:</span>
                   <span>{survey.housingStatus ? survey.housingStatus.charAt(0).toUpperCase() + survey.housingStatus.slice(1) : "—"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-[#111827] w-24">Raise/Promo:</span>
+                  <span className="font-medium text-[#302D2E] w-24">Raise/Promo:</span>
                   <span>{survey.raiseOrPromotion ? `Yes${survey.promotionDetails ? ` — ${survey.promotionDetails}` : ""}` : "No"}</span>
                 </div>
                 {survey.supportNeeds && (
                   <div>
-                    <span className="font-medium text-[#111827]">Support needs: </span>
+                    <span className="font-medium text-[#302D2E]">Support needs: </span>
                     <span>{survey.supportNeeds}</span>
                   </div>
                 )}
               </div>
             </div>
           ))}
-          {surveys?.length === 0 && <p className="text-center py-6 text-sm text-[#9CA3AF]">No surveys submitted yet.</p>}
+          {surveys?.length === 0 && <p className="text-center py-6 text-sm text-[#C7C2BF]">No surveys submitted yet.</p>}
         </div>
       )}
     </div>
@@ -703,20 +703,20 @@ function UsersTab() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <Users className="w-4 h-4 text-[#6B7280]" />
-        <p className="text-xs text-[#6B7280]">{users?.length || 0} users</p>
+        <Users className="w-4 h-4 text-[#868180]" />
+        <p className="text-xs text-[#868180]">{users?.length || 0} users</p>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#0D9488]" /></div>
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
       ) : (
         <div className="space-y-2">
           {users?.map((u: any) => (
             <div key={u.id} className="bg-white rounded-xl p-3" data-testid={`admin-user-${u.id}`}>
               {editUserId === u.id ? (
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-[#111827]">{u.firstName} {u.lastName}</p>
-                  <p className="text-xs text-[#9CA3AF]">{u.email}</p>
+                  <p className="text-sm font-semibold text-[#302D2E]">{u.firstName} {u.lastName}</p>
+                  <p className="text-xs text-[#C7C2BF]">{u.email}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <Select value={editData.role} onValueChange={(v) => setEditData({ ...editData, role: v })}>
                       <SelectTrigger data-testid="admin-select-user-role"><SelectValue placeholder="Role" /></SelectTrigger>
@@ -736,11 +736,11 @@ function UsersTab() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-xs text-[#6B7280] mb-1 block">Graduation Date</label>
+                    <label className="text-xs text-[#868180] mb-1 block">Graduation Date</label>
                     <Input type="date" value={editData.graduationDate} onChange={(e) => setEditData({ ...editData, graduationDate: e.target.value })} data-testid="admin-input-graduation-date" />
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="bg-[#0D9488] text-white" onClick={() => updateUser.mutate()} disabled={updateUser.isPending} data-testid="button-admin-save-user">
+                    <Button size="sm" className="bg-[#34737A] text-white" onClick={() => updateUser.mutate()} disabled={updateUser.isPending} data-testid="button-admin-save-user">
                       {updateUser.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Check className="w-3 h-3 mr-1" /> Save</>}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => setEditUserId(null)} data-testid="button-admin-cancel-user">
@@ -752,16 +752,16 @@ function UsersTab() {
                 <div className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-[#111827]">{u.firstName} {u.lastName}</p>
+                      <p className="text-sm font-medium text-[#302D2E]">{u.firstName} {u.lastName}</p>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${roleBadgeColors[u.role]}`}>
                         {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
                       </span>
                     </div>
-                    <p className="text-xs text-[#9CA3AF]">{u.email}</p>
-                    {u.graduationDate && <p className="text-[10px] text-[#9CA3AF] mt-0.5">Graduated: {u.graduationDate}</p>}
+                    <p className="text-xs text-[#C7C2BF]">{u.email}</p>
+                    {u.graduationDate && <p className="text-[10px] text-[#C7C2BF] mt-0.5">Graduated: {u.graduationDate}</p>}
                   </div>
-                  <button onClick={() => openEdit(u)} className="p-2 rounded-lg hover:bg-[#F3F4F6]" data-testid={`button-edit-user-${u.id}`}>
-                    <Pencil className="w-4 h-4 text-[#6B7280]" />
+                  <button onClick={() => openEdit(u)} className="p-2 rounded-lg hover:bg-[#F1EFEF]" data-testid={`button-edit-user-${u.id}`}>
+                    <Pencil className="w-4 h-4 text-[#868180]" />
                   </button>
                 </div>
               )}

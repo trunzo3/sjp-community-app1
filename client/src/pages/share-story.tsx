@@ -92,18 +92,18 @@ export default function ShareStoryPage() {
   if (submitted) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center" data-testid="story-confirmation">
-        <div className="w-16 h-16 rounded-full bg-[#0D9488]/10 flex items-center justify-center mb-4">
-          <CheckCircle2 className="w-8 h-8 text-[#0D9488]" />
+        <div className="w-16 h-16 rounded-full bg-[#34737A]/10 flex items-center justify-center mb-4">
+          <CheckCircle2 className="w-8 h-8 text-[#34737A]" />
         </div>
-        <h1 className="text-xl font-bold text-[#111827] mb-2">
+        <h1 className="text-xl font-bold text-[#302D2E] mb-2">
           {editingRevision ? "Story resubmitted!" : "Thank you for sharing your story."}
         </h1>
-        <p className="text-sm text-[#6B7280] max-w-xs">
+        <p className="text-sm text-[#868180] max-w-xs">
           {shareExternally
             ? "A staff member will review your story before it's shared outside the community."
             : "Your story is now visible to the SJP community."}
         </p>
-        <Button className="bg-[#0D9488] text-white mt-6" onClick={() => navigate("/")} data-testid="button-return-home">
+        <Button className="bg-[#34737A] text-white mt-6" onClick={() => navigate("/")} data-testid="button-return-home">
           Return Home
         </Button>
       </div>
@@ -115,25 +115,25 @@ export default function ShareStoryPage() {
       <div>
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => setStep(2)} data-testid="button-back-step3">
-            <ArrowLeft className="w-5 h-5 text-[#6B7280]" />
+            <ArrowLeft className="w-5 h-5 text-[#868180]" />
           </button>
-          <h1 className="text-lg font-bold text-[#111827]">Sharing Permission</h1>
+          <h1 className="text-lg font-bold text-[#302D2E]">Sharing Permission</h1>
         </div>
 
         <div className="bg-white rounded-xl p-5 space-y-4" data-testid="sharing-permission">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm font-medium text-[#111827] flex-1">
+            <p className="text-sm font-medium text-[#302D2E] flex-1">
               Allow Saint John's to share my story at fundraising and outreach events
             </p>
             <Switch checked={shareExternally} onCheckedChange={setShareExternally} data-testid="toggle-share-externally" />
           </div>
-          <p className="text-xs text-[#6B7280] leading-relaxed">
+          <p className="text-xs text-[#868180] leading-relaxed">
             If you say yes, a staff member will review your story before it's shared outside the community. Your story will always be visible in the SJP community regardless of this setting.
           </p>
         </div>
 
         <Button
-          className="w-full bg-[#0D9488] text-white mt-6"
+          className="w-full bg-[#34737A] text-white mt-6"
           onClick={() => submitStory.mutate()}
           disabled={submitStory.isPending}
           data-testid="button-submit-story"
@@ -155,9 +155,9 @@ export default function ShareStoryPage() {
           if (step > 0) setStep(step - 1);
           else { setEditingRevision(false); navigate("/profile"); }
         }} data-testid="button-back-story">
-          <ArrowLeft className="w-5 h-5 text-[#6B7280]" />
+          <ArrowLeft className="w-5 h-5 text-[#868180]" />
         </button>
-        <h1 className="text-lg font-bold text-[#111827]">
+        <h1 className="text-lg font-bold text-[#302D2E]">
           {editingRevision ? "Edit Your Story" : "Share Your Story"}
         </h1>
       </div>
@@ -186,24 +186,24 @@ export default function ShareStoryPage() {
 
       <div className="mb-6" data-testid="progress-bar">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-[#6B7280]">Step {step + 1} of 3</span>
+          <span className="text-xs font-medium text-[#868180]">Step {step + 1} of 3</span>
         </div>
-        <div className="h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[#C7C2BF] rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#0D9488] rounded-full transition-all duration-300"
+            className="h-full bg-[#34737A] rounded-full transition-all duration-300"
             style={{ width: `${((step + 1) / 3) * 100}%` }}
           />
         </div>
       </div>
 
       <div className="bg-white rounded-xl p-5 space-y-4" data-testid={`story-step-${step + 1}`}>
-        <h2 className="text-base font-bold text-[#111827]">{currentStep.title}</h2>
-        <p className="text-sm text-[#6B7280]">{currentStep.prompt}</p>
+        <h2 className="text-base font-bold text-[#302D2E]">{currentStep.title}</h2>
+        <p className="text-sm text-[#868180]">{currentStep.prompt}</p>
 
         {!focused && !currentContent && (
           <div className="space-y-1">
             {currentStep.hints.map((hint, i) => (
-              <p key={i} className="text-xs text-[#9CA3AF] italic">"{hint}"</p>
+              <p key={i} className="text-xs text-[#C7C2BF] italic">"{hint}"</p>
             ))}
           </div>
         )}
@@ -230,7 +230,7 @@ export default function ShareStoryPage() {
           </Button>
         )}
         <Button
-          className={`bg-[#0D9488] text-white ${step === 0 ? "w-full" : "flex-1"}`}
+          className={`bg-[#34737A] text-white ${step === 0 ? "w-full" : "flex-1"}`}
           onClick={() => setStep(step + 1)}
           disabled={!currentContent.trim()}
           data-testid="button-story-continue"

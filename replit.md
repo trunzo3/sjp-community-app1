@@ -25,7 +25,7 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - Bottom nav with 5 tabs (Home, Community, Resources, Events, Profile)
 - Content visibility rules enforced on backend (stage-based filtering)
 - Demo quick-login buttons on login page for hackathon/testing
-- Design tokens: Primary teal #0D9488, coral accent #FF6B6B, amber accent #F5A623
+- Design tokens: Primary teal #34737A (SJP brand), dark teal #2C6169, deepest teal #1F4F49, red accent #D32027, muted accent #979DB6, text primary #302D2E, text secondary #868180, text muted #C7C2BF, page bg #FFFBF9, card bg white, light gray #F1EFEF
 - `staleTime: Infinity` in queryClient — must explicitly invalidate queries after mutations
 - `apiRequest(method, url, data)` — NOT `(url, options)` like fetch
 - queryKey uses array format for TanStack Query: `["/api/endpoint", param]`
