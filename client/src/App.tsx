@@ -3,16 +3,48 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { BottomNav } from "@/components/bottom-nav";
+import LoginPage from "@/pages/login";
+import HomePage from "@/pages/home";
+import CommunityPage from "@/pages/community";
+import ResourcesPage from "@/pages/resources";
+import EventsPage from "@/pages/events";
+import ProfilePage from "@/pages/profile";
+import { Loader2 } from "lucide-react";
 
-function Router() {
+function AppContent() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0D9488] mx-auto" />
+          <p className="text-sm text-[#6B7280] mt-2">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
   return (
-    <Switch>
-      {/* Add pages below */}
-      {/* <Route path="/" component={Home}/> */}
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
-    </Switch>
+    <div className="min-h-screen bg-[#F9FAFB]">
+      <div className="max-w-[430px] mx-auto px-4 pt-4 pb-20">
+        <Switch>
+          <Route path="/" component={HomePage} />
+          <Route path="/community" component={CommunityPage} />
+          <Route path="/resources" component={ResourcesPage} />
+          <Route path="/events" component={EventsPage} />
+          <Route path="/profile" component={ProfilePage} />
+          <Route component={HomePage} />
+        </Switch>
+      </div>
+      <BottomNav />
+    </div>
   );
 }
 
@@ -20,8 +52,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <AuthProvider>
+          <Toaster />
+          <AppContent />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
