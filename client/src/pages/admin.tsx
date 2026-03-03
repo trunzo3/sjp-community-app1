@@ -35,6 +35,17 @@ const intervalBadgeColors: Record<number, string> = {
   12: "bg-emerald-100 text-emerald-700",
 };
 
+function getResourceAge(createdAt: string | null): string {
+  if (!createdAt) return "";
+  const now = new Date();
+  const created = new Date(createdAt);
+  const diffMs = now.getTime() - created.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "1 day ago";
+  return `${diffDays} days ago`;
+}
+
 const roleBadgeColors: Record<string, string> = {
   client: "bg-blue-100 text-blue-700",
   alumni: "bg-emerald-100 text-emerald-700",
@@ -253,6 +264,11 @@ function ResourcesTab() {
                   <span className="text-[10px] text-[#9CA3AF]">{r.type}</span>
                 </div>
                 <p className="text-sm font-medium text-[#111827] truncate">{r.name}</p>
+                {r.createdAt && (
+                  <span className="text-[10px] text-[#9CA3AF]" data-testid={`admin-resource-age-${r.id}`}>
+                    {getResourceAge(r.createdAt)}
+                  </span>
+                )}
               </div>
               <button onClick={() => openEdit(r)} className="p-2 rounded-lg hover:bg-[#F3F4F6]" data-testid={`button-edit-resource-${r.id}`}>
                 <Pencil className="w-4 h-4 text-[#6B7280]" />

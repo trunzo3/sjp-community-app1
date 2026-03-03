@@ -150,7 +150,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getResources(userStage?: string, pillar?: string): Promise<Resource[]> {
-    let allResources = await db.select().from(resources).orderBy(resources.createdAt);
+    let allResources = await db.select().from(resources).orderBy(desc(resources.createdAt));
     if (userStage) {
       allResources = allResources.filter(r => r.applicableStages.includes(userStage));
     }
@@ -161,7 +161,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllResources(): Promise<Resource[]> {
-    return db.select().from(resources).orderBy(resources.createdAt);
+    return db.select().from(resources).orderBy(desc(resources.createdAt));
   }
 
   async createResource(resource: InsertResource): Promise<Resource> {

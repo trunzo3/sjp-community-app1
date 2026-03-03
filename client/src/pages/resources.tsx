@@ -10,6 +10,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Phone, Globe, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+function getResourceAge(createdAt: string | null): string {
+  if (!createdAt) return "";
+  const now = new Date();
+  const created = new Date(createdAt);
+  const diffMs = now.getTime() - created.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "1 day ago";
+  return `${diffDays} days ago`;
+}
+
 const pillars = ["all", "community", "confidence", "resilience", "readiness", "wellness"];
 const pillarColors: Record<string, string> = {
   community: "#0D9488",
@@ -185,15 +196,22 @@ export default function ResourcesPage() {
                   </div>
                 </div>
               </div>
-              {isStaffOrAdmin && (
-                <div className="flex gap-1 mt-2">
-                  {r.applicableStages?.map((s: string) => (
-                    <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F3F4F6] text-[#6B7280] font-medium">
-                      {s.charAt(0).toUpperCase() + s.slice(1)}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <div className="flex items-center justify-between mt-2">
+                {isStaffOrAdmin ? (
+                  <div className="flex gap-1">
+                    {r.applicableStages?.map((s: string) => (
+                      <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F3F4F6] text-[#6B7280] font-medium">
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </span>
+                    ))}
+                  </div>
+                ) : <div />}
+                {r.createdAt && (
+                  <span className="text-[10px] text-[#9CA3AF]" data-testid={`resource-age-${r.id}`}>
+                    {getResourceAge(r.createdAt)}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
           {resources?.length === 0 && (
