@@ -1,0 +1,472 @@
+# SJP Community Platform — Prompt 1 of 2
+
+**Create a named checkpoint called "pre-build" before running this prompt.**
+
+---
+
+Build a private, mobile-first community web app called "SJP Community" for Saint John's Program for Real Change, a Sacramento nonprofit serving women experiencing homelessness, addiction, justice involvement, and domestic violence. This is a closed community platform — not a case management tool, not a clinical dashboard, not a public website. Authenticated users only.
+
+Tech stack: React frontend, Node.js/Express backend, PostgreSQL database. Mobile-first at 430px max-width, responsive up. Deploy to a live URL accessible on real phones.
+
+This is Prompt 1 of 2. This prompt builds the foundation, all five user-facing pages with full features, and seed data. Prompt 2 will add the Admin Panel, guided storytelling flow, and alumni survey system.
+
+---
+
+## 1. DATABASE SCHEMA
+
+Create a PostgreSQL database with these exact tables and fields. Do not rename fields or change types.
+
+**users**
+- id (uuid, primary key)
+- email (text, unique, not null)
+- password (text, hashed, not null)
+- first_name (text, not null)
+- last_name (text, not null)
+- role (enum: 'client', 'alumni', 'staff', 'admin')
+- stage (enum: 'client', 'alumni')
+- graduation_date (date, nullable — must exist from day one, nullable, no default)
+- bio (text, nullable)
+- avatar_color (text — hex color string for initial-based avatar circle)
+- created_at (timestamp, default now)
+
+**posts**
+- id (uuid, primary key)
+- author_id (uuid, foreign key → users.id)
+- content (text, not null)
+- post_type (enum: 'update', 'win', 'question', 'need', 'milestone')
+- pinned (boolean, default false)
+- created_at (timestamp, default now)
+
+**replies**
+- id (uuid, primary key)
+- post_id (uuid, foreign key → posts.id)
+- author_id (uuid, foreign key → users.id)
+- content (text, not null)
+- created_at (timestamp, default now)
+
+**resources**
+- id (uuid, primary key)
+- name (text, not null)
+- description (text)
+- pillar (enum: 'community', 'confidence', 'resilience', 'readiness', 'wellness')
+- type (enum: 'partner', 'program', 'service', 'opportunity')
+- provider_name (text)
+- phone (text, nullable)
+- website_url (text, nullable)
+- applicable_stages (text array — e.g. ['client', 'alumni'] or ['client'] or ['alumni'])
+- created_by (uuid, foreign key → users.id)
+- created_at (timestamp, default now)
+
+**events**
+- id (uuid, primary key)
+- name (text, not null)
+- event_type (enum: 'community_meeting', 'workshop', 'celebration', 'class', 'partner_session')
+- date (date, not null)
+- start_time (time, not null)
+- end_time (time, not null)
+- location (text)
+- description (text)
+- applicable_stages (text array)
+- created_by (uuid, foreign key → users.id)
+- created_at (timestamp, default now)
+
+**stories**
+- id (uuid, primary key)
+- author_id (uuid, foreign key → users.id)
+- step1_content (text — "Where were you?")
+- step2_content (text — "What changed?")
+- step3_content (text — "Where are you now?")
+- share_externally (boolean, default false)
+- approval_status (enum: 'pending', 'approved', 'community_only')
+- featured (boolean, default false)
+- created_at (timestamp, default now)
+
+**surveys**
+- id (uuid, primary key)
+- user_id (uuid, foreign key → users.id)
+- interval_months (integer — value is 3, 6, or 12)
+- still_employed (boolean)
+- job_title (text, nullable)
+- raise_or_promotion (boolean)
+- promotion_details (text, nullable)
+- housing_status (enum: 'stable', 'transitional', 'unstable')
+- support_needs (text, nullable)
+- submitted_at (timestamp, default now)
+
+---
+
+## 2. DESIGN TOKENS
+
+Use these consistently across the entire app:
+
+- **Primary (teal/green):** #0D9488 — buttons, active nav, links, accents
+- **Primary dark:** #0F766E — hover states
+- **Coral accent:** #FF6B6B — Need post left border, badge counters
+- **Amber accent:** #F5A623 — Question post left border
+- **Background:** #F9FAFB
+- **Card background:** #FFFFFF
+- **Text primary:** #111827
+- **Text secondary:** #6B7280
+- **Text muted:** #9CA3AF
+- **Border:** #E5E7EB
+- **Font stack:** Inter, system-ui, -apple-system, sans-serif
+- **Card border radius:** 12px
+- **Button border radius:** 8px
+- **Bottom nav height:** 64px
+- **Max content width:** 430px, centered on larger screens
+
+---
+
+## 3. CONTENT VISIBILITY RULES
+
+Enforce on the backend, not just the frontend.
+
+- Users with role `client` or `alumni` see resources and events where their `stage` value is in the item's `applicable_stages` array, OR where the item is tagged for all stages (both 'client' and 'alumni' in the array).
+- Users with role `staff` or `admin` see ALL resources and events regardless of stage tags.
+- Stage badge labels on resource and event cards are visible ONLY to staff and admin.
+- "+ Add" buttons on Resources and Events pages are visible ONLY to staff and admin.
+- "Admin Panel" link on Profile page is visible ONLY to staff and admin.
+- "Share Your Story" on Home page and Profile page is visible ONLY to users with role `alumni`.
+- Survey prompts appear ONLY for alumni with non-null `graduation_date` at correct intervals.
+
+---
+
+## 4. AUTHENTICATION AND LOGIN PAGE
+
+Email/password auth with bcrypt hashing and session-based or JWT auth.
+
+**Login page layout:**
+
+Top: gradient background in teal/green tones. "SJP Community" title and tagline "Building community. Changing lives."
+
+Center: white card (visually distinct from background). Contains:
+- Email address input
+- Password input
+- "Sign In" button (teal/green)
+- "New to SJP? Create an account" link (styled but non-functional for hackathon)
+
+Below the card, on the gradient background, separated by a muted divider line with label "Demo accounts (password: password123)":
+
+Demo quick-login buttons grouped by muted uppercase headers: CLIENTS, ALUMNI, STAFF, ADMIN. Two buttons per row in a grid. Each button shows: colored circle with first initial, first name, and role/stage label. Clicking logs in instantly as that user — no password entry needed.
+
+Demo users:
+- CLIENTS: Angela (Client), Keisha (Client), Destiny (Client), Maria (Client)
+- ALUMNI: Monica (Alumni), Tasha (Alumni), Denise (Alumni)
+- STAFF: Sarah (Staff), James (Staff), Broc (Staff)
+- ADMIN: Scott (Admin), Quinta (Admin)
+
+Demo buttons sit on the page background, NOT inside the white card — visually clear they are testing scaffolding.
+
+---
+
+## 5. NAVIGATION
+
+Sticky bottom nav bar, always visible on every page after login. 5 tabs:
+
+1. **Home** — house icon
+2. **Community** — people/chat icon
+3. **Resources** — book/folder icon
+4. **Events** — calendar icon
+5. **Profile** — person icon
+
+Active tab highlighted with primary teal/green. Every tab loads its page. No dead ends.
+
+---
+
+## 6. HOME PAGE
+
+The Home page IS the community experience. Community content is ~80% of the screen.
+
+**Layout top to bottom:**
+
+**6a. Hero banner.** SJP branding, dark overlay, personalized greeting: "Welcome back, [first name]." Strength-based quote underneath: "You're here not because you're broken, but because you're strong." Tagline: "Building community. Changing lives."
+
+**6b. Stories of Change carousel.** Horizontally scrollable cards showing featured alumni stories (stories where featured = true). Each card: avatar with initial, author first name, "Featured Story" badge, 2-line text preview of step3_content truncated with ellipsis, "Read more" link that expands to show all three story steps.
+
+Navigation: left/right arrow buttons visible on hover (desktop). Pagination dots below cards visible on all devices. Swipe on touch. Compact vertical spacing — 2-line max preview, compressed section height.
+
+**6c. Share Your Story bar.** Visible to alumni only. Green/teal bar with "Share your story" heading, subtext "Your journey can inspire someone who's just starting," and "Write it" button. For now, the button is a placeholder that shows a "Coming soon" message — the guided storytelling flow will be built in Prompt 2. Keep the bar compact — heading, subtext, and button on one row.
+
+**6d. Community feed.** Full feed with posting and filtering — same content as the Community page. See section 7 for complete spec.
+
+**6e. Contextual cards (bottom).** One or two slim cards: next upcoming event, or a resource tagged to user's stage. For alumni who have a non-null graduation_date and are at a check-in milestone (90/180/365 days post-graduation), show a text card that says "You have a check-in survey available" — the actual survey form will be built in Prompt 2.
+
+---
+
+## 7. COMMUNITY PAGE
+
+Accessible via bottom nav. Same feed as Home but as the full dedicated page.
+
+**Privacy banner** at top: lock icon + "Private space for the SJP community. What's shared here stays here."
+
+**Post composer:**
+- Text input with placeholder: "Share something with the community..."
+- Post type tag selector: Update, Win, Question, Need, Milestone
+- "Share" button
+
+**Feed filters:** All, Needs, Wins, Milestones, Questions
+
+**Post cards:**
+- Avatar (initial circle with user's avatar_color), first name only, role badge (Client, Alumni, Staff, Admin), post type badge
+- Post content
+- Timestamp (relative — "2 hours ago", "3 days ago")
+- **Reply link** below each post. Tapping "Reply" expands an inline reply area below the post. Existing replies appear chronologically. Single level only — no nested threading. New reply text input at bottom of thread.
+- **Visual differentiation:** Need posts get a coral (#FF6B6B) left border. Question posts get an amber (#F5A623) left border. Wins, Milestones, and Updates have no colored left border. Post type badge still appears on all types.
+
+**Pinned posts** stick to top of feed regardless of filters. Staff and admin can pin/unpin posts.
+
+---
+
+## 8. RESOURCES PAGE
+
+**Header:** "Resources" title. "+ Add" button visible only to staff/admin — opens the resource creation form.
+
+**Two-tier filtering:**
+- Row 1 (stages): All, Clients, Alumni. Highlighted pill = active. This row only shows for staff and admin. Clients and alumni don't see stage filters — they only see resources tagged to their own stage.
+- Row 2 (pillars): All, Community, Confidence, Resilience, Readiness, Wellness. Highlighted pill = active. Visible to everyone.
+
+**Resource cards:**
+- Pillar label (colored text)
+- Resource title (bold)
+- Description (2-3 lines)
+- Provider name
+- Phone number (tappable `tel:` link on mobile) and/or website link
+- Stage badges: visible to staff/admin only.
+
+**Resource creation form** (opens from "+ Add" button):
+- Resource name (text input)
+- Description (text area)
+- Pillar (dropdown: Community, Confidence, Resilience, Readiness, Wellness)
+- Type (dropdown: Partner, Program, Service, Opportunity)
+- Provider name (text input)
+- Phone number (text input, optional)
+- Website URL (text input, optional)
+- Applicable stages (multi-select checkboxes: Client, Alumni, All)
+- Save button
+
+---
+
+## 9. EVENTS PAGE
+
+**Header:** "Events" title. "+ Add" button visible only to staff/admin — opens event creation form.
+
+**No calendar widget.** Chronological list only, sorted by date ascending.
+
+**Event cards:**
+- Date block on the left: colored square with month abbreviation + day number (e.g., "MAR" over "15").
+- Event type badge (Community Meeting, Workshop, Celebration, Class, Partner Session)
+- Event name (bold)
+- Time range and location
+- Description
+- Stage badges: visible to staff/admin only.
+
+Same content visibility rules as Resources.
+
+**Event creation form** (opens from "+ Add" button):
+- Event name (text input)
+- Event type (dropdown: Community Meeting, Workshop, Celebration, Class, Partner Session)
+- Date (date picker)
+- Start time (time picker)
+- End time (time picker)
+- Location (text input)
+- Description (text area)
+- Applicable stages (multi-select checkboxes: Client, Alumni, All)
+- Save button
+
+---
+
+## 10. PROFILE PAGE
+
+**Header section:**
+- Avatar circle (first initial on colored background using avatar_color)
+- First name (large)
+- Role badge (Client, Alumni, Staff, Admin)
+- Edit profile button (pencil icon) — allows editing bio
+- Bio line (if populated)
+- Graduation date: shows the date if populated, shows "TBD" if null
+- "Member since [formatted created_at date]"
+- Privacy note: "Your profile is visible only to the SJP community."
+
+**Action links:**
+- **Share Your Story** — visible to alumni only. Placeholder for now — shows "Coming soon" when tapped. Will be wired in Prompt 2.
+- **Admin Panel** — visible to staff/admin only. Badge counter (coral dot with number) showing count of stories with approval_status = 'pending'. Placeholder for now — shows "Coming in next update" when tapped. Will be built in Prompt 2.
+- **My Posts** — shows the logged-in user's own community posts.
+- **Sign Out** — logs out and returns to login page.
+
+---
+
+## 11. SEED DATA
+
+Insert all seed data on first deploy. All passwords are "password123" (hashed with bcrypt). The app must feel alive on first login.
+
+### Users (12)
+
+| first_name | last_name | email | role | stage | graduation_date | avatar_color | bio |
+|---|---|---|---|---|---|---|---|
+| Angela | Torres | angela@sjp.demo | client | client | null | #4CAF50 | Just started at Gateway. Taking it one day at a time. |
+| Keisha | Williams | keisha@sjp.demo | client | client | null | #FF9800 | Two weeks in. Already learning so much. |
+| Destiny | Johnson | destiny@sjp.demo | client | client | null | #2196F3 | Working on my future every day. Moved to OSS last month. |
+| Maria | Garcia | maria@sjp.demo | client | client | null | #9C27B0 | Kitchen team and loving it. Getting ready for what's next. |
+| Monica | Davis | monica@sjp.demo | alumni | alumni | (today minus 210 days) | #E91E63 | Working full-time at Golden 1 Center. My kids are home with me. |
+| Tasha | Robinson | tasha@sjp.demo | alumni | alumni | (today minus 95 days) | #00BCD4 | Just started my new customer service role. Grateful every day. |
+| Denise | Mitchell | denise@sjp.demo | alumni | alumni | (today minus 425 days) | #FF5722 | Promoted at work, stable housing, living my best life. |
+| Sarah | Chen | sarah@sjp.demo | staff | client | null | #607D8B | Community coordinator. Here to support your journey. |
+| James | Wright | james@sjp.demo | staff | client | null | #795548 | Case manager. Your success is my success. |
+| Broc | Thompson | broc@sjp.demo | staff | client | null | #3F51B5 | Program staff. Let's build something together. |
+| Scott | Richards | scott@sjp.demo | admin | alumni | null | #009688 | CEO. Proud of every woman who walks through our doors. |
+| Quinta | Adams | quinta@sjp.demo | admin | alumni | null | #F44336 | Program lead. This community is everything. |
+
+Staff and admin `stage` values do not restrict their visibility — they always see everything.
+
+### Resources (12)
+
+1. "Mulvaney's Career Pathway Program" | Pillar: readiness | Type: partner | Provider: "Mulvaney's B&L" | Phone: "(916) 441-6022" | Website: "https://mulvaneysbl.com" | Stages: ['client', 'alumni'] | Description: "Restaurant industry job training including prep cook, front of house, and catering positions. Hands-on experience in a working restaurant environment."
+
+2. "UC Davis Behavioral Wellness" | Pillar: wellness | Type: partner | Provider: "UC Davis Health" | Phone: "(916) 734-2011" | Website: "https://health.ucdavis.edu" | Stages: ['client', 'alumni'] | Description: "Free and low-cost behavioral health services including counseling, substance use support, and psychiatric care."
+
+3. "Modern Aviation Job Training" | Pillar: readiness | Type: partner | Provider: "Modern Aviation" | Phone: "(916) 555-0147" | Stages: ['client', 'alumni'] | Description: "Aviation ground crew and operations training with full-time job placement opportunities at Sacramento International Airport."
+
+4. "Single Mom Strong" | Pillar: community | Type: partner | Provider: "Single Mom Strong Sacramento" | Website: "https://singlemomstrong.org" | Stages: ['alumni'] | Description: "Post-program community support for single mothers. Peer networking, resource sharing, and ongoing encouragement."
+
+5. "SJP Life Skills Workshop Series" | Pillar: confidence | Type: program | Provider: "Saint John's Program" | Stages: ['client'] | Description: "Weekly workshops covering budgeting, conflict resolution, goal setting, and personal development. Building your foundation for lasting change."
+
+6. "Sacramento Works Job Center" | Pillar: readiness | Type: service | Provider: "Sacramento Employment & Training Agency" | Phone: "(916) 263-3800" | Website: "https://sacramentoworks.org" | Stages: ['client', 'alumni'] | Description: "Free job search assistance, resume workshops, interview preparation, and access to local employer hiring events."
+
+7. "WellSpace Health Recovery Services" | Pillar: wellness | Type: partner | Provider: "WellSpace Health" | Phone: "(916) 737-5555" | Website: "https://wellspacehealth.org" | Stages: ['client', 'alumni'] | Description: "Outpatient substance use recovery services, mental health counseling, and crisis support for women and families."
+
+8. "Financial Literacy Foundations" | Pillar: readiness | Type: program | Provider: "Saint John's Program" | Stages: ['client'] | Description: "Learn to build a budget, open a bank account, understand credit, and plan for savings goals. Required coursework for all program participants."
+
+9. "Parenting with Confidence" | Pillar: confidence | Type: program | Provider: "Saint John's Program" | Stages: ['client', 'alumni'] | Description: "Classes focused on building healthy family relationships, communication with children, and navigating the challenges of parenting during recovery."
+
+10. "SJP Alumni Mentorship Circle" | Pillar: community | Type: program | Provider: "Saint John's Program" | Stages: ['alumni'] | Description: "Monthly gatherings for alumni to connect, share experiences, and mentor women currently in the program. Your journey helps light the way for someone else."
+
+11. "Family Services & Advocacy" | Pillar: resilience | Type: program | Provider: "Saint John's Program" | Phone: "(916) 453-1482" | Stages: ['client', 'alumni'] | Description: "Support for family reunification, custody navigation, child welfare advocacy, and building healthy family structures. Standing up for yourself and your family."
+
+12. "SUD Recovery & NA/AA Meetings" | Pillar: wellness | Type: service | Provider: "Saint John's Program" | Stages: ['client'] | Description: "On-campus substance use disorder services, therapy, and daily NA/AA meeting access. A safe space for recovery, one day at a time."
+
+### Events (7)
+
+1. "Daily Community Meeting" | Type: community_meeting | Date: (today) | Time: 3:00 PM – 4:00 PM | Location: "Main Campus — Community Room" | Stages: ['client'] | Description: "Milestone celebrations, sobriety milestones, open discussion. You're here not because you're broken, but because you're strong."
+
+2. "New Resident Orientation" | Type: class | Date: (today + 2 days) | Time: 10:00 AM – 12:00 PM | Location: "Gateway Building — Room 102" | Stages: ['client'] | Description: "Welcome session for new community members. Program overview, campus tour, and getting set up with your resources."
+
+3. "Milestone Celebration Friday" | Type: celebration | Date: (coming Friday) | Time: 2:00 PM – 3:00 PM | Location: "Main Campus — Community Room" | Stages: ['client', 'alumni'] | Description: "Celebrating sobriety milestones, program milestones, and personal wins. Come cheer on your community."
+
+4. "Resume Building Workshop" | Type: workshop | Date: (today + 4 days) | Time: 1:00 PM – 3:00 PM | Location: "OSS Building — Computer Lab" | Stages: ['client'] | Description: "Hands-on workshop to create or update your resume. Bring your work history — we'll help you tell your professional story."
+
+5. "Mulvaney's Kitchen Tour" | Type: partner_session | Date: (today + 7 days) | Time: 9:00 AM – 11:00 AM | Location: "Mulvaney's B&L — 1215 19th St, Sacramento" | Stages: ['client', 'alumni'] | Description: "Tour the Mulvaney's kitchen, meet the team, and learn about the Career Pathway Program. Transportation provided from campus."
+
+6. "Wellness Wednesday: Yoga & Meditation" | Type: workshop | Date: (next Wednesday) | Time: 8:00 AM – 9:00 AM | Location: "Main Campus — Garden Area" | Stages: ['client', 'alumni'] | Description: "Start your day with gentle yoga and guided meditation. All levels welcome. Mats provided."
+
+7. "Alumni Networking Brunch" | Type: celebration | Date: (today + 14 days) | Time: 10:00 AM – 12:00 PM | Location: "Main Campus — Community Room" | Stages: ['alumni'] | Description: "Quarterly gathering for SJP alumni. Share updates, connect with old friends, and meet women who graduated after you. Brunch provided."
+
+### Community Posts (8 posts — set created_at timestamps so newest appears first)
+
+1. Author: Sarah (staff) | Type: update | Pinned: true | Content: "Welcome to our community space! This is YOUR place to connect, share wins, ask questions, and support each other. What's shared here stays here." | created_at: 7 days ago
+
+2. Author: Destiny | Type: win | Content: "Got my 60-day chip today. Didn't think I'd make it here when I first walked through those doors. Thank you all for believing in me when I couldn't believe in myself." | created_at: 2 days ago
+   - Reply from Maria (1 day ago): "So proud of you Destiny! You earned every single day of that."
+   - Reply from Sarah (1 day ago): "This is what it looks like. Keep going, Destiny."
+   - Reply from Keisha (12 hours ago): "You're an inspiration. I'm on day 14 and seeing you hit 60 gives me hope."
+
+3. Author: Angela | Type: need | Content: "Does anyone know if the Medi-Cal office on Stockton Boulevard is open on Saturdays? I keep trying to call and the line is busy." | created_at: 1 day ago
+   - Reply from Broc (1 day ago): "They're open Saturday 8am-12pm but get there early — the line gets long. I can help you with the paperwork if you need it."
+
+4. Author: Monica | Type: milestone | Content: "One year at Golden 1 Center today. One year of showing up, doing good work, and building something real. SJP gave me the foundation — I built the house." | created_at: 3 days ago
+
+5. Author: Maria | Type: update | Content: "Kitchen team served 200 meals today for the community event. My feet hurt but my heart is full. This is the work." | created_at: 4 days ago
+
+6. Author: Tasha | Type: win | Content: "First paycheck from my new customer service job just hit. I cried in the parking lot. Happy tears only." | created_at: 5 days ago
+
+7. Author: Keisha | Type: question | Content: "What should I expect in the first week of SUD coursework? I'm nervous but ready." | created_at: 5 days ago
+   - Reply from Angela (5 days ago): "It's a lot but everyone is so supportive. Just be honest and show up. You got this."
+   - Reply from James (4 days ago): "Great question Keisha. The first week focuses on building a foundation. Come talk to me if you have specific concerns — my door is always open."
+
+8. Author: Denise | Type: update | Content: "Drove past the campus today and got emotional. That place changed my life. Love to all my SJP sisters — the ones there now and the ones who came before me." | created_at: 6 days ago
+
+### Stories of Change (3)
+
+1. Author: Monica | Featured: true | Share externally: true | Approval status: approved
+   - Step 1: "Before Saint John's, I was couch surfing with my two kids. We'd stay with friends until we wore out our welcome, then move to the next couch. I was working part-time at a gas station and using just to get through the day. I didn't see a way out. I thought this was just my life now."
+   - Step 2: "The daily community meeting changed everything for me. Hearing other women talk about what they were going through — and seeing women who were further along — I started to believe it was possible. Laura helped me with my resume and interview skills. The kitchen team taught me how to show up on time, take direction, and take pride in work. But honestly? It was the women around me. They didn't let me give up."
+   - Step 3: "Today I'm working full-time at the Golden 1 Center — I handle logistics for events. My kids are home with me. We're renting a two-bedroom apartment and it's ours. I still come back to campus for milestone celebrations because I remember what it felt like to see an alumna walk in and know that could be me someday."
+
+2. Author: Denise | Featured: true | Share externally: true | Approval status: pending
+   - Step 1: "I came to Saint John's from prison. I'd been incarcerated for three years and when I got out I had nothing — no housing, no job, no family willing to take me in. I was terrified I'd end up right back where I started."
+   - Step 2: "Saint John's didn't treat me like an ex-offender. They treated me like a person who was building something new. The workforce development program connected me with Modern Aviation and I trained for ground operations at the airport. I never would have imagined myself working at an airport. But someone at SJP saw that in me before I could see it in myself."
+   - Step 3: "I've been at Modern Aviation for over a year now. I just got promoted to shift lead. I have my own apartment — my name is on the lease, which still feels surreal. I'm saving money for the first time in my life. I volunteer at SJP when I can because I want every woman who walks through those doors to know: your past does not define your future."
+
+3. Author: Tasha | Featured: false | Share externally: false | Approval status: community_only
+   - Step 1: "I was in a DV situation for six years. When I finally left, I had my daughter and a trash bag of clothes. That was it. I didn't know where to go or what to do."
+   - Step 2: "The safety I felt at Saint John's was the first peace I'd had in years. Nobody was going to find me there. The staff helped me with a protection order, got my daughter into school, and just let me breathe for the first time. The other women understood without me having to explain."
+   - Step 3: "I just started a customer service role and my daughter is thriving in school. We're in transitional housing and working toward our own place. I'm not where I want to be yet, but I'm so far from where I was. And I know I have a community behind me."
+
+### Survey Responses (6)
+
+1. User: Monica | Interval: 3 | Employed: true | Job title: "Events Logistics Assistant" | Raise/promotion: false | Housing: stable | Support needs: "None right now — just grateful." | Submitted: (her graduation_date + 95 days)
+
+2. User: Monica | Interval: 6 | Employed: true | Job title: "Events Logistics Coordinator" | Raise/promotion: true | Promotion details: "Promoted from assistant to coordinator with a $2/hr raise" | Housing: stable | Support needs: "Could use help finding affordable childcare near downtown." | Submitted: (her graduation_date + 185 days)
+
+3. User: Tasha | Interval: 3 | Employed: true | Job title: "Customer Service Representative" | Raise/promotion: false | Housing: transitional | Support needs: "Still looking for stable housing. If anyone knows about openings for 2-bedroom apartments that accept vouchers, please let me know." | Submitted: (her graduation_date + 92 days)
+
+4. User: Denise | Interval: 3 | Employed: true | Job title: "Ground Operations Crew" | Raise/promotion: false | Housing: transitional | Support needs: "Transportation to work is tough. Looking into getting my license back." | Submitted: (her graduation_date + 100 days)
+
+5. User: Denise | Interval: 6 | Employed: true | Job title: "Ground Operations Crew" | Raise/promotion: false | Housing: stable | Support needs: "Doing well. Got my own place last month." | Submitted: (her graduation_date + 188 days)
+
+6. User: Denise | Interval: 12 | Employed: true | Job title: "Shift Lead — Ground Operations" | Raise/promotion: true | Promotion details: "Promoted to shift lead with benefits" | Housing: stable | Support needs: "No needs — just want to give back. Can I help mentor someone?" | Submitted: (her graduation_date + 370 days)
+
+---
+
+## 12. TONE AND COPY RULES
+
+This app serves women experiencing homelessness, addiction, justice involvement, and domestic violence. Every word matters.
+
+**Do:**
+- First names only in all community-facing views
+- Strength-based framing: "Share your story" not "Submit your testimony"
+- Warm, direct language: "Your journey can inspire someone who's just starting"
+- Celebrate milestones visually
+
+**Do not:**
+- Use clinical language in the UI: no "clients," "cases," "interventions," "treatment plans"
+- Use surveillance language: no "you are required to," "your activity is monitored"
+- Use deficit framing: no "at-risk," "struggling," "in crisis"
+- Use generic placeholder text — all seed data should feel real and specific to this community
+
+---
+
+## 13. THE FIVE FOUNDATIONS FOR REAL CHANGE
+
+These are SJP's five pillars. They organize the resource library and represent the graduate profile framework:
+
+1. **Community** — Cultivating strong, supportive relationships and meaningful connections. Building healthy relationships and support networks.
+2. **Confidence** — Demonstrating inner strength and a positive, proactive mindset. Nurturing self-worth and self-esteem with an "I can" attitude.
+3. **Resilience** — Confident self-advocacy and active agency. Standing up for yourself and your family. Overcoming challenges with strength and determination.
+4. **Readiness** — Prepared with essential tools, knowledge, and resources for financial independence and stability in employment and housing.
+5. **Wellness** — Prioritizing physical and emotional health. Consistent self-care practices as the foundation for lasting stability.
+
+Use these descriptions to inform how pillar labels feel in the UI and how resources are categorized.
+
+---
+
+## 14. WHAT THIS PROMPT DOES NOT BUILD
+
+Do NOT build the following — they come in Prompt 2:
+
+- Admin Panel (the four-tab management interface)
+- Guided storytelling flow (the three-step form)
+- Alumni survey form (the check-in questionnaire)
+- User management screen
+
+Also do NOT build any of these at all (out of scope entirely):
+
+- Kipu integration
+- External API connections (Outlook, Google Calendar, etc.)
+- Push notifications
+- Volunteer or donor portal
+- Nested reply threading (one level only)
+- Calendar widget on Events page
+- Dark mode
+- AI chatbot inside the app
+- CSV upload for bulk loading
+- Any feature requiring a third-party API key
