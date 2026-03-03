@@ -27,7 +27,7 @@ export function BottomNav() {
             <Link key={tab.path} href={tab.path}>
               <button
                 className={`flex flex-col items-center justify-center gap-1 py-1 px-3 transition-colors ${
-                  isActive ? "text-[#34737A]" : "text-[#C7C2BF]"
+                  isActive ? "text-[#34737A]" : "text-[#D32027] hover:text-[#34737A]"
                 }`}
                 data-testid={`nav-${tab.label.toLowerCase()}`}
               >
