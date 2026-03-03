@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import sjpLogo from "@assets/FF_SJP_Logos_Digital_Primary_SJP_FullColorWhiteText_1772578179749.png";
 
 const demoUsers = {
   CLIENTS: [
@@ -62,6 +63,7 @@ export default function LoginPage() {
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #0D9488 0%, #0F766E 40%, #115E59 100%)" }}>
       <div className="max-w-[430px] mx-auto px-4 py-8">
         <div className="text-center mb-6 pt-4">
+          <img src={sjpLogo} alt="Saint John's Program for Real Change" className="h-16 mx-auto mb-4" data-testid="img-sjp-logo" />
           <h1 className="text-3xl font-bold text-white tracking-tight" data-testid="text-app-title">SJP Community</h1>
           <p className="text-teal-100 text-sm mt-1">Building community. Changing lives.</p>
         </div>
