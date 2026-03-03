@@ -50,10 +50,10 @@ const postTypeBadgeColors: Record<string, string> = {
 };
 
 const roleBadgeColors: Record<string, string> = {
-  client: "bg-blue-100 text-blue-700",
-  alumni: "bg-emerald-100 text-emerald-700",
-  staff: "bg-orange-100 text-orange-700",
-  admin: "bg-purple-100 text-purple-700",
+  client: "bg-[#34737A] text-white",
+  alumni: "bg-[#34737A] text-white",
+  staff: "bg-[#34737A] text-white",
+  admin: "bg-[#34737A] text-white",
 };
 
 const reactionEmojis: Record<string, string> = {

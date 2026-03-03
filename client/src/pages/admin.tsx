@@ -47,10 +47,10 @@ function getResourceAge(createdAt: string | null): string {
 }
 
 const roleBadgeColors: Record<string, string> = {
-  client: "bg-blue-100 text-blue-700",
-  alumni: "bg-emerald-100 text-emerald-700",
-  staff: "bg-orange-100 text-orange-700",
-  admin: "bg-purple-100 text-purple-700",
+  client: "bg-[#34737A] text-white",
+  alumni: "bg-[#34737A] text-white",
+  staff: "bg-[#34737A] text-white",
+  admin: "bg-[#34737A] text-white",
 };
 
 type ResourceForm = {
@@ -106,6 +106,7 @@ export default function AdminPage() {
         </button>
         <h1 className="text-lg font-bold text-[#302D2E]" data-testid="text-admin-title">Admin Panel</h1>
       </div>
+      <div className="h-[3px] bg-[#D32027] -mx-4 mb-4" />
 
       <div className="flex gap-1 overflow-x-auto pb-2 mb-4" data-testid="admin-tabs">
         {tabs.map((t) => (

@@ -1,0 +1,58 @@
+# Color Fixes + Page Differentiation
+
+**Checkpoint before running: "pre-color-cleanup"**
+
+Two parts: fix colors that didn't update correctly, then add subtle visual identity to each page.
+
+---
+
+## Part 1: Color Fixes
+
+**Avatar circles:** Replace all bright/saturated avatar colors (the green, orange, blue, purple, cyan, etc. currently on user avatars) with these brand colors, rotating so adjacent users don't share a color:
+- #34737A (dark teal)
+- #5DA592 (sage green)
+- #D32027 (Saint John's Red)
+- #979DB6 (dusty lavender)
+- #EEBBA7 (peach)
+
+Apply to: demo login buttons on the login page, post avatars in the community feed, profile page avatar, and anywhere else a user avatar circle appears.
+
+**Role badges** (the "Admin", "Staff", "Client", "Alumni" labels next to usernames): Use #34737A (dark teal) background with white text. Not bright green.
+
+**Need post left border:** Confirm it is #D32027 (true red), not coral/pink.
+
+**Pillar filter pills on Resources page:** The active/selected pill should use #34737A (dark teal), not the old bright teal. Inactive pills should have #F1EFEF background with #302D2E text.
+
+---
+
+## Part 2: Page Differentiation
+
+Each page gets a subtle accent so users can tell where they are at a glance. No big color blocks — just enough that each page has its own feel.
+
+**Home page:**
+- Already has the hero banner with the teal/sage gradient. No change needed — the banner is the identity.
+
+**Community page:**
+- Give the privacy banner at the top a #FCF3EE (cream) background instead of the current teal-tinted background. Keep the lock icon and text.
+- Add a thin #34737A (dark teal) top border (3px) across the very top of the page, above the "Community" title.
+
+**Resources page:**
+- Add a thin #5DA592 (sage green) top border (3px) across the top of the page.
+- Give the filter pill area a #FAE8DF (peach tint) background strip — a subtle warm band behind the two rows of filter pills.
+
+**Events page:**
+- Add a thin #979DB6 (dusty lavender) top border (3px) across the top of the page.
+- The date blocks on event cards are already dark teal — that's the Events page visual signature. No other change needed.
+
+**Profile page:**
+- Add a thin #EEBBA7 (peach) top border (3px) across the top of the page.
+- Give the header section (avatar, name, bio, dates) a #FCF3EE (cream) background to set it apart from the action links below.
+
+**Admin Panel:**
+- Add a thin #D32027 (Saint John's Red) top border (3px) across the top of the page, under the back arrow and "Admin Panel" title. This subtly signals "you're in the staff area."
+
+---
+
+## Do not change
+
+Layout, spacing, functionality, content, seed data, reactions, sort order, or the login page. This is cosmetic only.

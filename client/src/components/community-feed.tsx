@@ -42,7 +42,7 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
   return (
     <div className="space-y-4">
       {showPrivacyBanner && (
-        <div className="bg-[#34737A]/5 rounded-xl px-4 py-3 flex items-center gap-2" data-testid="privacy-banner">
+        <div className="bg-[#FCF3EE] rounded-xl px-4 py-3 flex items-center gap-2" data-testid="privacy-banner">
           <svg className="w-4 h-4 text-[#34737A] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>

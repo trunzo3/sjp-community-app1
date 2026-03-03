@@ -77,6 +77,7 @@ export default function ResourcesPage() {
 
   return (
     <div>
+      <div className="h-[3px] bg-[#5DA592] -mx-4 mb-4" />
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-bold text-[#302D2E]" data-testid="text-resources-title">Resources</h1>
         {isStaffOrAdmin && (
@@ -134,36 +135,38 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      {isStaffOrAdmin && (
-        <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2" data-testid="stage-filters">
-          {["all", "client", "alumni"].map((s) => (
+      <div className="bg-[#FAE8DF] -mx-4 px-4 py-3 mb-4 space-y-2">
+        {isStaffOrAdmin && (
+          <div className="flex gap-1.5 overflow-x-auto" data-testid="stage-filters">
+            {["all", "client", "alumni"].map((s) => (
+              <button
+                key={s}
+                onClick={() => setStageFilter(s)}
+                className={`text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors ${
+                  stageFilter === s ? "bg-[#34737A] text-white" : "bg-[#F1EFEF] text-[#302D2E]"
+                }`}
+                data-testid={`button-stage-${s}`}
+              >
+                {s === "all" ? "All" : s === "client" ? "Clients" : "Alumni"}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-1.5 overflow-x-auto" data-testid="pillar-filters">
+          {pillars.map((p) => (
             <button
-              key={s}
-              onClick={() => setStageFilter(s)}
+              key={p}
+              onClick={() => setPillarFilter(p)}
               className={`text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors ${
-                stageFilter === s ? "bg-[#34737A] text-white" : "bg-white text-[#868180]"
+                pillarFilter === p ? "bg-[#34737A] text-white" : "bg-[#F1EFEF] text-[#302D2E]"
               }`}
-              data-testid={`button-stage-${s}`}
+              data-testid={`button-pillar-${p}`}
             >
-              {s === "all" ? "All" : s === "client" ? "Clients" : "Alumni"}
+              {p.charAt(0).toUpperCase() + p.slice(1)}
             </button>
           ))}
         </div>
-      )}
-
-      <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4" data-testid="pillar-filters">
-        {pillars.map((p) => (
-          <button
-            key={p}
-            onClick={() => setPillarFilter(p)}
-            className={`text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors ${
-              pillarFilter === p ? "bg-[#34737A] text-white" : "bg-white text-[#868180]"
-            }`}
-            data-testid={`button-pillar-${p}`}
-          >
-            {p.charAt(0).toUpperCase() + p.slice(1)}
-          </button>
-        ))}
       </div>
 
       {isLoading ? (

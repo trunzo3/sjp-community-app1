@@ -75,6 +75,7 @@ export default function EventsPage() {
 
   return (
     <div>
+      <div className="h-[3px] bg-[#979DB6] -mx-4 mb-4" />
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-bold text-[#302D2E]" data-testid="text-events-title">Events</h1>
         {isStaffOrAdmin && (

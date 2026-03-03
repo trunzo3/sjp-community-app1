@@ -41,6 +41,19 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **Story Revision Workflow**: Admin/staff can now "Request Revision" on pending stories with a revision note. Stories get `revision_requested` status (orange badge). Alumni see revision banner on `/share-story` page with the staff note. Staff can still approve/community-only stories with revision_requested status.
 - **Schema additions**: `reactions` table (id, postId, userId, reactionType, createdAt), `revision_note` column on stories, `revision_requested` added to `approval_status` enum, `reaction_type` enum.
 
+## Color Fixes & Page Differentiation (Implemented)
+- **Avatar colors**: All user avatars now use 5 brand colors rotating: #34737A (dark teal), #5DA592 (sage green), #D32027 (red), #979DB6 (dusty lavender), #EEBBA7 (peach). Applied to seed data, login demo buttons, and all avatar displays.
+- **Role badges**: All role badges (Admin/Staff/Client/Alumni) now use #34737A dark teal background with white text.
+- **Need post left border**: Confirmed #D32027 (true red).
+- **Filter pills**: Active pill uses #34737A, inactive pills use #F1EFEF bg with #302D2E text.
+- **Page differentiation**: Each page has a subtle accent for visual identity:
+  - Home: Hero banner (no change needed)
+  - Community: #34737A dark teal 3px top border, privacy banner changed to #FCF3EE cream bg
+  - Resources: #5DA592 sage green 3px top border, #FAE8DF peach tint background strip behind filter pills
+  - Events: #979DB6 dusty lavender 3px top border
+  - Profile: #EEBBA7 peach 3px top border, #FCF3EE cream header section bg
+  - Admin: #D32027 red 3px top border below title
+
 ## Security
 - `/api/users` protected by requireStaffOrAdmin (not just requireAuth)
 - `/api/admin/*` endpoints protected by requireStaffOrAdmin

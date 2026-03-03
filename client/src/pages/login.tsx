@@ -8,24 +8,24 @@ import sjpLogo from "@assets/FF_SJP_Logos_Digital_Primary_SJP_FullColorWhiteText
 
 const demoUsers = {
   CLIENTS: [
-    { name: "Angela", email: "angela@sjp.demo", color: "#4CAF50", label: "Client" },
-    { name: "Keisha", email: "keisha@sjp.demo", color: "#FF9800", label: "Client" },
-    { name: "Destiny", email: "destiny@sjp.demo", color: "#2196F3", label: "Client" },
-    { name: "Maria", email: "maria@sjp.demo", color: "#9C27B0", label: "Client" },
+    { name: "Angela", email: "angela@sjp.demo", color: "#34737A", label: "Client" },
+    { name: "Keisha", email: "keisha@sjp.demo", color: "#5DA592", label: "Client" },
+    { name: "Destiny", email: "destiny@sjp.demo", color: "#D32027", label: "Client" },
+    { name: "Maria", email: "maria@sjp.demo", color: "#979DB6", label: "Client" },
   ],
   ALUMNI: [
-    { name: "Monica", email: "monica@sjp.demo", color: "#E91E63", label: "Alumni" },
-    { name: "Tasha", email: "tasha@sjp.demo", color: "#00BCD4", label: "Alumni" },
-    { name: "Denise", email: "denise@sjp.demo", color: "#FF5722", label: "Alumni" },
+    { name: "Monica", email: "monica@sjp.demo", color: "#EEBBA7", label: "Alumni" },
+    { name: "Tasha", email: "tasha@sjp.demo", color: "#34737A", label: "Alumni" },
+    { name: "Denise", email: "denise@sjp.demo", color: "#5DA592", label: "Alumni" },
   ],
   STAFF: [
-    { name: "Sarah", email: "sarah@sjp.demo", color: "#607D8B", label: "Staff" },
-    { name: "James", email: "james@sjp.demo", color: "#795548", label: "Staff" },
-    { name: "Broc", email: "broc@sjp.demo", color: "#3F51B5", label: "Staff" },
+    { name: "Sarah", email: "sarah@sjp.demo", color: "#D32027", label: "Staff" },
+    { name: "James", email: "james@sjp.demo", color: "#979DB6", label: "Staff" },
+    { name: "Broc", email: "broc@sjp.demo", color: "#EEBBA7", label: "Staff" },
   ],
   ADMIN: [
-    { name: "Scott", email: "scott@sjp.demo", color: "#009688", label: "Admin" },
-    { name: "Quinta", email: "quinta@sjp.demo", color: "#F44336", label: "Admin" },
+    { name: "Scott", email: "scott@sjp.demo", color: "#34737A", label: "Admin" },
+    { name: "Quinta", email: "quinta@sjp.demo", color: "#D32027", label: "Admin" },
   ],
 };
 
