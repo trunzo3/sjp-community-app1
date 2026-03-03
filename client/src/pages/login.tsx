@@ -97,9 +97,6 @@ export default function LoginPage() {
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign In"}
             </Button>
           </form>
-          <p className="text-center text-sm text-[#0D9488] mt-4 font-medium" data-testid="link-create-account">
-            New to SJP? Create an account
-          </p>
         </div>
 
         <div className="mt-8">
