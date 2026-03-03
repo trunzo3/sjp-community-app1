@@ -13,11 +13,11 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - `shared/schema.ts` — Drizzle schema with all 7 tables (users, posts, replies, resources, events, stories, surveys)
 - `server/db.ts` — Database connection
 - `server/storage.ts` — IStorage interface + DatabaseStorage implementation
-- `server/routes.ts` — Express API routes with session auth
+- `server/routes.ts` — Express API routes with session auth, role-based middleware (requireAuth, requireStaffOrAdmin, requireAdmin)
 - `server/seed.ts` — Seed data (12 users, 12 resources, 7 events, 8 posts, 3 stories, 6 surveys)
 - `client/src/lib/auth.tsx` — AuthProvider context with login/logout/demoLogin
 - `client/src/components/` — Shared components (AvatarCircle, BottomNav, PostCard, CommunityFeed)
-- `client/src/pages/` — 6 pages (login, home, community, resources, events, profile)
+- `client/src/pages/` — 9 pages (login, home, community, resources, events, profile, admin, share-story, survey)
 
 ## Key Design Decisions
 - Mobile-first at 430px max-width, centered on larger screens
@@ -26,9 +26,21 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - Content visibility rules enforced on backend (stage-based filtering)
 - Demo quick-login buttons on login page for hackathon/testing
 - Design tokens: Primary teal #0D9488, coral accent #FF6B6B, amber accent #F5A623
+- `staleTime: Infinity` in queryClient — must explicitly invalidate queries after mutations
+- `apiRequest(method, url, data)` — NOT `(url, options)` like fetch
+- queryKey uses array format for TanStack Query: `["/api/endpoint", param]`
 
-## Prompt 2 Will Add
-- Admin Panel (four-tab management interface)
-- Guided storytelling flow (three-step form)
-- Alumni survey form (check-in questionnaire)
-- User management screen
+## Prompt 2 Features (Implemented)
+- **Admin Panel** (`/admin`): 4-tab management (Resources, Events, Stories, Surveys) + Users tab (admin-only). Full CRUD for resources/events, story approval workflow, survey aggregate stats, user role/stage/graduation management.
+- **Guided Storytelling** (`/share-story`): 3-step form for alumni (Where were you? → What changed? → Where are you now?) with sharing permission toggle. Stories with sharing ON go to pending review; sharing OFF appear immediately in carousel.
+- **Alumni Survey** (`/survey`): Interval-based (3/6/12 month) check-in form. Survey prompt card on Home page when due. Tracks employment, housing, raise/promotion, support needs.
+- **Wiring**: Profile "Admin Panel" → `/admin`, Profile "Share Your Story" → `/share-story`, Home "Write it" → `/share-story`, Home survey card → `/survey`
+
+## Security
+- `/api/users` protected by requireStaffOrAdmin (not just requireAuth)
+- `/api/admin/*` endpoints protected by requireStaffOrAdmin
+- `/api/admin/users/:id` protected by requireAdmin (admin-only)
+- Admin page has frontend guard redirecting non-staff/admin to profile
+- Story creation restricted to alumni role
+- Survey creation restricted to alumni role
+- `stripPasswords()` handles Date instances before object spread

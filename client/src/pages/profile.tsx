@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { format } from "date-fns";
 
 const roleBadgeColors: Record<string, string> = {
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const { user, logout, refetchUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [editingBio, setEditingBio] = useState(false);
   const [bio, setBio] = useState(user?.bio || "");
   const [showMyPosts, setShowMyPosts] = useState(false);
@@ -111,7 +113,7 @@ export default function ProfilePage() {
         {isAlumni && (
           <button
             className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
-            onClick={() => toast({ title: "Coming soon", description: "The guided storytelling flow will be available in the next update." })}
+            onClick={() => navigate("/share-story")}
             data-testid="button-share-story"
           >
             <div className="w-9 h-9 rounded-lg bg-[#0D9488]/10 flex items-center justify-center">
@@ -127,7 +129,7 @@ export default function ProfilePage() {
         {isStaffOrAdmin && (
           <button
             className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
-            onClick={() => toast({ title: "Coming in next update", description: "The admin panel will be available in the next update." })}
+            onClick={() => navigate("/admin")}
             data-testid="button-admin-panel"
           >
             <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center">

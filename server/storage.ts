@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, desc, and, sql, arrayContains } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import {
   users, posts, replies, resources, events, stories, surveys,
   type User, type InsertUser,
@@ -27,16 +27,25 @@ export interface IStorage {
   getRepliesByPost(postId: string): Promise<(Reply & { author: User })[]>;
 
   getResources(userStage?: string, pillar?: string): Promise<Resource[]>;
+  getAllResources(): Promise<Resource[]>;
   createResource(resource: InsertResource): Promise<Resource>;
+  updateResource(id: string, data: Partial<InsertResource>): Promise<Resource | undefined>;
+  deleteResource(id: string): Promise<boolean>;
 
   getEvents(userStage?: string): Promise<Event[]>;
+  getAllEvents(): Promise<Event[]>;
   createEvent(event: InsertEvent): Promise<Event>;
+  updateEvent(id: string, data: Partial<InsertEvent>): Promise<Event | undefined>;
+  deleteEvent(id: string): Promise<boolean>;
 
   getFeaturedStories(): Promise<(Story & { author: User })[]>;
+  getAllShareableStories(): Promise<(Story & { author: User })[]>;
   getStoriesByUser(userId: string): Promise<Story[]>;
   createStory(story: InsertStory): Promise<Story>;
+  updateStory(id: string, data: Partial<InsertStory>): Promise<Story | undefined>;
   getPendingStoriesCount(): Promise<number>;
 
+  getAllSurveys(): Promise<(Survey & { user: User })[]>;
   getSurveysByUser(userId: string): Promise<Survey[]>;
   createSurvey(survey: InsertSurvey): Promise<Survey>;
 }
@@ -67,10 +76,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPosts(filter?: string): Promise<(Post & { author: User; replies: (Reply & { author: User })[] })[]> {
-    let query = db.select().from(posts).orderBy(desc(posts.createdAt));
     const allPosts = filter && filter !== "all"
       ? await db.select().from(posts).where(eq(posts.postType, filter as any)).orderBy(desc(posts.createdAt))
-      : await query;
+      : await db.select().from(posts).orderBy(desc(posts.createdAt));
 
     const pinnedPosts = await db.select().from(posts).where(eq(posts.pinned, true)).orderBy(desc(posts.createdAt));
 
@@ -146,9 +154,23 @@ export class DatabaseStorage implements IStorage {
     return allResources;
   }
 
+  async getAllResources(): Promise<Resource[]> {
+    return db.select().from(resources).orderBy(resources.createdAt);
+  }
+
   async createResource(resource: InsertResource): Promise<Resource> {
     const [created] = await db.insert(resources).values(resource).returning();
     return created;
+  }
+
+  async updateResource(id: string, data: Partial<InsertResource>): Promise<Resource | undefined> {
+    const [updated] = await db.update(resources).set(data).where(eq(resources.id, id)).returning();
+    return updated;
+  }
+
+  async deleteResource(id: string): Promise<boolean> {
+    const result = await db.delete(resources).where(eq(resources.id, id)).returning();
+    return result.length > 0;
   }
 
   async getEvents(userStage?: string): Promise<Event[]> {
@@ -159,15 +181,48 @@ export class DatabaseStorage implements IStorage {
     return allEvents;
   }
 
+  async getAllEvents(): Promise<Event[]> {
+    return db.select().from(events).orderBy(events.date);
+  }
+
   async createEvent(event: InsertEvent): Promise<Event> {
     const [created] = await db.insert(events).values(event).returning();
     return created;
   }
 
+  async updateEvent(id: string, data: Partial<InsertEvent>): Promise<Event | undefined> {
+    const [updated] = await db.update(events).set(data).where(eq(events.id, id)).returning();
+    return updated;
+  }
+
+  async deleteEvent(id: string): Promise<boolean> {
+    const result = await db.delete(events).where(eq(events.id, id)).returning();
+    return result.length > 0;
+  }
+
   async getFeaturedStories(): Promise<(Story & { author: User })[]> {
-    const featuredStories = await db.select().from(stories).where(eq(stories.featured, true));
+    const featuredStories = await db.select().from(stories).where(
+      and(eq(stories.featured, true), eq(stories.approvalStatus, "approved"))
+    );
+    const communityStories = await db.select().from(stories).where(
+      eq(stories.approvalStatus, "community_only")
+    );
+    const allStories = [...featuredStories, ...communityStories];
+    const uniqueMap = new Map<string, Story>();
+    for (const s of allStories) uniqueMap.set(s.id, s);
+
     const result = [];
-    for (const story of featuredStories) {
+    for (const story of uniqueMap.values()) {
+      const [author] = await db.select().from(users).where(eq(users.id, story.authorId));
+      result.push({ ...story, author });
+    }
+    return result;
+  }
+
+  async getAllShareableStories(): Promise<(Story & { author: User })[]> {
+    const allStories = await db.select().from(stories).orderBy(desc(stories.createdAt));
+    const result = [];
+    for (const story of allStories) {
       const [author] = await db.select().from(users).where(eq(users.id, story.authorId));
       result.push({ ...story, author });
     }
@@ -183,9 +238,24 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async updateStory(id: string, data: Partial<InsertStory>): Promise<Story | undefined> {
+    const [updated] = await db.update(stories).set(data).where(eq(stories.id, id)).returning();
+    return updated;
+  }
+
   async getPendingStoriesCount(): Promise<number> {
     const result = await db.select({ count: sql<number>`count(*)` }).from(stories).where(eq(stories.approvalStatus, "pending"));
     return Number(result[0].count);
+  }
+
+  async getAllSurveys(): Promise<(Survey & { user: User })[]> {
+    const allSurveys = await db.select().from(surveys).orderBy(desc(surveys.submittedAt));
+    const result = [];
+    for (const survey of allSurveys) {
+      const [user] = await db.select().from(users).where(eq(users.id, survey.userId));
+      result.push({ ...survey, user });
+    }
+    return result;
   }
 
   async getSurveysByUser(userId: string): Promise<Survey[]> {

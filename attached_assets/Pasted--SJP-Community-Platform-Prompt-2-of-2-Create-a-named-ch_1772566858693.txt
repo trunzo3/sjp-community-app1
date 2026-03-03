@@ -1,0 +1,184 @@
+# SJP Community Platform — Prompt 2 of 2
+
+**Create a named checkpoint called "pre-prompt2" before running this prompt.**
+
+---
+
+This is Prompt 2 of 2. The app already has: authentication with demo login, all five pages (Home, Community, Resources, Events, Profile) with full features, community feed with posting and replies, resource and event creation forms, stories carousel, and all seed data.
+
+This prompt adds three features: the Admin Panel, the guided storytelling flow, and the alumni survey system. It also wires up the placeholder links from Prompt 1 (Share Your Story and Admin Panel on the Profile page, the "Write it" button on the Home page, and the survey prompt card).
+
+---
+
+## 1. ADMIN PANEL
+
+Accessed from the "Admin Panel" link on the Profile page. Visible to staff and admin only. Four tabs across the top: Resources, Events, Stories, Surveys.
+
+### 1a. Resources Tab
+- List of ALL resources with name, pillar, type
+- "+ New" button opens the resource creation form (same form that already exists from the "+ Add" button on the Resources page — reuse that component)
+- Each resource row has:
+  - Edit action (tap to open the resource in an editable form, pre-populated with current values)
+  - Delete action (trash icon with a confirmation dialog before deleting)
+- Optional: search or filter by pillar
+
+### 1b. Events Tab
+- List of ALL events with name, type, date, sorted by date
+- "+ New" button opens the event creation form (same form from the Events page — reuse that component)
+- Each event row has edit and delete actions (same pattern as Resources)
+- This is the bulk management view. Quick single adds still happen via "+ Add" on the Events page.
+
+### 1c. Stories Tab
+- Shows all stories where share_externally = true
+- Count of pending stories (approval_status = 'pending') displayed prominently at top of this tab
+- Each story card shows:
+  - Author first name
+  - Approval status badge (Pending, Approved, Community Only) — color-coded
+  - Story content: show a preview of all three steps, expandable to read full text
+  - Submitted date
+- Two action buttons per pending story:
+  - **"Approve"** — sets approval_status to 'approved' (approved for external/fundraising use)
+  - **"Community Only"** — sets approval_status to 'community_only' (stays visible in the app but not flagged for external use)
+- Already-approved and community-only stories show their status badge but no action buttons
+- **Badge counter:** The count of pending stories should match the badge number shown on the "Admin Panel" link on the Profile page. When a story is approved or set to community-only, the badge count decreases in real time.
+
+### 1d. Surveys Tab
+- **Aggregate metrics at top:** total surveys submitted, percentage of respondents still employed, percentage in stable housing. Display these as large stat cards.
+- **Individual survey response cards below**, each showing:
+  - Interval badge (3-Month, 6-Month, 12-Month) — color-coded
+  - Respondent first name
+  - Employment status and current job title
+  - Housing status
+  - Raise/promotion status and details (if yes)
+  - Support needs text
+  - Submitted date
+- Sort by most recent first
+
+### 1e. User Management (Admin Role Only)
+This sub-section is visible only to users with role = 'admin', NOT to staff.
+
+- View all users in a list: first name, last name, email, role, stage, graduation date
+- Tap a user to edit:
+  - Role (dropdown: client, alumni, staff, admin)
+  - Stage (dropdown: client, alumni)
+  - Graduation date (date picker — this is how graduation_date gets populated when someone completes the program; setting this triggers future survey eligibility)
+- Save changes
+
+---
+
+## 2. GUIDED STORYTELLING FLOW
+
+Three-step guided form accessed from:
+- The "Write it" button on the Home page Share Your Story bar (replace the "Coming soon" placeholder)
+- The "Share Your Story" link on the Profile page (replace the "Coming soon" placeholder)
+
+Visible to alumni only.
+
+### Step 1 of 3: "Where were you?"
+- Progress bar at top showing step 1 of 3
+- Prompt text: "Tell us about where you were before Saint John's. What was life like?"
+- Large text area with grayed-out hint examples (these disappear when the user taps into the field):
+  - "I was sleeping in my car..."
+  - "I didn't think I'd ever..."
+- Placeholder text inside the text area: "Write freely. There's no wrong way to tell your story."
+- "Continue" button at bottom
+
+### Step 2 of 3: "What changed?"
+- Progress bar showing step 2 of 3
+- Prompt: "What happened at Saint John's that made a difference?"
+- Hint examples:
+  - "The moment things started to shift was..."
+  - "The person who changed everything for me..."
+- Same text area format
+- "Back" and "Continue" buttons
+
+### Step 3 of 3: "Where are you now?"
+- Progress bar showing step 3 of 3
+- Prompt: "Tell us about your life today."
+- Hint examples:
+  - "Today I wake up and..."
+  - "My kids and I..."
+- Same text area format
+- "Back" and "Continue" buttons
+
+### Sharing Permission Screen (after Step 3)
+- Toggle switch: "Allow Saint John's to share my story at fundraising and outreach events"
+- Explanation text below the toggle: "If you say yes, a staff member will review your story before it's shared outside the community. Your story will always be visible in the SJP community regardless of this setting."
+- "Submit" button
+
+### Save Logic
+- **If sharing toggle is ON:** Save with share_externally = true, approval_status = 'pending'. The pending count increments the badge on the Admin Panel link in staff/admin Profile pages. Story does NOT appear in the Stories carousel until approved.
+- **If sharing toggle is OFF:** Save with share_externally = false, approval_status = 'community_only'. Story appears immediately in the Stories of Change carousel on the Home page.
+- After submission, show a confirmation screen: "Thank you for sharing your story." with a button to return to the Home page.
+
+---
+
+## 3. ALUMNI SURVEY SYSTEM
+
+### Survey Timing
+Based on the graduation_date field on the user record:
+- graduation_date + 90 days → 3-month survey
+- graduation_date + 180 days → 6-month survey
+- graduation_date + 365 days → 12-month survey
+
+A survey becomes available when the current date is at or past the trigger date AND the user has not yet submitted a survey for that interval.
+
+### Survey Prompt
+Replace the placeholder text card on the Home page (from Prompt 1) with an actual survey prompt card. This card appears in the contextual section at the bottom of the Home page when a survey is due. It is a card, not a popup.
+
+Card text: "It's time for your [3/6/12]-month check-in! Your feedback helps Saint John's continue to improve." With a "Take Survey" button.
+
+### Survey Form
+Opens when the user taps "Take Survey." Full-screen form:
+
+- **Are you still employed?** (yes/no toggle)
+- **Current job title** (text input — shown regardless of employed toggle, but optional if not employed)
+- **Have you received a raise or promotion?** (yes/no toggle)
+- **Details** (text input — shown only if raise/promotion = yes)
+- **Housing status** (select with three options: Stable, Transitional, Unstable)
+- **What support do you need right now?** (text area)
+- **Submit** button
+
+### Save Logic
+- Saves to the surveys table with the correct interval_months value, user_id, and all field values
+- After submission, show confirmation: "Thank you for checking in! Your responses help us serve the community better." with a button to return Home
+- The survey prompt card disappears from the Home page after submission
+- The response appears in Admin Panel > Surveys tab
+
+---
+
+## 4. WIRING CHECKLIST
+
+Make sure all these connections work:
+
+- [ ] Profile page "Admin Panel" link opens the Admin Panel (not "Coming soon")
+- [ ] Profile page "Share Your Story" link opens the storytelling flow (not "Coming soon")
+- [ ] Home page "Write it" button opens the storytelling flow (not "Coming soon")
+- [ ] Home page survey prompt card opens the survey form (not just text)
+- [ ] Admin Panel badge counter on Profile page shows correct count of pending stories
+- [ ] Stories tab badge count decreases when a story is approved or set to community-only
+- [ ] New stories with sharing OFF appear in the Stories carousel immediately
+- [ ] New stories with sharing ON do NOT appear in carousel until approved in Admin Panel
+- [ ] Approved stories appear in the Stories carousel on the Home page
+- [ ] Survey prompt card only appears for alumni with graduation_date at correct intervals
+- [ ] Survey prompt card disappears after the survey is submitted
+- [ ] Submitted surveys appear in Admin Panel > Surveys tab with correct aggregate metrics
+- [ ] User management (admin only) allows setting graduation_date, and this correctly triggers survey eligibility
+
+---
+
+## 5. WHAT NOT TO BUILD
+
+Do not build any of these:
+
+- Kipu integration
+- External API connections (Outlook, Google Calendar, etc.)
+- Push notifications
+- Volunteer or donor portal
+- Nested reply threading (one level only — already built)
+- Calendar widget on Events page
+- Dark mode
+- AI chatbot inside the app
+- CSV upload for bulk loading
+- Data export from surveys (stretch goal, not this prompt)
+- Any feature requiring a third-party API key

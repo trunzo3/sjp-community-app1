@@ -40,6 +40,15 @@ async function requireStaffOrAdmin(req: Request, res: Response, next: NextFuncti
   next();
 }
 
+async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
+  const user = await storage.getUser(req.session.userId);
+  if (!user || user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  next();
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -93,14 +102,18 @@ export async function registerRoutes(
     res.json(safeUser);
   });
 
-  app.get("/api/users", requireAuth, async (_req, res) => {
+  app.get("/api/users", requireStaffOrAdmin, async (_req, res) => {
     const allUsers = await storage.getAllUsers();
     const safe = allUsers.map(({ password, ...u }) => u);
     res.json(safe);
   });
 
   app.patch("/api/users/:id", requireAuth, async (req, res) => {
-    if (req.session.userId !== req.params.id) return res.status(403).json({ message: "Forbidden" });
+    const currentUser = await storage.getUser(req.session.userId!);
+    if (!currentUser) return res.status(401).json({ message: "Not authenticated" });
+    const isOwn = req.session.userId === req.params.id;
+    const isAdmin = currentUser.role === "admin";
+    if (!isOwn && !isAdmin) return res.status(403).json({ message: "Forbidden" });
     const updated = await storage.updateUser(req.params.id, req.body);
     if (!updated) return res.status(404).json({ message: "User not found" });
     const { password: _, ...safeUser } = updated;
@@ -145,9 +158,26 @@ export async function registerRoutes(
     res.json(resourcesData);
   });
 
+  app.get("/api/admin/resources", requireStaffOrAdmin, async (_req, res) => {
+    const allResources = await storage.getAllResources();
+    res.json(allResources);
+  });
+
   app.post("/api/resources", requireStaffOrAdmin, async (req, res) => {
     const resource = await storage.createResource({ ...req.body, createdBy: req.session.userId });
     res.json(resource);
+  });
+
+  app.patch("/api/resources/:id", requireStaffOrAdmin, async (req, res) => {
+    const updated = await storage.updateResource(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ message: "Resource not found" });
+    res.json(updated);
+  });
+
+  app.delete("/api/resources/:id", requireStaffOrAdmin, async (req, res) => {
+    const deleted = await storage.deleteResource(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Resource not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/events", requireAuth, async (req, res) => {
@@ -158,9 +188,26 @@ export async function registerRoutes(
     res.json(eventsData);
   });
 
+  app.get("/api/admin/events", requireStaffOrAdmin, async (_req, res) => {
+    const allEvents = await storage.getAllEvents();
+    res.json(allEvents);
+  });
+
   app.post("/api/events", requireStaffOrAdmin, async (req, res) => {
     const event = await storage.createEvent({ ...req.body, createdBy: req.session.userId });
     res.json(event);
+  });
+
+  app.patch("/api/events/:id", requireStaffOrAdmin, async (req, res) => {
+    const updated = await storage.updateEvent(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ message: "Event not found" });
+    res.json(updated);
+  });
+
+  app.delete("/api/events/:id", requireStaffOrAdmin, async (req, res) => {
+    const deleted = await storage.deleteEvent(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Event not found" });
+    res.json({ message: "Deleted" });
   });
 
   app.get("/api/stories/featured", requireAuth, async (_req, res) => {
@@ -173,6 +220,11 @@ export async function registerRoutes(
     res.json({ count });
   });
 
+  app.get("/api/admin/stories", requireStaffOrAdmin, async (_req, res) => {
+    const allStories = await storage.getAllShareableStories();
+    res.json(stripPasswords(allStories));
+  });
+
   app.get("/api/stories/user/:userId", requireAuth, async (req, res) => {
     const currentUser = await storage.getUser(req.session.userId!);
     if (!currentUser) return res.status(401).json({ message: "Not authenticated" });
@@ -183,6 +235,26 @@ export async function registerRoutes(
     res.json(storiesData);
   });
 
+  app.post("/api/stories", requireAuth, async (req, res) => {
+    const currentUser = await storage.getUser(req.session.userId!);
+    if (!currentUser || currentUser.role !== "alumni") {
+      return res.status(403).json({ message: "Only alumni can submit stories" });
+    }
+    const story = await storage.createStory({ ...req.body, authorId: req.session.userId });
+    res.json(story);
+  });
+
+  app.patch("/api/stories/:id", requireStaffOrAdmin, async (req, res) => {
+    const updated = await storage.updateStory(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ message: "Story not found" });
+    res.json(updated);
+  });
+
+  app.get("/api/admin/surveys", requireStaffOrAdmin, async (_req, res) => {
+    const allSurveys = await storage.getAllSurveys();
+    res.json(stripPasswords(allSurveys));
+  });
+
   app.get("/api/surveys/user/:userId", requireAuth, async (req, res) => {
     const currentUser = await storage.getUser(req.session.userId!);
     if (!currentUser) return res.status(401).json({ message: "Not authenticated" });
@@ -191,6 +263,27 @@ export async function registerRoutes(
     if (!isOwn && !isStaff) return res.status(403).json({ message: "Forbidden" });
     const surveysData = await storage.getSurveysByUser(req.params.userId);
     res.json(surveysData);
+  });
+
+  app.post("/api/surveys", requireAuth, async (req, res) => {
+    const currentUser = await storage.getUser(req.session.userId!);
+    if (!currentUser || currentUser.role !== "alumni") {
+      return res.status(403).json({ message: "Only alumni can submit surveys" });
+    }
+    const survey = await storage.createSurvey({ ...req.body, userId: req.session.userId });
+    res.json(survey);
+  });
+
+  app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    const { role, stage, graduationDate } = req.body;
+    const updateData: any = {};
+    if (role) updateData.role = role;
+    if (stage) updateData.stage = stage;
+    if (graduationDate !== undefined) updateData.graduationDate = graduationDate;
+    const updated = await storage.updateUser(req.params.id, updateData);
+    if (!updated) return res.status(404).json({ message: "User not found" });
+    const { password: _, ...safeUser } = updated;
+    res.json(safeUser);
   });
 
   return httpServer;

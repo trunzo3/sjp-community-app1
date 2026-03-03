@@ -5,8 +5,9 @@ import { AvatarCircle } from "@/components/avatar-circle";
 import { ChevronLeft, ChevronRight, Sparkles, Calendar, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { format } from "date-fns";
+import { getDueSurveyInterval } from "@/pages/survey";
 
 type StoryWithAuthor = {
   id: string;
@@ -20,24 +21,22 @@ type StoryWithAuthor = {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [storyIndex, setStoryIndex] = useState(0);
   const [expandedStory, setExpandedStory] = useState<string | null>(null);
 
   const { data: stories } = useQuery<StoryWithAuthor[]>({ queryKey: ["/api/stories/featured"] });
   const { data: events } = useQuery<any[]>({ queryKey: ["/api/events"] });
+  const { data: existingSurveys } = useQuery<any[]>({
+    queryKey: ["/api/surveys/user", user?.id || ""],
+    enabled: !!user?.id && user?.role === "alumni",
+  });
 
   const nextEvent = events?.[0];
   const isAlumni = user?.role === "alumni";
 
-  const daysSinceGraduation = user?.graduationDate
-    ? Math.floor((Date.now() - new Date(user.graduationDate).getTime()) / (1000 * 60 * 60 * 24))
-    : null;
-  const showSurveyCard = isAlumni && daysSinceGraduation !== null && (
-    (daysSinceGraduation >= 85 && daysSinceGraduation <= 100) ||
-    (daysSinceGraduation >= 175 && daysSinceGraduation <= 190) ||
-    (daysSinceGraduation >= 360 && daysSinceGraduation <= 375)
-  );
+  const completedIntervals = existingSurveys?.map((s: any) => s.intervalMonths) || [];
+  const dueInterval = getDueSurveyInterval(user?.graduationDate || null, completedIntervals);
 
   return (
     <div className="space-y-4">
@@ -170,7 +169,7 @@ export default function HomePage() {
             size="sm"
             variant="outline"
             className="bg-white/20 border-white/30 text-white shrink-0 backdrop-blur-sm"
-            onClick={() => toast({ title: "Coming soon", description: "The guided storytelling flow will be available in the next update." })}
+            onClick={() => navigate("/share-story")}
             data-testid="button-write-story"
           >
             Write it
@@ -193,13 +192,22 @@ export default function HomePage() {
         </div>
       )}
 
-      {showSurveyCard && (
-        <div className="bg-[#FEF3C7] rounded-xl p-4 flex items-center gap-3" data-testid="survey-card">
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-[#92400E]">You have a check-in survey available</p>
-            <p className="text-xs text-[#B45309] mt-0.5">Share how things are going since graduation</p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-[#92400E] shrink-0" />
+      {isAlumni && dueInterval && (
+        <div className="bg-[#FEF3C7] rounded-xl p-4" data-testid="survey-card">
+          <p className="text-sm font-semibold text-[#92400E]">
+            It's time for your {dueInterval}-month check-in!
+          </p>
+          <p className="text-xs text-[#B45309] mt-0.5">
+            Your feedback helps Saint John's continue to improve.
+          </p>
+          <Button
+            size="sm"
+            className="bg-[#92400E] text-white mt-3"
+            onClick={() => navigate("/survey")}
+            data-testid="button-take-survey"
+          >
+            Take Survey <ArrowRight className="w-3 h-3 ml-1" />
+          </Button>
         </div>
       )}
     </div>
