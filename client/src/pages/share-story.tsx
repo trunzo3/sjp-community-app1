@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle2, AlertTriangle, Pencil } from "lucide-react";
 import { useLocation } from "wouter";
 
 const steps = [
@@ -38,23 +38,54 @@ export default function ShareStoryPage() {
   const [shareExternally, setShareExternally] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [editingRevision, setEditingRevision] = useState(false);
+
+  const { data: myStories } = useQuery<any[]>({
+    queryKey: ["/api/stories/user", user?.id || ""],
+    enabled: !!user?.id,
+  });
+
+  const revisionStory = myStories?.find((s: any) => s.approvalStatus === "revision_requested");
+
+  function startEditingRevision() {
+    if (!revisionStory) return;
+    setContents([
+      revisionStory.step1Content || "",
+      revisionStory.step2Content || "",
+      revisionStory.step3Content || "",
+    ]);
+    setShareExternally(revisionStory.shareExternally || false);
+    setEditingRevision(true);
+    setStep(0);
+  }
 
   const submitStory = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/stories", {
-        step1Content: contents[0],
-        step2Content: contents[1],
-        step3Content: contents[2],
-        shareExternally,
-        approvalStatus: shareExternally ? "pending" : "community_only",
-        featured: false,
-      });
+      if (editingRevision && revisionStory) {
+        await apiRequest("PATCH", `/api/stories/${revisionStory.id}/resubmit`, {
+          step1Content: contents[0],
+          step2Content: contents[1],
+          step3Content: contents[2],
+          shareExternally,
+        });
+      } else {
+        await apiRequest("POST", "/api/stories", {
+          step1Content: contents[0],
+          step2Content: contents[1],
+          step3Content: contents[2],
+          shareExternally,
+          approvalStatus: shareExternally ? "pending" : "community_only",
+          featured: false,
+        });
+      }
     },
     onSuccess: () => {
       setSubmitted(true);
+      setEditingRevision(false);
       queryClient.invalidateQueries({ queryKey: ["/api/stories/featured"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stories/pending-count"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stories/user", user?.id || ""] });
     },
   });
 
@@ -64,7 +95,9 @@ export default function ShareStoryPage() {
         <div className="w-16 h-16 rounded-full bg-[#0D9488]/10 flex items-center justify-center mb-4">
           <CheckCircle2 className="w-8 h-8 text-[#0D9488]" />
         </div>
-        <h1 className="text-xl font-bold text-[#111827] mb-2">Thank you for sharing your story.</h1>
+        <h1 className="text-xl font-bold text-[#111827] mb-2">
+          {editingRevision ? "Story resubmitted!" : "Thank you for sharing your story."}
+        </h1>
         <p className="text-sm text-[#6B7280] max-w-xs">
           {shareExternally
             ? "A staff member will review your story before it's shared outside the community."
@@ -106,7 +139,7 @@ export default function ShareStoryPage() {
           data-testid="button-submit-story"
         >
           {submitStory.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-          Submit
+          {editingRevision ? "Resubmit" : "Submit"}
         </Button>
       </div>
     );
@@ -118,11 +151,38 @@ export default function ShareStoryPage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => step > 0 ? setStep(step - 1) : navigate("/profile")} data-testid="button-back-story">
+        <button onClick={() => {
+          if (step > 0) setStep(step - 1);
+          else { setEditingRevision(false); navigate("/profile"); }
+        }} data-testid="button-back-story">
           <ArrowLeft className="w-5 h-5 text-[#6B7280]" />
         </button>
-        <h1 className="text-lg font-bold text-[#111827]">Share Your Story</h1>
+        <h1 className="text-lg font-bold text-[#111827]">
+          {editingRevision ? "Edit Your Story" : "Share Your Story"}
+        </h1>
       </div>
+
+      {revisionStory && !editingRevision && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4" data-testid="revision-banner">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-orange-800">Revision requested on your story</p>
+              {revisionStory.revisionNote && (
+                <p className="text-xs text-orange-700 mt-1 leading-relaxed">{revisionStory.revisionNote}</p>
+              )}
+              <Button
+                size="sm"
+                className="bg-orange-500 text-white mt-3"
+                onClick={startEditingRevision}
+                data-testid="button-edit-revision"
+              >
+                <Pencil className="w-3 h-3 mr-1" /> Edit & Resubmit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-6" data-testid="progress-bar">
         <div className="flex items-center justify-between mb-2">

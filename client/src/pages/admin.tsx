@@ -430,23 +430,35 @@ function StoriesTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [revisionStoryId, setRevisionStoryId] = useState<string | null>(null);
+  const [revisionNote, setRevisionNote] = useState("");
 
   const { data: stories, isLoading } = useQuery<any[]>({ queryKey: ["/api/admin/stories"] });
   const { data: pendingCount } = useQuery<{ count: number }>({ queryKey: ["/api/stories/pending-count"] });
 
   const updateStory = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      await apiRequest("PATCH", `/api/stories/${id}`, { approvalStatus: status });
+    mutationFn: async ({ id, status, note }: { id: string; status: string; note?: string }) => {
+      const body: any = { approvalStatus: status };
+      if (note) body.revisionNote = note;
+      await apiRequest("PATCH", `/api/stories/${id}`, body);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/stories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stories/pending-count"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stories/featured"] });
+      setRevisionStoryId(null);
+      setRevisionNote("");
       toast({ title: "Story updated" });
     },
   });
 
   const pendingStories = stories?.filter((s: any) => s.approvalStatus === "pending") || [];
+
+  function getStatusLabel(status: string) {
+    if (status === "community_only") return "Community Only";
+    if (status === "revision_requested") return "Revision Requested";
+    return status?.charAt(0).toUpperCase() + status?.slice(1);
+  }
 
   return (
     <div>
@@ -470,8 +482,8 @@ function StoriesTab() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-[#111827]">{story.author?.firstName}</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${approvalBadgeColors[story.approvalStatus]}`}>
-                    {story.approvalStatus === "community_only" ? "Community Only" : story.approvalStatus?.charAt(0).toUpperCase() + story.approvalStatus?.slice(1)}
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${approvalBadgeColors[story.approvalStatus] || "bg-orange-100 text-orange-700"}`}>
+                    {getStatusLabel(story.approvalStatus)}
                   </span>
                 </div>
                 <button onClick={() => setExpandedId(expandedId === story.id ? null : story.id)} className="p-1">
@@ -504,18 +516,62 @@ function StoriesTab() {
                 </div>
               )}
 
+              {story.approvalStatus === "revision_requested" && story.revisionNote && (
+                <div className="mt-2 bg-orange-50 rounded-lg p-2.5" data-testid={`revision-note-${story.id}`}>
+                  <p className="text-[10px] font-bold text-orange-700 uppercase tracking-wider mb-0.5">Revision Note</p>
+                  <p className="text-xs text-orange-800 leading-relaxed">{story.revisionNote}</p>
+                </div>
+              )}
+
+              {revisionStoryId === story.id && (
+                <div className="mt-3 space-y-2" data-testid={`revision-form-${story.id}`}>
+                  <Textarea
+                    value={revisionNote}
+                    onChange={(e) => setRevisionNote(e.target.value)}
+                    placeholder="Describe what needs to be revised..."
+                    className="min-h-[80px] resize-none text-xs"
+                    data-testid={`input-revision-note-${story.id}`}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-orange-500 text-white text-xs h-7 px-3"
+                      onClick={() => updateStory.mutate({ id: story.id, status: "revision_requested", note: revisionNote })}
+                      disabled={!revisionNote.trim() || updateStory.isPending}
+                      data-testid={`button-send-revision-${story.id}`}
+                    >
+                      Send Revision Request
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7 px-3"
+                      onClick={() => { setRevisionStoryId(null); setRevisionNote(""); }}
+                      data-testid={`button-cancel-revision-${story.id}`}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mt-3">
                 <span className="text-[10px] text-[#9CA3AF]">
                   {story.createdAt ? format(new Date(story.createdAt), "MMM d, yyyy") : ""}
                 </span>
-                {story.approvalStatus === "pending" && (
-                  <div className="flex gap-2">
+                {(story.approvalStatus === "pending" || story.approvalStatus === "revision_requested") && (
+                  <div className="flex gap-2 flex-wrap">
                     <Button size="sm" className="bg-emerald-500 text-white text-xs h-7 px-3" onClick={() => updateStory.mutate({ id: story.id, status: "approved" })} disabled={updateStory.isPending} data-testid={`button-approve-story-${story.id}`}>
                       <Check className="w-3 h-3 mr-1" /> Approve
                     </Button>
                     <Button size="sm" variant="outline" className="text-xs h-7 px-3 text-blue-600 border-blue-200" onClick={() => updateStory.mutate({ id: story.id, status: "community_only" })} disabled={updateStory.isPending} data-testid={`button-community-only-${story.id}`}>
                       Community Only
                     </Button>
+                    {revisionStoryId !== story.id && (
+                      <Button size="sm" variant="outline" className="text-xs h-7 px-3 text-orange-600 border-orange-200" onClick={() => setRevisionStoryId(story.id)} disabled={updateStory.isPending} data-testid={`button-request-revision-${story.id}`}>
+                        Request Revision
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>

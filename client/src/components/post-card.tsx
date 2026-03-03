@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { MessageCircle, Pin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,13 @@ type ReplyType = {
   content: string;
   createdAt: string;
   author: Author;
+};
+
+type ReactionData = {
+  id: string;
+  postId: string;
+  userId: string;
+  reactionType: string;
 };
 
 type PostType = {
@@ -49,6 +56,14 @@ const roleBadgeColors: Record<string, string> = {
   admin: "bg-purple-100 text-purple-700",
 };
 
+const reactionEmojis: Record<string, string> = {
+  heart: "❤️",
+  clap: "👏",
+  pray: "🙏",
+  fire: "🔥",
+  star: "⭐",
+};
+
 function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -57,8 +72,13 @@ export function PostCard({ post }: { post: PostType }) {
   const { user } = useAuth();
   const [showReplies, setShowReplies] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
   const queryClient = useQueryClient();
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
+
+  const { data: postReactions } = useQuery<ReactionData[]>({
+    queryKey: ["/api/reactions", post.id],
+  });
 
   const replyMutation = useMutation({
     mutationFn: async () => {
@@ -78,6 +98,23 @@ export function PostCard({ post }: { post: PostType }) {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     },
   });
+
+  const reactMutation = useMutation({
+    mutationFn: async (reactionType: string) => {
+      await apiRequest("POST", "/api/reactions", { postId: post.id, reactionType });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reactions", post.id] });
+      setShowReactionPicker(false);
+    },
+  });
+
+  const reactionCounts = (postReactions || []).reduce<Record<string, number>>((acc, r) => {
+    acc[r.reactionType] = (acc[r.reactionType] || 0) + 1;
+    return acc;
+  }, {});
+
+  const userReaction = postReactions?.find(r => r.userId === user?.id);
 
   const leftBorderColor = post.postType === "need" ? "#FF6B6B" : post.postType === "question" ? "#F5A623" : "transparent";
 
@@ -103,10 +140,60 @@ export function PostCard({ post }: { post: PostType }) {
             )}
           </div>
           <p className="text-sm text-[#111827] mt-1.5 leading-relaxed">{post.content}</p>
+
+          {Object.keys(reactionCounts).length > 0 && (
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap" data-testid={`reactions-display-${post.id}`}>
+              {Object.entries(reactionCounts).map(([type, count]) => (
+                <button
+                  key={type}
+                  onClick={() => reactMutation.mutate(type)}
+                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-colors ${
+                    userReaction?.reactionType === type
+                      ? "bg-[#0D9488]/10 border border-[#0D9488]/30"
+                      : "bg-[#F3F4F6] border border-transparent"
+                  }`}
+                  data-testid={`reaction-badge-${type}-${post.id}`}
+                >
+                  <span className="text-sm">{reactionEmojis[type]}</span>
+                  <span className="text-[10px] font-medium text-[#6B7280]">{count}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex items-center gap-3 mt-2">
             <span className="text-xs text-[#9CA3AF]">
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
             </span>
+            <div className="relative">
+              <button
+                onClick={() => setShowReactionPicker(!showReactionPicker)}
+                className="text-xs text-[#6B7280] flex items-center gap-1 transition-colors"
+                data-testid={`button-react-${post.id}`}
+              >
+                <span className="text-sm">😊</span>
+                React
+              </button>
+              {showReactionPicker && (
+                <div
+                  className="absolute bottom-full left-0 mb-1 flex gap-1 bg-white rounded-xl shadow-lg border border-[#E5E7EB] p-1.5 z-10"
+                  data-testid={`reaction-picker-${post.id}`}
+                >
+                  {Object.entries(reactionEmojis).map(([type, emoji]) => (
+                    <button
+                      key={type}
+                      onClick={() => reactMutation.mutate(type)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F3F4F6] transition-colors text-lg ${
+                        userReaction?.reactionType === type ? "bg-[#0D9488]/10" : ""
+                      }`}
+                      data-testid={`reaction-option-${type}-${post.id}`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               onClick={() => setShowReplies(!showReplies)}
               className="text-xs text-[#6B7280] flex items-center gap-1 transition-colors"

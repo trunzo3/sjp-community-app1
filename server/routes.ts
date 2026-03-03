@@ -244,10 +244,61 @@ export async function registerRoutes(
     res.json(story);
   });
 
-  app.patch("/api/stories/:id", requireStaffOrAdmin, async (req, res) => {
-    const updated = await storage.updateStory(req.params.id, req.body);
+  app.patch("/api/stories/:id/resubmit", requireAuth, async (req, res) => {
+    const currentUser = await storage.getUser(req.session.userId!);
+    if (!currentUser || currentUser.role !== "alumni") {
+      return res.status(403).json({ message: "Only alumni can resubmit stories" });
+    }
+    const existingStories = await storage.getStoriesByUser(req.session.userId!);
+    const story = existingStories.find(s => s.id === req.params.id);
+    if (!story) return res.status(404).json({ message: "Story not found" });
+    if (story.approvalStatus !== "revision_requested") {
+      return res.status(400).json({ message: "Story is not in revision_requested status" });
+    }
+    const updated = await storage.updateStory(req.params.id, {
+      step1Content: req.body.step1Content,
+      step2Content: req.body.step2Content,
+      step3Content: req.body.step3Content,
+      shareExternally: req.body.shareExternally,
+      approvalStatus: req.body.shareExternally ? "pending" : "community_only",
+      revisionNote: null,
+    });
     if (!updated) return res.status(404).json({ message: "Story not found" });
     res.json(updated);
+  });
+
+  app.patch("/api/stories/:id", requireStaffOrAdmin, async (req, res) => {
+    const { approvalStatus, revisionNote, ...rest } = req.body;
+    const updateData: any = { ...rest };
+    if (approvalStatus) updateData.approvalStatus = approvalStatus;
+    if (approvalStatus === "revision_requested" && revisionNote) {
+      updateData.revisionNote = revisionNote;
+    }
+    if (approvalStatus && approvalStatus !== "revision_requested") {
+      updateData.revisionNote = null;
+    }
+    const updated = await storage.updateStory(req.params.id, updateData);
+    if (!updated) return res.status(404).json({ message: "Story not found" });
+    res.json(updated);
+  });
+
+  app.get("/api/reactions/:postId", requireAuth, async (req, res) => {
+    const postReactions = await storage.getReactionsByPost(req.params.postId);
+    res.json(postReactions);
+  });
+
+  app.post("/api/reactions", requireAuth, async (req, res) => {
+    const { postId, reactionType } = req.body;
+    if (!postId || !reactionType) return res.status(400).json({ message: "postId and reactionType required" });
+    const existing = await storage.getReactionsByUser(req.session.userId!, postId);
+    if (existing) {
+      await storage.deleteReaction(existing.id);
+      if (existing.reactionType === reactionType) {
+        return res.json({ removed: true });
+      }
+    }
+    const reaction = await storage.createReaction({ postId, userId: req.session.userId!, reactionType });
+    res.json(reaction);
   });
 
   app.get("/api/admin/surveys", requireStaffOrAdmin, async (_req, res) => {

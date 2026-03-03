@@ -1,0 +1,90 @@
+# SJP Community Platform — Post-Build Update Prompt
+
+**Create a named checkpoint called "pre-polish" before running this prompt.**
+
+---
+
+Make four changes to the existing app. Do not modify any other features or layouts.
+
+---
+
+## 1. ADD HEART REACTIONS TO POSTS
+
+Add a heart reaction button to every post in the community feed.
+
+**Database:** Create a new `reactions` table:
+- id (uuid, primary key)
+- post_id (uuid, foreign key → posts.id)
+- user_id (uuid, foreign key → users.id)
+- created_at (timestamp, default now)
+- Add a unique constraint on (post_id, user_id) — one reaction per user per post.
+
+**UI on each post card:**
+- Below the post content and above the Reply link, add a small heart icon (outline when not reacted, filled coral #FF6B6B when reacted by the current user).
+- Next to the heart icon, show the reaction count (e.g., "❤️ 4"). If zero reactions, show just the outline heart with no number.
+- Tapping the heart toggles it: tap once to react, tap again to remove. The count updates immediately.
+- Any logged-in user can react regardless of role.
+
+**Seed data reactions:** Add reactions to these existing posts so the feed feels alive on first login:
+- Destiny's 60-day chip post (win): reactions from Monica, Tasha, Sarah, James, Broc, Angela, Maria (7 reactions)
+- Tasha's first paycheck post (win): reactions from Monica, Denise, Sarah, Destiny, Maria (5 reactions)
+- Monica's one-year milestone post: reactions from Tasha, Denise, Sarah, James, Broc, Angela, Keisha, Maria (8 reactions)
+- Maria's kitchen team post (update): reactions from Destiny, Keisha, Sarah (3 reactions)
+- Sarah's pinned welcome post: reactions from Angela, Keisha, Destiny, Maria, Monica, Tasha (6 reactions)
+- Denise's campus drive-by post (update): reactions from Monica, Tasha, Sarah (3 reactions)
+
+---
+
+## 2. ADD STORY REVISION FLOW
+
+Allow staff and admin to request revisions on stories instead of only approving or setting community-only.
+
+**Database changes:**
+- Add 'revision_requested' to the approval_status enum on the stories table (existing values: pending, approved, community_only — add revision_requested).
+- Add a `revision_note` text column (nullable) to the stories table.
+
+**Admin Panel > Stories tab:**
+- Add a third action button on pending stories: **"Request Revision"**
+- When staff taps "Request Revision," show a text input for the revision note (e.g., "Could you remove the specific street name for safety?" or "Can you add a sentence about where you are today?"). The note is required — the button should not submit without text.
+- Saving sets approval_status = 'revision_requested' and stores the note in revision_note.
+- Stories with status revision_requested should appear in the Stories tab with a yellow/amber "Revision Requested" badge and the note text visible.
+
+**Author experience:**
+- When an alumni user has a story with approval_status = 'revision_requested', show a card on their Home page in the contextual cards section at the bottom (same pattern as the survey prompt card).
+- Card text: "A staff member has feedback on your story." Show the revision_note text below. Include an "Edit Story" button.
+- Tapping "Edit Story" opens the three-step storytelling form pre-populated with the existing step1, step2, and step3 content so the author can make changes.
+- After editing and resubmitting, the story returns to approval_status = 'pending' and revision_note is cleared. The pending count badge increments again.
+- The revision card disappears from the Home page once the story is resubmitted.
+
+**No seed data change needed.** Denise's story stays as approval_status = 'pending'. The revision flow will be demoed live by having a staff member request a revision during the showcase if needed.
+
+---
+
+## 3. REMOVE "CREATE AN ACCOUNT" LINK
+
+On the login page, remove the "New to SJP? Create an account" link entirely. The login card should contain only:
+- Email address input
+- Password input
+- "Sign In" button
+
+Nothing else below the button inside the white card. Do not add replacement text. This is a closed community — account creation is handled by staff through the Admin Panel user management.
+
+---
+
+## 4. FIX RESOURCE AND EVENT SORT ORDER
+
+Resources and events should display with the **newest items first** (sorted by created_at descending).
+
+Apply this to:
+- **Resources page** — newest resources appear at the top of the list
+- **Events page** — sort by event date ascending (soonest upcoming event first), NOT by created_at. Events are date-based, so chronological by event date is correct. But if two events share the same date, the most recently created one should appear first.
+- **Admin Panel > Resources tab** — newest first
+- **Admin Panel > Events tab** — soonest upcoming first (same logic as Events page)
+
+When staff adds a new resource via the "+ Add" button, it should appear at the top of the Resources page immediately, not buried at the bottom.
+
+---
+
+## WHAT NOT TO CHANGE
+
+Do not modify anything else. The community feed, home page, profiles, storytelling flow, survey system, authentication, navigation, and all existing seed data should remain exactly as they are.

@@ -1,13 +1,14 @@
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import {
-  users, posts, replies, resources, events, stories, surveys,
+  users, posts, replies, resources, events, stories, reactions, surveys,
   type User, type InsertUser,
   type Post, type InsertPost,
   type Reply, type InsertReply,
   type Resource, type InsertResource,
   type Event, type InsertEvent,
   type Story, type InsertStory,
+  type Reaction, type InsertReaction,
   type Survey, type InsertSurvey,
 } from "@shared/schema";
 
@@ -44,6 +45,11 @@ export interface IStorage {
   createStory(story: InsertStory): Promise<Story>;
   updateStory(id: string, data: Partial<InsertStory>): Promise<Story | undefined>;
   getPendingStoriesCount(): Promise<number>;
+
+  getReactionsByPost(postId: string): Promise<Reaction[]>;
+  getReactionsByUser(userId: string, postId: string): Promise<Reaction | undefined>;
+  createReaction(reaction: InsertReaction): Promise<Reaction>;
+  deleteReaction(id: string): Promise<boolean>;
 
   getAllSurveys(): Promise<(Survey & { user: User })[]>;
   getSurveysByUser(userId: string): Promise<Survey[]>;
@@ -246,6 +252,27 @@ export class DatabaseStorage implements IStorage {
   async getPendingStoriesCount(): Promise<number> {
     const result = await db.select({ count: sql<number>`count(*)` }).from(stories).where(eq(stories.approvalStatus, "pending"));
     return Number(result[0].count);
+  }
+
+  async getReactionsByPost(postId: string): Promise<Reaction[]> {
+    return db.select().from(reactions).where(eq(reactions.postId, postId));
+  }
+
+  async getReactionsByUser(userId: string, postId: string): Promise<Reaction | undefined> {
+    const [reaction] = await db.select().from(reactions).where(
+      and(eq(reactions.userId, userId), eq(reactions.postId, postId))
+    );
+    return reaction;
+  }
+
+  async createReaction(reaction: InsertReaction): Promise<Reaction> {
+    const [created] = await db.insert(reactions).values(reaction).returning();
+    return created;
+  }
+
+  async deleteReaction(id: string): Promise<boolean> {
+    const result = await db.delete(reactions).where(eq(reactions.id, id)).returning();
+    return result.length > 0;
   }
 
   async getAllSurveys(): Promise<(Survey & { user: User })[]> {
