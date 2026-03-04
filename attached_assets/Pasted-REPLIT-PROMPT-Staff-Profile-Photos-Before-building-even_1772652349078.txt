@@ -1,0 +1,44 @@
+REPLIT PROMPT: Staff Profile Photos
+Before building event detail pages, we need staff profile photos in place so they are available to pull into event host cards when that feature is built next. This prompt is scoped narrowly to staff and admin users only. The broader avatar and personalization system for clients and alumni is a separate feature handled later.
+
+WHAT TO BUILD
+1. Schema change
+Add an optional photoUrl field (text, nullable) to the users table. Run the required migration and update shared/schema.ts and server/storage.ts accordingly. This field applies to all users but will only be surfaced in the UI for staff and admin roles at this stage.
+
+2. Staff profile photo upload on the profile page
+On the profile page, staff and admin users should see a new section for their profile photo. The behavior:
+If no photo exists, show the current colored initial avatar with an "Add a photo" link or button beneath it
+If a photo URL exists, display the photo as a circular avatar replacing the colored initial avatar, at the same size and position as the current avatar
+The input method is a URL field, not a file upload. Staff paste in a direct image URL. This keeps infrastructure simple and avoids file storage complexity for now
+Include a small note beneath the field: "Use a direct image link. Your photo will only be visible to the SJP community."
+On save, validate that the URL returns an image by attempting to load it. If it fails to load, show an inline error: "That link does not appear to be a valid image. Please try a different URL." Do not save a broken URL.
+Staff can remove their photo at any time, which reverts them to the colored initial avatar
+Clients and alumni do not see this UI element on their profile page. Their avatar experience is unchanged.
+
+3. How the avatar renders throughout the app
+Anywhere a staff or admin user's avatar currently appears in the app, update the avatar component to check for photoUrl first. If it exists, render the photo as a circular cropped image. If it does not exist, fall back to the existing colored initial avatar. This includes:
+The profile page header
+Post cards in the community feed
+Reply threads
+The admin panel user list
+This should be handled in whatever shared avatar component exists. If no shared component exists, create one now and refactor the above locations to use it. This will also make the event host card build straightforward in the next prompt.
+
+EDGE CASES TO HANDLE
+If the image URL loads initially but later breaks, the avatar should fall back to the colored initial avatar silently. Use an onError handler on the image element.
+Photo display should be cropped to a circle and cover the full avatar area regardless of the source image dimensions or aspect ratio. Use object-fit: cover.
+Do not expose this feature to client or alumni roles under any circumstances, including through direct API calls. The PATCH endpoint for users already exists — add a role check so that only staff and admin can write to photoUrl.
+
+DO NOT CHANGE
+The avatar color and initial system for clients and alumni
+Any other profile page functionality
+The admin panel user management tab
+Anything related to the community feed behavior beyond rendering the updated avatar
+
+ACCEPTANCE CRITERIA
+A staff user can add a photo URL on their profile page
+A valid photo URL replaces their colored initial avatar everywhere in the app
+An invalid URL is rejected with a clear inline error message
+Removing the photo reverts to the colored initial avatar everywhere
+Clients and alumni see no change to their profile page or avatar experience
+The avatar component is shared and consistent across feed, profile, replies, and admin panel
+A broken image URL falls back to the colored initial avatar without an error state showing
