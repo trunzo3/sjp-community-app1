@@ -6,7 +6,8 @@ import { AvatarCircle } from "@/components/avatar-circle";
 import { PostCard } from "@/components/post-card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X, Camera, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -26,6 +27,9 @@ export default function ProfilePage() {
   const [editingBio, setEditingBio] = useState(false);
   const [bio, setBio] = useState(user?.bio || "");
   const [showMyPosts, setShowMyPosts] = useState(false);
+  const [editingPhoto, setEditingPhoto] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState(user?.photoUrl || "");
+  const [photoError, setPhotoError] = useState("");
 
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
   const isAlumni = user?.role === "alumni";
@@ -51,6 +55,42 @@ export default function ProfilePage() {
     },
   });
 
+  const updatePhoto = useMutation({
+    mutationFn: async (url: string | null) => {
+      await apiRequest("PATCH", `/api/users/${user?.id}`, { photoUrl: url });
+      return url;
+    },
+    onSuccess: (savedUrl) => {
+      setEditingPhoto(false);
+      setPhotoError("");
+      refetchUser();
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({ title: savedUrl ? "Photo updated" : "Photo removed" });
+    },
+  });
+
+  const handleSavePhoto = () => {
+    if (!photoUrl.trim()) {
+      setPhotoError("Please enter a URL.");
+      return;
+    }
+    setPhotoError("");
+    const img = new Image();
+    img.onload = () => {
+      updatePhoto.mutate(photoUrl.trim());
+    };
+    img.onerror = () => {
+      setPhotoError("That link does not appear to be a valid image. Please try a different URL.");
+    };
+    img.src = photoUrl.trim();
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoUrl("");
+    setPhotoError("");
+    updatePhoto.mutate(null);
+  };
+
   const handleLogout = async () => {
     await logout();
   };
@@ -62,7 +102,19 @@ export default function ProfilePage() {
       <div className="h-[3px] bg-[#EEBBA7] -mx-4 mb-4" />
       <div className="bg-[#FCF3EE] rounded-xl p-5 mb-4" data-testid="profile-header">
         <div className="flex items-start gap-4">
-          <AvatarCircle firstName={user.firstName} color={user.avatarColor} size="lg" />
+          <div className="flex flex-col items-center gap-1">
+            <AvatarCircle firstName={user.firstName} color={user.avatarColor} size="lg" photoUrl={user.photoUrl} />
+            {isStaffOrAdmin && !editingPhoto && (
+              <button
+                onClick={() => { setEditingPhoto(true); setPhotoUrl(user.photoUrl || ""); setPhotoError(""); }}
+                className="flex items-center gap-1 text-[10px] text-[#34737A] font-medium mt-1"
+                data-testid="button-edit-photo"
+              >
+                <Camera className="w-3 h-3" />
+                {user.photoUrl ? "Change photo" : "Add a photo"}
+              </button>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-[#302D2E]" data-testid="text-profile-name">{user.firstName}</h1>
@@ -105,6 +157,37 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {isStaffOrAdmin && editingPhoto && (
+          <div className="mt-4 pt-3 border-t border-[#C7C2BF] space-y-2" data-testid="photo-edit-section">
+            <label className="text-xs font-semibold text-[#302D2E]">Profile Photo URL</label>
+            <Input
+              value={photoUrl}
+              onChange={(e) => { setPhotoUrl(e.target.value); setPhotoError(""); }}
+              placeholder="https://example.com/your-photo.jpg"
+              className="text-sm"
+              data-testid="input-photo-url"
+            />
+            <p className="text-[10px] text-[#C7C2BF] italic">Use a direct image link. Your photo will only be visible to the SJP community.</p>
+            {photoError && (
+              <p className="text-xs text-[#D32027]" data-testid="text-photo-error">{photoError}</p>
+            )}
+            <div className="flex gap-2">
+              <Button size="sm" className="bg-[#34737A] text-white" onClick={handleSavePhoto} disabled={updatePhoto.isPending} data-testid="button-save-photo">
+                {updatePhoto.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Check className="w-3 h-3 mr-1" />} Save
+              </Button>
+              {user.photoUrl && (
+                <Button size="sm" variant="outline" className="text-[#D32027] border-[#D32027]" onClick={handleRemovePhoto} disabled={updatePhoto.isPending} data-testid="button-remove-photo">
+                  <Trash2 className="w-3 h-3 mr-1" /> Remove
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={() => { setEditingPhoto(false); setPhotoError(""); }} data-testid="button-cancel-photo">
+                <X className="w-3 h-3 mr-1" /> Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="mt-3 pt-3 border-t border-[#C7C2BF]">
           <p className="text-[10px] text-[#C7C2BF] italic">Your profile is visible only to the SJP community.</p>
         </div>

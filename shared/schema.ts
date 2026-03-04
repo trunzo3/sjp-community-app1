@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   graduationDate: date("graduation_date"),
   bio: text("bio"),
   avatarColor: text("avatar_color").notNull().default("#607D8B"),
+  photoUrl: text("photo_url"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

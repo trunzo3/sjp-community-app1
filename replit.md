@@ -80,6 +80,14 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **Pinned posts**: Displayed above the composer (below privacy banner), with #FAE8DF warm peach background, 📌 pin icon + "Pinned" label, no left border color treatment
 - **Regular posts**: Displayed below the composer in the feed with white background and normal styling
 
+## Staff Profile Photos (Implemented)
+- **Schema**: `photoUrl` (text, nullable) added to `users` table
+- **AvatarCircle component**: Updated to accept optional `photoUrl` prop. If present, renders circular `<img>` with `object-fit: cover`. Falls back to colored initial avatar on `onError`.
+- **Profile page**: Staff/admin see "Add a photo" / "Change photo" link below avatar. URL input with validation (loads image to verify). Inline error for invalid URLs. Remove photo option.
+- **Role guard**: PATCH `/api/users/:id` strips `photoUrl` from request body for non-staff/non-admin users
+- **Consistency**: AvatarCircle with photoUrl used in: profile header, post cards, reply threads, home page (composer, story cards, category cards), admin panel user list
+- **Edge cases**: Broken image URLs fall back silently to colored initial avatar via `onError` handler
+
 ## Security
 - `/api/users` protected by requireStaffOrAdmin (not just requireAuth)
 - `/api/admin/*` endpoints protected by requireStaffOrAdmin

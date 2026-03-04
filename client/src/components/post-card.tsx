@@ -15,6 +15,7 @@ type Author = {
   lastName: string;
   role: string;
   avatarColor: string;
+  photoUrl?: string | null;
 };
 
 type ReplyType = {
@@ -132,7 +133,7 @@ export function PostCard({ post, isPinnedSection = false }: { post: PostType; is
         </div>
       )}
       <div className="flex items-start gap-3">
-        <AvatarCircle firstName={post.author.firstName} color={post.author.avatarColor} size="sm" />
+        <AvatarCircle firstName={post.author.firstName} color={post.author.avatarColor} size="sm" photoUrl={post.author.photoUrl} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm text-[#302D2E]">{post.author.firstName}</span>
@@ -227,7 +228,7 @@ export function PostCard({ post, isPinnedSection = false }: { post: PostType; is
         <div className="mt-3 ml-11 space-y-3">
           {post.replies.map((reply) => (
             <div key={reply.id} className="flex items-start gap-2" data-testid={`reply-${reply.id}`}>
-              <AvatarCircle firstName={reply.author.firstName} color={reply.author.avatarColor} size="sm" />
+              <AvatarCircle firstName={reply.author.firstName} color={reply.author.avatarColor} size="sm" photoUrl={reply.author.photoUrl} />
               <div className="flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold text-xs text-[#302D2E]">{reply.author.firstName}</span>

@@ -51,7 +51,7 @@ function HomeCategoryCard({ post }: { post: any }) {
       </div>
       <div className="p-4">
         <div className="flex items-start gap-3">
-          <AvatarCircle firstName={post.author.firstName} color={post.author.avatarColor} size="sm" />
+          <AvatarCircle firstName={post.author.firstName} color={post.author.avatarColor} size="sm" photoUrl={post.author.photoUrl} />
           <div className="flex-1 min-w-0">
             <span className="text-sm font-semibold text-[#302D2E]">{post.author.firstName}</span>
             <p className="text-sm text-[#302D2E] mt-1 leading-relaxed">{post.content}</p>
@@ -185,7 +185,7 @@ export default function HomePage() {
               {featuredStory.step3Content}
             </p>
             <div className="flex items-center gap-2 mt-4">
-              <AvatarCircle firstName={featuredStory.author.firstName} color={featuredStory.author.avatarColor} size="sm" />
+              <AvatarCircle firstName={featuredStory.author.firstName} color={featuredStory.author.avatarColor} size="sm" photoUrl={featuredStory.author.photoUrl} />
               <span className="text-xs font-semibold text-[#302D2E]">{featuredStory.author.firstName}</span>
               <span className="text-xs font-medium text-[#34737A]">Alumni</span>
             </div>
@@ -250,7 +250,7 @@ export default function HomePage() {
             style={{ borderRadius: "20px" }}
             data-testid="slim-composer"
           >
-            {user && <AvatarCircle firstName={user.firstName} color={user.avatarColor || "#607D8B"} size="sm" />}
+            {user && <AvatarCircle firstName={user.firstName} color={user.avatarColor || "#607D8B"} size="sm" photoUrl={user.photoUrl} />}
             <span className="text-sm text-[#C7C2BF]">Share something with the community...</span>
           </button>
 

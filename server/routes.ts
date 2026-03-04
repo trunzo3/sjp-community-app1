@@ -113,8 +113,23 @@ export async function registerRoutes(
     if (!currentUser) return res.status(401).json({ message: "Not authenticated" });
     const isOwn = req.session.userId === req.params.id;
     const isAdmin = currentUser.role === "admin";
+    const isStaff = currentUser.role === "staff";
     if (!isOwn && !isAdmin) return res.status(403).json({ message: "Forbidden" });
-    const updated = await storage.updateUser(req.params.id, req.body);
+    const allowedFields: Record<string, string[]> = {
+      self: ["bio"],
+      staff: ["bio", "photoUrl"],
+      admin: ["bio", "photoUrl"],
+    };
+    const role = isAdmin ? "admin" : isStaff ? "staff" : "self";
+    const allowed = allowedFields[role];
+    const body: Record<string, any> = {};
+    for (const key of allowed) {
+      if (key in req.body) {
+        body[key] = req.body[key];
+      }
+    }
+    if (Object.keys(body).length === 0) return res.status(400).json({ message: "No valid fields to update" });
+    const updated = await storage.updateUser(req.params.id, body);
     if (!updated) return res.status(404).json({ message: "User not found" });
     const { password: _, ...safeUser } = updated;
     res.json(safeUser);

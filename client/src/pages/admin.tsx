@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AvatarCircle } from "@/components/avatar-circle";
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2, X, Check, ChevronDown, ChevronUp, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -804,6 +805,7 @@ function UsersTab() {
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
+                  <AvatarCircle firstName={u.firstName} color={u.avatarColor} size="sm" photoUrl={u.photoUrl} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-[#302D2E]">{u.firstName} {u.lastName}</p>
