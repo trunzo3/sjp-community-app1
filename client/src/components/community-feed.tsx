@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,7 +6,6 @@ import { PostCard } from "./post-card";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
-
 const postTypes = ["update", "win", "question", "need"] as const;
 const filterOptions = ["all", "need", "win", "question"] as const;
 const filterLabels: Record<string, string> = {
@@ -16,11 +15,40 @@ const filterLabels: Record<string, string> = {
   question: "Questions",
 };
 
+const SJP_COLORS = ["#34737A", "#5DA592", "#D32027", "#EEBBA7", "#979DB6", "#FAE8DF"];
+
+async function fireWinConfetti() {
+  const { default: confetti } = await import("canvas-confetti");
+  const end = Date.now() + 2500;
+  const defaults = { colors: SJP_COLORS, disableForReducedMotion: true };
+  function frame() {
+    confetti({
+      ...defaults,
+      particleCount: 3,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0, y: 0.6 },
+      scalar: 0.9,
+    });
+    confetti({
+      ...defaults,
+      particleCount: 3,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1, y: 0.6 },
+      scalar: 0.9,
+    });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  }
+  frame();
+}
+
 export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner?: boolean }) {
   const { user } = useAuth();
   const [filter, setFilter] = useState<string>("all");
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState<typeof postTypes[number]>("update");
+  const submittedPostType = useRef<string>("update");
   const queryClient = useQueryClient();
 
   const { data: allPosts, isLoading } = useQuery<any[]>({
@@ -32,9 +60,13 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
 
   const createPost = useMutation({
     mutationFn: async () => {
+      submittedPostType.current = postType;
       await apiRequest("POST", "/api/posts", { content, postType });
     },
     onSuccess: () => {
+      if (submittedPostType.current === "win") {
+        fireWinConfetti();
+      }
       setContent("");
       setPostType("update");
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
