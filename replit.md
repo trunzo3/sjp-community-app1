@@ -100,6 +100,16 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **Admin event form**: Location is now a dropdown with 5 known venues + "Other" option. Known venues auto-populate venue photo URL. Host dropdown lists staff/admin users. Venue photo URL field for manual override.
 - **API routes**: GET `/api/events/:id` returns event with host user data, GET `/api/staff-users` returns staff/admin users, GET `/api/venue-locations` returns venue library
 
+## Milestone Post Cards (Implemented)
+- **Schema**: `milestoneType` (text, nullable) and `milestoneCategory` (text, nullable) added to `posts` table. `"milestone"` added to `post_type` enum.
+- **Milestone picker**: `client/src/components/milestone-picker.tsx` — scrollable grid of tappable tiles grouped by 6 categories (Recovery, My Journey at Saint John's, Work and Career, Family, Housing, Personal Growth) plus "Something else worth celebrating" custom option.
+- **Category color scheme**: Recovery=#C8882A, Journey=#34737A, Work=#5DA592, Family=#E8956D, Housing=#979DB6, Growth=#B8A832. Each has unique background tint and lucide icon.
+- **Card design**: Milestone posts render with 4px colored left border (category color), tinted background, category icon in top right, bold milestone label as headline, personal note beneath. Standard author/reactions/replies unchanged.
+- **Composer flow**: Selecting "Milestone" pill replaces text input with picker. Selecting a tile highlights it (teal). Optional personal note field appears after selection. "Something else" is a tile that opens free-text input on click.
+- **Server validation**: POST `/api/posts` validates postType, requires milestoneType+milestoneCategory for milestone posts, strips them for other types.
+- **Feed filter**: "Milestones" filter pill added to community feed filters.
+- **No confetti**: Milestone posts use dignified warmth, no animation effects.
+
 ## Security
 - `/api/users` protected by requireStaffOrAdmin (not just requireAuth)
 - `/api/admin/*` endpoints protected by requireStaffOrAdmin

@@ -220,7 +220,19 @@ export async function registerRoutes(
   });
 
   app.post("/api/posts", requireAuth, async (req, res) => {
-    const post = await storage.createPost({ ...req.body, authorId: req.session.userId });
+    const { content, postType, milestoneType, milestoneCategory } = req.body;
+    if (!content || !postType) return res.status(400).json({ message: "Content and post type are required" });
+    const validTypes = ["update", "win", "question", "need", "milestone"];
+    if (!validTypes.includes(postType)) return res.status(400).json({ message: "Invalid post type" });
+    const postData: any = { content, postType, authorId: req.session.userId };
+    if (postType === "milestone") {
+      if (!milestoneType || !milestoneCategory) {
+        return res.status(400).json({ message: "Milestone type and category are required for milestone posts" });
+      }
+      postData.milestoneType = milestoneType;
+      postData.milestoneCategory = milestoneCategory;
+    }
+    const post = await storage.createPost(postData);
     res.json(post);
   });
 

@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { MessageCircle, Pin } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AvatarCircle } from "./avatar-circle";
+import { MILESTONE_CATEGORY_STYLES } from "./milestone-picker";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -36,6 +36,8 @@ type PostType = {
   id: string;
   content: string;
   postType: string;
+  milestoneType?: string | null;
+  milestoneCategory?: string | null;
   pinned: boolean;
   createdAt: string;
   author: Author;
@@ -117,19 +119,39 @@ export function PostCard({ post, isPinnedSection = false }: { post: PostType; is
 
   const userReaction = postReactions?.find(r => r.userId === user?.id);
 
-  const showLeftBorder = !isPinnedSection && (post.postType === "need" || post.postType === "question");
-  const leftBorderColor = post.postType === "need" ? "#D32027" : post.postType === "question" ? "#979DB6" : "transparent";
+  const isMilestone = post.postType === "milestone" && post.milestoneCategory;
+  const milestoneStyle = isMilestone ? MILESTONE_CATEGORY_STYLES[post.milestoneCategory!] || MILESTONE_CATEGORY_STYLES["Something else worth celebrating"] : null;
+  const MilestoneIcon = milestoneStyle?.icon;
+
+  const showLeftBorder = !isPinnedSection && (post.postType === "need" || post.postType === "question" || isMilestone);
+  const leftBorderColor = isMilestone && milestoneStyle
+    ? milestoneStyle.color
+    : post.postType === "need" ? "#D32027" : post.postType === "question" ? "#979DB6" : "transparent";
+  const cardBg = isPinnedSection
+    ? "bg-[#FAE8DF]"
+    : isMilestone && milestoneStyle
+      ? ""
+      : "bg-white";
 
   return (
     <div
-      className={`${isPinnedSection ? "bg-[#FAE8DF]" : "bg-white"} rounded-xl p-4`}
-      style={{ borderLeft: showLeftBorder ? `4px solid ${leftBorderColor}` : undefined, borderRadius: showLeftBorder ? "4px 12px 12px 4px" : "12px" }}
+      className={`${cardBg} rounded-xl p-4`}
+      style={{
+        borderLeft: showLeftBorder ? `4px solid ${leftBorderColor}` : undefined,
+        borderRadius: showLeftBorder ? "4px 12px 12px 4px" : "12px",
+        backgroundColor: isMilestone && milestoneStyle && !isPinnedSection ? milestoneStyle.bg : undefined,
+      }}
       data-testid={`post-${post.id}`}
     >
       {isPinnedSection && (
         <div className="flex items-center gap-1 mb-2">
           <span className="text-sm">📌</span>
           <span className="text-[10px] font-medium text-[#868180]">Pinned</span>
+        </div>
+      )}
+      {isMilestone && MilestoneIcon && (
+        <div className="flex justify-end mb-1">
+          <MilestoneIcon className="w-5 h-5" style={{ color: milestoneStyle!.color }} data-testid={`milestone-icon-${post.id}`} />
         </div>
       )}
       <div className="flex items-start gap-3">
@@ -140,14 +162,25 @@ export function PostCard({ post, isPinnedSection = false }: { post: PostType; is
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${roleBadgeColors[post.author.role]}`}>
               {capitalize(post.author.role)}
             </span>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${postTypeBadgeColors[post.postType]}`}>
-              {capitalize(post.postType)}
-            </span>
+            {!isMilestone && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${postTypeBadgeColors[post.postType]}`}>
+                {capitalize(post.postType)}
+              </span>
+            )}
             {post.pinned && (
               <Pin className="w-3 h-3 text-[#34737A]" />
             )}
           </div>
-          <p className="text-sm text-[#302D2E] mt-1.5 leading-relaxed">{post.content}</p>
+          {isMilestone && post.milestoneType && (
+            <p className="text-sm font-bold mt-1.5 leading-relaxed" style={{ color: milestoneStyle?.color || "#302D2E" }} data-testid={`milestone-label-${post.id}`}>
+              {post.milestoneType}
+            </p>
+          )}
+          {isMilestone && post.milestoneType && post.content !== post.milestoneType ? (
+            <p className="text-sm text-[#302D2E] mt-1 leading-relaxed">{post.content}</p>
+          ) : !isMilestone ? (
+            <p className="text-sm text-[#302D2E] mt-1.5 leading-relaxed">{post.content}</p>
+          ) : null}
 
           {Object.keys(reactionCounts).length > 0 && (
             <div className="flex items-center gap-1.5 mt-2 flex-wrap" data-testid={`reactions-display-${post.id}`}>

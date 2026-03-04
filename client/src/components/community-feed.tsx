@@ -3,16 +3,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { PostCard } from "./post-card";
+import { MilestonePicker, type MilestoneSelection } from "./milestone-picker";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
-const postTypes = ["update", "win", "question", "need"] as const;
-const filterOptions = ["all", "need", "win", "question"] as const;
+const postTypes = ["update", "win", "question", "need", "milestone"] as const;
+const filterOptions = ["all", "need", "win", "question", "milestone"] as const;
 const filterLabels: Record<string, string> = {
   all: "All",
   need: "Needs",
   win: "Wins",
   question: "Questions",
+  milestone: "Milestones",
 };
 
 const SJP_COLORS = ["#34737A", "#5DA592", "#D32027", "#EEBBA7", "#979DB6", "#FAE8DF"];
@@ -48,8 +50,11 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
   const [filter, setFilter] = useState<string>("all");
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState<typeof postTypes[number]>("update");
+  const [milestoneSelection, setMilestoneSelection] = useState<MilestoneSelection | null>(null);
   const submittedPostType = useRef<string>("update");
   const queryClient = useQueryClient();
+
+  const isMilestone = postType === "milestone";
 
   const { data: allPosts, isLoading } = useQuery<any[]>({
     queryKey: ["/api/posts", `?filter=${filter}`],
@@ -58,10 +63,24 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
   const pinnedPosts = allPosts?.filter((p: any) => p.pinned) || [];
   const regularPosts = allPosts?.filter((p: any) => !p.pinned) || [];
 
+  const canShare = isMilestone
+    ? !!milestoneSelection?.milestoneType
+    : !!content.trim();
+
   const createPost = useMutation({
     mutationFn: async () => {
       submittedPostType.current = postType;
-      await apiRequest("POST", "/api/posts", { content, postType });
+      if (isMilestone && milestoneSelection) {
+        const postContent = milestoneSelection.note.trim() || milestoneSelection.milestoneType;
+        await apiRequest("POST", "/api/posts", {
+          content: postContent,
+          postType: "milestone",
+          milestoneType: milestoneSelection.milestoneType,
+          milestoneCategory: milestoneSelection.milestoneCategory,
+        });
+      } else {
+        await apiRequest("POST", "/api/posts", { content, postType });
+      }
     },
     onSuccess: () => {
       if (submittedPostType.current === "win") {
@@ -69,6 +88,7 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
       }
       setContent("");
       setPostType("update");
+      setMilestoneSelection(null);
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     },
   });
@@ -95,19 +115,26 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
       )}
 
       <div className="bg-white rounded-xl p-4 space-y-3" data-testid="post-composer">
-        <Textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Share something with the community..."
-          className="min-h-[80px] resize-none text-sm border-[#C7C2BF]"
-          data-testid="input-post-content"
-        />
+        {isMilestone ? (
+          <MilestonePicker onSelect={setMilestoneSelection} selection={milestoneSelection} />
+        ) : (
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Share something with the community..."
+            className="min-h-[80px] resize-none text-sm border-[#C7C2BF]"
+            data-testid="input-post-content"
+          />
+        )}
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex gap-1.5 flex-wrap">
             {postTypes.map((pt) => (
               <button
                 key={pt}
-                onClick={() => setPostType(pt)}
+                onClick={() => {
+                  setPostType(pt);
+                  if (pt !== "milestone") setMilestoneSelection(null);
+                }}
                 className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                   postType === pt
                     ? "bg-[#34737A] text-white"
@@ -122,7 +149,7 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
           <Button
             size="sm"
             onClick={() => createPost.mutate()}
-            disabled={!content.trim() || createPost.isPending}
+            disabled={!canShare || createPost.isPending}
             className="bg-[#34737A] text-white"
             data-testid="button-share-post"
           >

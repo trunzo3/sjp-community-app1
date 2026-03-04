@@ -1,0 +1,102 @@
+REPLIT PROMPT: Milestone Post Cards
+The community feed currently renders all post types with the same card design. Milestone posts need a visually distinct treatment that makes them feel like a celebration, not just another update. This prompt adds a structured milestone selection experience and unique card designs per milestone category, all using colors that extend the existing design system.
+
+MILESTONE CATEGORIES AND TYPES
+When a user selects the Milestone post type, replace the plain text input with a two-step flow: first select a milestone from the list below, then optionally add a personal note in their own words. The milestone label itself is the headline. Their note sits beneath it.
+Structure the milestone picker as a scrollable grid of tappable tiles, grouped by category with a category label above each group.
+Use these categories and milestones exactly as written, as this language will be reviewed by Saint John's and may be updated:
+Recovery
+24 hours sober
+7 days sober
+30 days sober
+60 days sober
+90 days sober
+6 months sober
+1 year sober
+Completed a recovery class
+Attended my first NA/AA meeting
+My Journey at Saint John's
+First day at Saint John's
+One week in the program
+One month in the program
+Became a Dream Builder
+Became a Dream Achiever
+6 months in the program
+1 year in the program
+Graduation day
+Work and Career
+Submitted my first job application
+Got a job interview
+Got the job
+First day at work
+30 days on the job
+90 days on the job
+Received a raise
+Got a promotion
+Completed job training
+Family
+Reunited with my kids
+Completed parenting classes
+A great day with my family
+Custody milestone
+Housing
+Moved into stable housing
+First night in my own place
+Personal Growth
+Completed a class
+Tried something new
+Asked for help
+Set a boundary
+Had a hard day and got through it
+Include a final option at the bottom labeled "Something else worth celebrating" that opens a free-text field so users can write their own milestone. This covers anything the list does not anticipate.
+
+CARD DESIGNS
+Each category gets a distinct color scheme. All colors are drawn from or extend the existing design system. Cards should feel warm and celebratory without being loud or jarring. No gradients, no confetti animations. The treatment is dignified warmth, not a game reward screen.
+Each milestone card in the feed should have:
+A colored left border (4px, category color)
+A lightly tinted card background using a very low opacity version of the category color
+A category icon in the top right corner of the card (lucide-react, category color)
+The milestone label in bold as the headline
+The user's personal note beneath it if one was added
+The standard author avatar, name, timestamp, and reaction row at the bottom, unchanged
+Category color assignments:
+Recovery — Amber gold #C8882A, background tint #FEF6EC Icon: Sparkles or Sun
+My Journey at Saint John's — Primary teal #34737A, background tint #EBF4F5 Icon: Star or MapPin
+Work and Career — Sage green #5DA592, background tint #EDF7F4 Icon: Briefcase
+Family — Peach #E8956D, background tint #FDF2EC Icon: Heart
+Housing — Dusty lavender #979DB6, background tint #F2F3F8 Icon: Home
+Personal Growth — Warm yellow #B8A832, background tint #FAFAEC Icon: TrendingUp or Leaf
+Something else worth celebrating — Use the existing primary teal with a star icon as a neutral fallback.
+
+SCHEMA CHANGES
+Add two optional fields to the posts table:
+milestoneType (text, nullable) — stores the selected milestone label
+milestoneCategory (text, nullable) — stores the category name for color and icon lookup
+These fields only populate when postType is milestone. All other post types leave them null.
+Update shared/schema.ts, server/storage.ts, and the relevant POST and GET routes in server/routes.ts to include these fields.
+
+FEED FILTER
+The existing Milestones filter pill in the feed already filters by post type. No change needed there. The new card design applies automatically to all posts where postType === 'milestone'.
+
+MILESTONE PICKER UI
+The picker appears only when the user selects the Milestone pill in the post composer. It replaces the standard text input for that session. Selecting a milestone and optionally adding a note, then tapping Share, creates the post. If the user switches to a different post type pill, the milestone picker collapses and the standard text input returns.
+The picker should be scrollable and comfortably usable on a 390px wide screen. Category labels should be clearly separated. Selected milestone tile should show a filled teal background with white text to confirm selection.
+
+DO NOT CHANGE
+Card design for any other post type (update, win, question, need)
+The reaction system or reply system
+Feed filtering behavior
+The post composer layout for non-milestone post types
+Any admin panel functionality
+
+ACCEPTANCE CRITERIA
+Selecting Milestone in the post composer shows the category picker, not a plain text box
+All six categories and their milestones are present and scrollable
+Selecting a milestone highlights it and allows an optional personal note
+Posted milestone appears in the feed with the correct category color, tint, and icon
+The "Something else worth celebrating" option opens a free text field
+Switching post types collapses the picker cleanly
+Cards render correctly at 390px width without truncation
+All new fields are stored correctly and returned in feed API responses
+
+
