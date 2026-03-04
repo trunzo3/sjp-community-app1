@@ -1,0 +1,45 @@
+# Icon System — Replace Emoji with SVG Line Icons
+
+**Checkpoint before running: "pre-icon-swap"**
+
+Replace emoji icons with clean SVG line icons in two places. See the attached screenshot for the visual target. All icons should use the same stroke style: 2px stroke, round linecap, round linejoin, no fill.
+
+---
+
+## 1. My Journey Pillar Icons
+
+Replace the emoji inside each of the five pillar progress circles with SVG line icons. Each icon is rendered in the pillar's brand color.
+
+| Pillar | Current Emoji | Replace With | Color |
+|---|---|---|---|
+| Community | 🤝 | People/group icon (two figures) | #34737A |
+| Confidence | ✨ | Star icon (five-point star outline) | #979DB6 |
+| Resilience | 🛡️ | Shield icon (shield outline) | #D32027 |
+| Readiness | 🎯 | Briefcase icon (briefcase outline) | #5DA592 |
+| Wellness | 💚 | Heart icon (heart outline) | #EEBBA7 |
+
+Icons should be approximately 18px inside the 44px progress circles. Stroke color matches the pillar color. No fill.
+
+---
+
+## 2. Bottom Navigation Bar Icons
+
+Replace the emoji in the bottom nav tabs with SVG line icons. Same stroke style as above.
+
+| Tab | Current Emoji | Replace With | Inactive Color | Active Color |
+|---|---|---|---|---|
+| Home | 🏠 | House icon (house with door outline) | #D32027 | #34737A |
+| Community | 👥 | People icon (two figures) | #D32027 | #34737A |
+| Resources | 📚 | Book icon (open book outline) | #D32027 | #34737A |
+| Events | 📅 | Calendar icon (calendar outline) | #D32027 | #34737A |
+| Profile | 👤 | Person icon (single figure with circle head) | #D32027 | #34737A |
+
+Icons should be approximately 22px. The active tab's icon and label are #34737A (dark teal). Inactive tabs are #D32027 (Saint John's Red).
+
+---
+
+## Do Not Change
+
+- The section header icons added in the previous prompt (Stories of Change, Next Event, Community Feed) — those should already be SVG line icons from Prompt 1
+- Any layout, spacing, content, colors, or functionality
+- Any page other than where these icons appear

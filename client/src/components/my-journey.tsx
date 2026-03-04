@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { Check } from "lucide-react";
+import { Check, Users, Star, Shield, Briefcase, Heart } from "lucide-react";
 
 type ProgressEntry = {
   id: string;
@@ -10,11 +10,11 @@ type ProgressEntry = {
 };
 
 const pillarConfig = [
-  { key: "community", label: "Community", color: "#34737A", emoji: "🤝" },
-  { key: "confidence", label: "Confidence", color: "#979DB6", emoji: "✨" },
-  { key: "resilience", label: "Resilience", color: "#D32027", emoji: "🛡️" },
-  { key: "readiness", label: "Readiness", color: "#5DA592", emoji: "🎯" },
-  { key: "wellness", label: "Wellness", color: "#EEBBA7", emoji: "🧡" },
+  { key: "community", label: "Community", color: "#34737A", icon: Users },
+  { key: "confidence", label: "Confidence", color: "#979DB6", icon: Star },
+  { key: "resilience", label: "Resilience", color: "#D32027", icon: Shield },
+  { key: "readiness", label: "Readiness", color: "#5DA592", icon: Briefcase },
+  { key: "wellness", label: "Wellness", color: "#EEBBA7", icon: Heart },
 ];
 
 function ProgressRing({ size, strokeWidth, progress, color, children }: {
@@ -105,7 +105,7 @@ export function MyJourney() {
           return (
             <div key={pillar.key} className="flex flex-col items-center gap-1" data-testid={`pillar-${pillar.key}`}>
               <ProgressRing size={52} strokeWidth={4} progress={value} color={pillar.color}>
-                <span className="text-lg">{pillar.emoji}</span>
+                <pillar.icon className="w-[18px] h-[18px]" style={{ color: pillar.color }} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
               </ProgressRing>
               <span className="text-[10px] font-semibold" style={{ color: pillar.color }}>
                 {pillar.label}

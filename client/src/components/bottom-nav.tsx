@@ -31,7 +31,7 @@ export function BottomNav() {
                 }`}
                 data-testid={`nav-${tab.label.toLowerCase()}`}
               >
-                <tab.icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
+                <tab.icon className="w-[22px] h-[22px]" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 <span className="text-[10px] font-medium">{tab.label}</span>
               </button>
             </Link>
