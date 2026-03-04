@@ -303,12 +303,24 @@ export async function registerRoutes(
     res.json({ message: "Deleted" });
   });
 
+  async function enrichEventVenuePhoto(event: any) {
+    if (event.venuePhotoUrl) return event;
+    if (!event.location) return event;
+    const venues = await storage.getVenueLocations();
+    const match = venues.find((v: any) => v.name === event.location);
+    if (match?.photoUrl) {
+      return { ...event, venuePhotoUrl: match.photoUrl };
+    }
+    return event;
+  }
+
   app.get("/api/events", requireAuth, async (req, res) => {
     const user = await storage.getUser(req.session.userId!);
     if (!user) return res.status(401).json({ message: "Not authenticated" });
     const isStaffOrAdmin = user.role === "staff" || user.role === "admin";
     const eventsData = await storage.getEvents(isStaffOrAdmin ? undefined : user.stage);
-    res.json(eventsData);
+    const enriched = await Promise.all(eventsData.map(enrichEventVenuePhoto));
+    res.json(enriched);
   });
 
   app.get("/api/events/:id", requireAuth, async (req, res) => {
@@ -320,9 +332,10 @@ export async function registerRoutes(
     if (!isStaffOrAdmin && !event.applicableStages.includes(user.stage)) {
       return res.status(403).json({ message: "Forbidden" });
     }
+    const enriched = await enrichEventVenuePhoto(event);
     let host = null;
-    if (event.hostUserId) {
-      const hostUser = await storage.getUser(event.hostUserId);
+    if (enriched.hostUserId) {
+      const hostUser = await storage.getUser(enriched.hostUserId);
       if (hostUser) {
         host = {
           firstName: hostUser.firstName,
@@ -334,7 +347,7 @@ export async function registerRoutes(
         };
       }
     }
-    res.json({ ...event, host });
+    res.json({ ...enriched, host });
   });
 
   app.get("/api/admin/events", requireStaffOrAdmin, async (_req, res) => {
