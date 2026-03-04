@@ -109,6 +109,15 @@ export const surveys = pgTable("surveys", {
   submittedAt: timestamp("submitted_at").defaultNow(),
 });
 
+export const userProgress = pgTable("user_progress", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  pillar: pillarEnum("pillar").notNull(),
+  progress: integer("progress").notNull().default(0),
+}, (table) => [
+  uniqueIndex("user_progress_user_pillar_idx").on(table.userId, table.pillar),
+]);
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertPostSchema = createInsertSchema(posts).omit({ id: true, createdAt: true });
 export const insertReplySchema = createInsertSchema(replies).omit({ id: true, createdAt: true });
@@ -117,6 +126,7 @@ export const insertEventSchema = createInsertSchema(events).omit({ id: true, cre
 export const insertStorySchema = createInsertSchema(stories).omit({ id: true, createdAt: true });
 export const insertReactionSchema = createInsertSchema(reactions).omit({ id: true, createdAt: true });
 export const insertSurveySchema = createInsertSchema(surveys).omit({ id: true, submittedAt: true });
+export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -134,3 +144,5 @@ export type Reaction = typeof reactions.$inferSelect;
 export type InsertReaction = z.infer<typeof insertReactionSchema>;
 export type Survey = typeof surveys.$inferSelect;
 export type InsertSurvey = z.infer<typeof insertSurveySchema>;
+export type UserProgress = typeof userProgress.$inferSelect;
+export type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;

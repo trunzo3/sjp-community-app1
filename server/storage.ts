@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import {
-  users, posts, replies, resources, events, stories, reactions, surveys,
+  users, posts, replies, resources, events, stories, reactions, surveys, userProgress,
   type User, type InsertUser,
   type Post, type InsertPost,
   type Reply, type InsertReply,
@@ -10,6 +10,7 @@ import {
   type Story, type InsertStory,
   type Reaction, type InsertReaction,
   type Survey, type InsertSurvey,
+  type UserProgress, type InsertUserProgress,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -54,6 +55,9 @@ export interface IStorage {
   getAllSurveys(): Promise<(Survey & { user: User })[]>;
   getSurveysByUser(userId: string): Promise<Survey[]>;
   createSurvey(survey: InsertSurvey): Promise<Survey>;
+
+  getProgressByUser(userId: string): Promise<UserProgress[]>;
+  upsertProgress(userId: string, pillar: string, progress: number): Promise<UserProgress>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -291,6 +295,27 @@ export class DatabaseStorage implements IStorage {
 
   async createSurvey(survey: InsertSurvey): Promise<Survey> {
     const [created] = await db.insert(surveys).values(survey).returning();
+    return created;
+  }
+
+  async getProgressByUser(userId: string): Promise<UserProgress[]> {
+    return db.select().from(userProgress).where(eq(userProgress.userId, userId));
+  }
+
+  async upsertProgress(userId: string, pillar: string, progress: number): Promise<UserProgress> {
+    const existing = await db.select().from(userProgress).where(
+      and(eq(userProgress.userId, userId), eq(userProgress.pillar, pillar as any))
+    );
+    if (existing.length > 0) {
+      const [updated] = await db.update(userProgress)
+        .set({ progress })
+        .where(and(eq(userProgress.userId, userId), eq(userProgress.pillar, pillar as any)))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(userProgress)
+      .values({ userId, pillar: pillar as any, progress })
+      .returning();
     return created;
   }
 }

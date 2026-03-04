@@ -337,5 +337,23 @@ export async function registerRoutes(
     res.json(safeUser);
   });
 
+  app.get("/api/progress/:userId", requireAuth, async (req, res) => {
+    const currentUser = await storage.getUser(req.session.userId!);
+    if (!currentUser) return res.status(401).json({ message: "Not authenticated" });
+    const isOwn = req.params.userId === req.session.userId;
+    const isStaffOrAdmin = currentUser.role === "staff" || currentUser.role === "admin";
+    if (!isOwn && !isStaffOrAdmin) return res.status(403).json({ message: "Forbidden" });
+    const progress = await storage.getProgressByUser(req.params.userId);
+    res.json(progress);
+  });
+
+  app.put("/api/admin/progress/:userId", requireStaffOrAdmin, async (req, res) => {
+    const { pillar, progress } = req.body;
+    if (!pillar || progress === undefined) return res.status(400).json({ message: "pillar and progress required" });
+    if (progress < 0 || progress > 100) return res.status(400).json({ message: "progress must be 0-100" });
+    const result = await storage.upsertProgress(req.params.userId, pillar, progress);
+    res.json(result);
+  });
+
   return httpServer;
 }
