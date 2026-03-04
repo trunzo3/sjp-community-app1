@@ -62,6 +62,7 @@ const reactionEmojis: Record<string, string> = {
   pray: "🙏",
   fire: "🔥",
   star: "⭐",
+  smile: "😊",
 };
 
 function capitalize(s: string) {

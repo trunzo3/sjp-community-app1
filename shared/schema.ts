@@ -71,7 +71,7 @@ export const events = pgTable("events", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const reactionTypeEnum = pgEnum("reaction_type", ["heart", "clap", "pray", "fire", "star"]);
+export const reactionTypeEnum = pgEnum("reaction_type", ["heart", "clap", "pray", "fire", "star", "smile"]);
 
 export const stories = pgTable("stories", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
