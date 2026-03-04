@@ -62,6 +62,18 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **API**: GET `/api/progress/:userId` (auth), PUT `/api/admin/progress/:userId` (staff/admin)
 - **Pillar colors**: Community #34737A, Confidence #979DB6, Resilience #D32027, Readiness #5DA592, Wellness #EEBBA7
 
+## Home Page Layout Restructure (Implemented)
+- **Layout order**: Hero Banner → My Journey → Stories of Change → Next Event → Community Feed
+- **Section headers**: Each section below My Journey has a colored header with icon, title, and "See all →" / "Read more →" link
+  - Stories of Change: #D32027 red, BookOpen icon
+  - Next Event: #34737A teal, Calendar icon
+  - Community Feed: #B8876F warm brown, MessageCircle icon
+- **Stories of Change**: Single featured quote card with #FAE8DF peach bg, decorative quotation marks, italic text, author avatar + "Alumni" label. No carousel.
+- **Next Event**: Collapsible card with colored date block (month + day), event name, time, location. Expands to show description + stage tags.
+- **Community Feed**: Slim composer bar (pill shape, redirects to /community) → pinned posts → one latest post per category (need/win/question/update)
+- **Category post cards**: Colored banner strip at top with dot + uppercase label + timestamp. Heart reaction count + reply count below content.
+- **Post type banner colors**: Need=#FBEAEA/#D32027, Win=#E6F2EF/#5DA592, Question=#EDEEF3/#979DB6, Update=#E8F0F1/#34737A
+
 ## Community Feed Updates (Implemented)
 - **Post types**: 4 types only — update, win, question, need (milestone removed)
 - **Feed filters**: All, Needs, Wins, Questions

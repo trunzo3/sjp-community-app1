@@ -2,12 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { AvatarCircle } from "@/components/avatar-circle";
 import { PostCard } from "@/components/post-card";
-import { BookOpen, Calendar, MessageCircle, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { BookOpen, Calendar, MessageCircle, ChevronDown, ChevronUp, ArrowRight, CornerDownLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { format } from "date-fns";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { getDueSurveyInterval } from "@/pages/survey";
 import { MyJourney } from "@/components/my-journey";
 
@@ -27,6 +26,49 @@ const postTypeColors: Record<string, { dot: string; label: string; bg: string }>
   question: { dot: "#979DB6", label: "#979DB6", bg: "#EDEEF3" },
   update: { dot: "#34737A", label: "#34737A", bg: "#E8F0F1" },
 };
+
+function HomeCategoryCard({ post }: { post: any }) {
+  const colors = postTypeColors[post.postType] || postTypeColors.update;
+  const { data: reactions } = useQuery<any[]>({
+    queryKey: ["/api/reactions", post.id],
+  });
+  const reactionCount = reactions?.length || 0;
+  const replyCount = post.replies?.length || 0;
+
+  return (
+    <div className="bg-white rounded-xl overflow-hidden" data-testid={`home-post-${post.id}`}>
+      <div className="flex items-center justify-between px-4 py-2" style={{ backgroundColor: colors.bg }}>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.dot }} />
+          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.label }}>
+            {post.postType}
+          </span>
+        </div>
+        <span className="text-[10px] text-[#C7C2BF]">
+          {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+        </span>
+      </div>
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          <AvatarCircle firstName={post.author.firstName} color={post.author.avatarColor} size="sm" />
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-semibold text-[#302D2E]">{post.author.firstName}</span>
+            <p className="text-sm text-[#302D2E] mt-1 leading-relaxed">{post.content}</p>
+            <div className="flex items-center gap-4 mt-2">
+              <span className="text-xs text-[#D32027] flex items-center gap-1 font-medium">
+                ❤️ {reactionCount}
+              </span>
+              <span className="text-xs text-[#868180] flex items-center gap-1">
+                <CornerDownLeft className="w-3 h-3" />
+                {replyCount} {replyCount === 1 ? "Reply" : "Replies"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SectionHeader({ icon, title, color, linkText, onLink }: {
   icon: React.ReactNode;
@@ -53,6 +95,13 @@ function SectionHeader({ icon, title, color, linkText, onLink }: {
       </div>
     </div>
   );
+}
+
+function formatTime12h(time24: string) {
+  const [h, m] = time24.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
 
 export default function HomePage() {
@@ -137,16 +186,14 @@ export default function HomePage() {
             onLink={() => navigate("/share-story")}
           />
           <div className="mt-3 bg-[#FAE8DF] rounded-xl p-5" data-testid="featured-story-card">
-            <span className="text-4xl leading-none font-serif text-[#EEBBA7]">"</span>
-            <p className="text-sm italic text-[#302D2E] leading-relaxed mt-1" data-testid="text-featured-story">
+            <span className="text-4xl leading-none font-serif text-[#EEBBA7] block mb-1">{"\u201C\u201C"}</span>
+            <p className="text-sm italic text-[#302D2E] leading-relaxed" data-testid="text-featured-story">
               {featuredStory.step3Content}
             </p>
             <div className="flex items-center gap-2 mt-4">
               <AvatarCircle firstName={featuredStory.author.firstName} color={featuredStory.author.avatarColor} size="sm" />
-              <div>
-                <span className="text-xs font-semibold text-[#302D2E]">{featuredStory.author.firstName}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-[#34737A] text-white ml-2">Alumni</span>
-              </div>
+              <span className="text-xs font-semibold text-[#302D2E]">{featuredStory.author.firstName}</span>
+              <span className="text-xs font-medium text-[#34737A]">Alumni</span>
             </div>
           </div>
         </div>
@@ -191,7 +238,7 @@ export default function HomePage() {
             >
               <div className="shrink-0 w-12 h-12 rounded-lg bg-[#34737A] flex flex-col items-center justify-center">
                 <span className="text-[10px] font-bold text-white/70 uppercase leading-none">
-                  {format(new Date(nextEvent.date + "T00:00:00"), "MMM")}
+                  {format(new Date(nextEvent.date + "T00:00:00"), "MMM").toUpperCase()}
                 </span>
                 <span className="text-lg font-bold text-white leading-none mt-0.5">
                   {format(new Date(nextEvent.date + "T00:00:00"), "d")}
@@ -200,7 +247,7 @@ export default function HomePage() {
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-[#302D2E]">{nextEvent.name}</h3>
                 <p className="text-xs text-[#868180] mt-0.5">
-                  {nextEvent.startTime?.slice(0, 5)} – {nextEvent.endTime?.slice(0, 5)} · {nextEvent.location}
+                  {formatTime12h(nextEvent.startTime)} · {nextEvent.location}
                 </p>
               </div>
               {eventExpanded ? (
@@ -242,6 +289,7 @@ export default function HomePage() {
           <button
             onClick={() => navigate("/community")}
             className="w-full flex items-center gap-3 bg-white rounded-full px-4 py-3 border border-[#F1EFEF] text-left"
+            style={{ borderRadius: "20px" }}
             data-testid="slim-composer"
           >
             {user && <AvatarCircle firstName={user.firstName} color={user.avatarColor || "#607D8B"} size="sm" />}
@@ -252,41 +300,9 @@ export default function HomePage() {
             <PostCard key={post.id} post={post} isPinnedSection />
           ))}
 
-          {categoryPosts.map((post: any) => {
-            const colors = postTypeColors[post.postType] || postTypeColors.update;
-            return (
-              <div key={post.id} className="bg-white rounded-xl overflow-hidden" data-testid={`home-post-${post.id}`}>
-                <div className="flex items-center justify-between px-4 py-2" style={{ backgroundColor: colors.bg }}>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.dot }} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.label }}>
-                      {post.postType}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-[#C7C2BF]">
-                    {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                  </span>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-start gap-3">
-                    <AvatarCircle firstName={post.author.firstName} color={post.author.avatarColor} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-semibold text-[#302D2E]">{post.author.firstName}</span>
-                      <p className="text-sm text-[#302D2E] mt-1 leading-relaxed">{post.content}</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xs text-[#C7C2BF] flex items-center gap-1">
-                          ❤️ {post.reactions?.length || 0}
-                        </span>
-                        <span className="text-xs text-[#C7C2BF] flex items-center gap-1">
-                          💬 {post.replies?.length || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {categoryPosts.map((post: any) => (
+            <HomeCategoryCard key={post.id} post={post} />
+          ))}
         </div>
       </div>
     </div>

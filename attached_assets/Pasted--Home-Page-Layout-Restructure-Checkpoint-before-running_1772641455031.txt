@@ -1,0 +1,105 @@
+# Home Page Layout Restructure
+
+**Checkpoint before running: "pre-home-restructure"**
+
+Major redesign of the Home page layout. See the attached screenshot of the mockup for the visual target. The page flow top to bottom should be:
+
+**Hero Banner → My Journey → Stories of Change → Next Event → Community Feed**
+
+Each section is separated by a colored section header with an icon, title, and a "See all →" or "Read more →" link on the right. Below are the specifics for each section.
+
+---
+
+## 1. Section Headers
+
+Every section below My Journey gets a section header row with:
+- A small line-style icon on the left (not emoji)
+- Section title in bold, colored text
+- A subtle tinted border-bottom line in the section's color (very low opacity, like 15%)
+- "Read more →" or "See all →" link on the right in the same color
+
+Section colors:
+- **Stories of Change** — #D32027 (Saint John's Red) with a book icon
+- **Next Event** — #34737A (dark teal) with a calendar icon
+- **Community Feed** — #B8876F (warm brown) with a chat bubble icon
+
+---
+
+## 2. Stories of Change — Single Quote Card
+
+Replace the current Stories of Change carousel (horizontal scrollable cards with arrows and pagination dots) with a single featured story displayed as a quote card.
+
+- Background color: #FAE8DF (warm peach tint)
+- Large decorative open-quote character at the top-left in #EEBBA7
+- Story text displayed in full (italic, 14px, #302D2E) — not truncated, not a preview
+- Below the text: author avatar circle, first name, and Alumni badge
+- No pagination dots. No arrows. One story — the most recent featured story (where featured = true)
+- "Read more →" in the section header links to the full Stories of Change collection
+
+---
+
+## 3. Next Event — Single Collapsible Card
+
+Replace the current Upcoming Events section (if present on Home) or add a new one showing only the single next upcoming event.
+
+- Section header says "Next Event" not "Upcoming Events"
+- One event card, collapsed by default
+- Collapsed view: colored date block (month abbreviation + day number), event name, time, location, and a small ▾ chevron
+- Tapping expands to show description and stage tags
+- "See all →" in the section header navigates to the Events page
+
+---
+
+## 4. Community Feed — One Post Per Category
+
+Replace the current community feed on the Home page (which shows all posts chronologically) with exactly four posts — the most recent post from each category:
+- One latest **Need** post
+- One latest **Win** post
+- One latest **Question** post
+- One latest **Update** post
+
+Each post card gets a colored banner strip at the top:
+- Banner background is the post type's light color
+- Left side of banner: small colored dot + post type label in uppercase bold (e.g., "NEED", "WIN")
+- Right side of banner: timestamp
+- Below the banner: avatar, author name, post content, heart reactions count, reply count
+
+Post type banner colors:
+- **Need** — dot and label #D32027, banner background #FBEAEA
+- **Win** — dot and label #5DA592, banner background #E6F2EF
+- **Question** — dot and label #979DB6, banner background #EDEEF3
+- **Update** — dot and label #34737A, banner background #E8F0F1
+
+No feed filter pills on the Home page. The filters only appear on the Community page.
+
+"See all →" in the section header navigates to the Community page.
+
+---
+
+## 5. Composer — Slim Redirect Bar
+
+Replace the full post composer on the Home page (text area + post type tags + Share button) with a slim, single-line tappable bar:
+
+- Rounded pill shape (border-radius: 20px)
+- White background, subtle border
+- Shows the logged-in user's avatar circle on the left
+- Placeholder text: "Share something with the community..."
+- Tapping anywhere on the bar navigates to the Community page (with the composer focused if possible, but navigation alone is sufficient)
+
+The full composer with post type tags and Share button remains on the Community page only.
+
+---
+
+## 6. Pinned Post — Inside Community Feed Section
+
+Move the pinned post so it sits inside the Community Feed section, between the slim composer bar and the four category posts. Keep the existing peach (#FAE8DF) background and pin icon + "Pinned" label styling. It should be visually clear that this is a pinned community post, not a floating card between sections.
+
+---
+
+## Do Not Change
+
+- My Journey progress dashboard — leave exactly as it is
+- Hero banner — leave exactly as it is
+- Community page (the full dedicated tab) — leave the full feed, full composer, and filters as they are
+- Resources, Events, Profile, Admin Panel, Stories, Surveys, Login page
+- Any data model or database tables
