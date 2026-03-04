@@ -14,7 +14,7 @@ const pillarConfig = [
   { key: "confidence", label: "Confidence", color: "#979DB6", emoji: "✨" },
   { key: "resilience", label: "Resilience", color: "#D32027", emoji: "🛡️" },
   { key: "readiness", label: "Readiness", color: "#5DA592", emoji: "🎯" },
-  { key: "wellness", label: "Wellness", color: "#EEBBA7", emoji: "💚" },
+  { key: "wellness", label: "Wellness", color: "#EEBBA7", emoji: "🧡" },
 ];
 
 function ProgressRing({ size, strokeWidth, progress, color, children }: {
