@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Sparkles, X, Send, BookOpen, Calendar, MessageCircle, HelpCircle, Megaphone, AlertTriangle, Loader2 } from "lucide-react";
+import { Sparkles, X, Send, BookOpen, Calendar, MessageCircle, HelpCircle, Megaphone, AlertTriangle, Loader2, ChevronRight, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface Citation {
@@ -11,6 +11,7 @@ interface Citation {
   id: string;
   title: string;
   linkPath: string;
+  snippet: string;
 }
 
 interface CrisisInfo {
@@ -37,6 +38,10 @@ interface ChatMessage {
 }
 
 function CitationCard({ citation, onClick }: { citation: Citation; onClick: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasLink = !!citation.linkPath;
+  const isExpandable = citation.type === "faq" || citation.type === "trusted_answer";
+
   const icon = citation.type === "resource" ? <BookOpen className="w-3.5 h-3.5" /> :
                citation.type === "event" ? <Calendar className="w-3.5 h-3.5" /> :
                citation.type === "faq" ? <HelpCircle className="w-3.5 h-3.5" /> :
@@ -46,23 +51,49 @@ function CitationCard({ citation, onClick }: { citation: Citation; onClick: () =
   const label = citation.type === "resource" ? "Resource" :
                 citation.type === "event" ? "Event" :
                 citation.type === "faq" ? "FAQ" :
-                citation.type === "announcement" ? "Announcement" :
+                citation.type === "announcement" ? "Post" :
                 "Answer";
 
+  const colorClass = citation.type === "resource" ? "border-[#5DA592]/30 bg-[#5DA592]/5" :
+                     citation.type === "event" ? "border-[#34737A]/30 bg-[#34737A]/5" :
+                     citation.type === "faq" ? "border-[#979DB6]/30 bg-[#979DB6]/5" :
+                     citation.type === "announcement" ? "border-[#EEBBA7]/30 bg-[#EEBBA7]/5" :
+                     "border-[#34737A]/30 bg-[#34737A]/5";
+
+  const iconColor = citation.type === "resource" ? "text-[#5DA592]" :
+                    citation.type === "event" ? "text-[#34737A]" :
+                    citation.type === "faq" ? "text-[#979DB6]" :
+                    citation.type === "announcement" ? "text-[#D18A5A]" :
+                    "text-[#34737A]";
+
+  const handleClick = () => {
+    if (isExpandable) {
+      setExpanded(!expanded);
+    } else if (hasLink) {
+      onClick();
+    }
+  };
+
   return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-        citation.linkPath
-          ? "bg-[#34737A]/10 text-[#34737A] border-[#34737A]/20 hover:bg-[#34737A]/20 cursor-pointer"
-          : "bg-gray-100 text-gray-600 border-gray-200 cursor-default"
-      }`}
-      data-testid={`citation-${citation.type}-${citation.id}`}
-    >
-      {icon}
-      <span className="truncate max-w-[180px]">{citation.title}</span>
-      <span className="text-[10px] opacity-60">{label}</span>
-    </button>
+    <div className={`rounded-lg border ${colorClass} overflow-hidden transition-all`} data-testid={`citation-${citation.type}-${citation.id}`}>
+      <button
+        onClick={handleClick}
+        className="w-full flex items-center gap-2 px-3 py-2 text-left active:opacity-70 transition-opacity"
+      >
+        <span className={`flex-shrink-0 ${iconColor}`}>{icon}</span>
+        <div className="flex-1 min-w-0">
+          <span className="text-xs font-medium text-[#302D2E] line-clamp-1">{citation.title}</span>
+        </div>
+        <span className="text-[10px] font-medium text-[#868180] flex-shrink-0 uppercase">{label}</span>
+        {hasLink && !isExpandable && <ExternalLink className="w-3 h-3 text-[#868180] flex-shrink-0" />}
+        {isExpandable && <ChevronRight className={`w-3 h-3 text-[#868180] flex-shrink-0 transition-transform ${expanded ? "rotate-90" : ""}`} />}
+      </button>
+      {expanded && citation.snippet && (
+        <div className="px-3 pb-2 text-xs text-[#868180] border-t border-gray-100 pt-2 whitespace-pre-line">
+          {citation.snippet}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -225,7 +256,7 @@ export function AiGuide() {
                         {msg.content}
                       </div>
                       {msg.citations && msg.citations.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-1">
+                        <div className="space-y-1.5 mt-2">
                           {msg.citations.map((c, j) => (
                             <CitationCard key={j} citation={c} onClick={() => handleCitationClick(c)} />
                           ))}

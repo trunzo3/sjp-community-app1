@@ -81,7 +81,7 @@ function scoreTagMatch(query: string, tags: string[]): number {
   return (matched / queryTokens.length) * 60;
 }
 
-function truncate(text: string, maxLen = 120): string {
+function truncate(text: string, maxLen = 200): string {
   if (!text || text.length <= maxLen) return text || "";
   return text.substring(0, maxLen) + "...";
 }
@@ -101,11 +101,16 @@ export class KeywordSearchProvider implements ContentSearchProvider {
     for (const r of resources) {
       const fieldScore = bestScore(query, r.name, r.description, r.providerName, r.pillar, r.type);
       if (fieldScore > 20) {
+        const details = [
+          r.providerName ? `Provider: ${r.providerName}` : null,
+          r.pillar ? `Pillar: ${r.pillar}` : null,
+          r.type ? `Type: ${r.type}` : null,
+        ].filter(Boolean).join(" | ");
         results.push({
           type: "resource",
           id: r.id,
           title: r.name,
-          snippet: truncate(r.description),
+          snippet: `${details}. ${truncate(r.description)}`,
           score: fieldScore,
           linkPath: "/resources",
         });
@@ -115,11 +120,17 @@ export class KeywordSearchProvider implements ContentSearchProvider {
     for (const e of events) {
       const fieldScore = bestScore(query, e.name, e.description, e.eventType, e.location);
       if (fieldScore > 20) {
+        const details = [
+          e.date ? `Date: ${e.date}` : null,
+          e.time ? `Time: ${e.time}` : null,
+          e.location ? `Location: ${e.location}` : null,
+          e.eventType ? `Type: ${e.eventType}` : null,
+        ].filter(Boolean).join(" | ");
         results.push({
           type: "event",
           id: e.id,
           title: e.name,
-          snippet: truncate(e.description) || `${e.date} at ${e.location || "TBD"}`,
+          snippet: `${details}. ${truncate(e.description)}`,
           score: fieldScore,
           linkPath: `/events/${e.id}`,
         });
@@ -172,6 +183,49 @@ export class KeywordSearchProvider implements ContentSearchProvider {
           snippet: truncate(p.content),
           score: fieldScore,
           linkPath: "/community",
+        });
+      }
+    }
+
+    const eventKeywords = ["event", "events", "workshop", "upcoming", "next", "schedule", "calendar", "class", "session", "gathering"];
+    const resourceKeywords = ["resource", "resources", "help", "housing", "job", "employment", "wellness", "support", "service", "program", "childcare", "transportation"];
+    const queryTokens = tokenize(query);
+
+    const wantsEvents = queryTokens.some(t => eventKeywords.some(ek => ek.includes(t) || t.includes(ek)));
+    const wantsResources = queryTokens.some(t => resourceKeywords.some(rk => rk.includes(t) || t.includes(rk)));
+
+    if (wantsEvents && !results.some(r => r.type === "event")) {
+      for (const e of events.slice(0, 3)) {
+        const details = [
+          e.date ? `Date: ${e.date}` : null,
+          e.time ? `Time: ${e.time}` : null,
+          e.location ? `Location: ${e.location}` : null,
+          e.eventType ? `Type: ${e.eventType}` : null,
+        ].filter(Boolean).join(" | ");
+        results.push({
+          type: "event",
+          id: e.id,
+          title: e.name,
+          snippet: `${details}. ${truncate(e.description)}`,
+          score: 50,
+          linkPath: `/events/${e.id}`,
+        });
+      }
+    }
+
+    if (wantsResources && !results.some(r => r.type === "resource")) {
+      for (const r of resources.slice(0, 3)) {
+        const details = [
+          r.providerName ? `Provider: ${r.providerName}` : null,
+          r.pillar ? `Pillar: ${r.pillar}` : null,
+        ].filter(Boolean).join(" | ");
+        results.push({
+          type: "resource",
+          id: r.id,
+          title: r.name,
+          snippet: `${details}. ${truncate(r.description)}`,
+          score: 50,
+          linkPath: "/resources",
         });
       }
     }

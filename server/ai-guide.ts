@@ -10,7 +10,7 @@ const openai = new OpenAI({
 
 export interface AiGuideResponse {
   answer: string;
-  citations: { type: string; id: string; title: string; linkPath: string }[];
+  citations: { type: string; id: string; title: string; linkPath: string; snippet: string }[];
   isCrisis: boolean;
   crisisInfo: CrisisResult["crisisInfo"];
   confidence: number;
@@ -20,13 +20,18 @@ const SYSTEM_PROMPT = `You are the SJP Community Guide, a helpful assistant for 
 
 RULES:
 1. ONLY answer based on the provided context. Never make up information.
-2. Always cite your sources by mentioning the title of the resource, event, FAQ, or announcement you reference.
-3. Keep answers warm, supportive, and concise (2-4 sentences when possible).
-4. Never give medical, legal, or financial advice. If asked, recommend speaking with SJP staff.
-5. Never discuss topics outside of SJP programs, resources, and community.
-6. If the context doesn't contain relevant information, say so honestly and suggest the user speak with staff.
-7. Use encouraging, trauma-informed language. Avoid judgmental or clinical terms.
-8. Format your response as plain text. Do not use markdown headers or bullet lists unless listing multiple items.`;
+2. When mentioning resources or events, ALWAYS include specific details from the context:
+   - For events: mention the event name, date, time, and location
+   - For resources: mention the resource name, provider, and what it offers
+   - For FAQs: summarize the key information from the answer
+3. Reference items by their exact title as shown in the context (in quotes). Example: "SJP Life Skills Workshop Series" or "Financial Literacy Foundations"
+4. Keep answers warm, supportive, and concise (2-4 sentences when possible, but include specifics).
+5. Never give medical, legal, or financial advice. If asked, recommend speaking with SJP staff.
+6. Never discuss topics outside of SJP programs, resources, and community.
+7. If the context doesn't contain relevant information, say so honestly and suggest the user speak with staff.
+8. Use encouraging, trauma-informed language. Avoid judgmental or clinical terms.
+9. Do NOT say generic things like "check the Events page" or "visit the Resources page". Instead, name the specific event or resource from the context.
+10. If a detail (date, time, location, provider) is not listed in the context, simply omit it rather than guessing.`;
 
 function buildContextPrompt(results: RetrievalResult[]): string {
   if (results.length === 0) {
@@ -63,7 +68,8 @@ export async function handleAiGuideQuery(
 
   const citations = results
     .filter(r => r.score > 30)
-    .map(r => ({ type: r.type, id: r.id, title: r.title, linkPath: r.linkPath }));
+    .slice(0, 4)
+    .map(r => ({ type: r.type, id: r.id, title: r.title, linkPath: r.linkPath, snippet: r.snippet }));
 
   let answer: string;
   let responseGenerated = false;
