@@ -1,0 +1,95 @@
+# Add "My Journey" Progress Dashboard to Home Page
+
+**Checkpoint before running: "pre-progress-dashboard"**
+
+Add a "My Journey" card to the Home page, positioned between the hero banner and the Stories of Change carousel. See the attached screenshot for the visual design reference.
+
+---
+
+## What it looks like
+
+A white card with rounded corners containing:
+
+**Left side:** A circular progress ring (80px) showing the user's overall completion percentage as a number in the center. The ring fills with dark teal (#34737A). The unfilled portion is light gray (#F1EFEF).
+
+**Right side of the ring:**
+- Title: "My Journey" (15px, bold, #302D2E)
+- Subtitle: "Five Foundations for Real Change" (12px, #868180)
+- Encouraging line below: "Keep going — every step matters" for in-progress users. "All foundations complete" with a green checkmark for users at 100%.
+
+**Below the header row:** Five small circular progress rings in a horizontal row (one per pillar), evenly spaced. Each ring is 52px with a 4px stroke. Inside each ring, an emoji icon. Below each ring, the pillar name in the pillar's color.
+
+The five pillars with their colors and icons:
+- Community — #34737A (dark teal) — 🤝
+- Confidence — #979DB6 (dusty lavender) — ✨
+- Resilience — #D32027 (Saint John's Red) — 🛡️
+- Readiness — #5DA592 (sage green) — 🎯
+- Wellness — #EEBBA7 (peach) — 💚
+
+Each ring fills to the user's progress percentage for that pillar.
+
+---
+
+## Data model
+
+Add a new table: **user_progress**
+- id
+- user_id (foreign key → users.id)
+- pillar (enum: community, confidence, resilience, readiness, wellness)
+- progress (integer, 0-100)
+
+One row per user per pillar. The overall percentage displayed in the large ring is the average of all five pillar values.
+
+---
+
+## Seed data
+
+**Destiny (Client, mid-journey):**
+- Community: 80, Confidence: 65, Resilience: 50, Readiness: 35, Wellness: 70
+- Overall: 60%
+
+**Angela (Client, early):**
+- Community: 30, Confidence: 20, Resilience: 15, Readiness: 10, Wellness: 25
+- Overall: 20%
+
+**Keisha (Client, early):**
+- Community: 25, Confidence: 15, Resilience: 20, Readiness: 10, Wellness: 30
+- Overall: 20%
+
+**Maria (Client, advanced):**
+- Community: 90, Confidence: 75, Resilience: 70, Readiness: 80, Wellness: 85
+- Overall: 80%
+
+**Monica (Alumni):**
+- All pillars: 100
+- Overall: 100%
+
+**Tasha (Alumni):**
+- All pillars: 100
+- Overall: 100%
+
+**Denise (Alumni):**
+- All pillars: 100
+- Overall: 100%
+
+Staff and Admin users do not see the My Journey card on their Home page.
+
+---
+
+## Staff and Admin capability
+
+In the Admin Panel > Users tab, when editing a user, add the ability to set progress values (0-100) for each of the five pillars. Both Staff and Admin roles can edit all user fields including role, stage, graduation date, and progress values.
+
+---
+
+## Visibility rules
+
+- **Clients:** See their own progress dashboard.
+- **Alumni:** See their completed dashboard (all rings full).
+- **Staff and Admin:** Do not see the dashboard on their own Home page. They update client progress via Admin Panel > Users.
+
+---
+
+## Do not change
+
+Anything else on the Home page, or any other page. Just add this card between the hero banner and Stories of Change.
