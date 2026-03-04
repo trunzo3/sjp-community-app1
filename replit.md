@@ -80,13 +80,15 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **Pinned posts**: Displayed above the composer (below privacy banner), with #FAE8DF warm peach background, 📌 pin icon + "Pinned" label, no left border color treatment
 - **Regular posts**: Displayed below the composer in the feed with white background and normal styling
 
-## Staff Profile Photos (Implemented)
-- **Schema**: `photoUrl` (text, nullable) added to `users` table
-- **AvatarCircle component**: Updated to accept optional `photoUrl` prop. If present, renders circular `<img>` with `object-fit: cover`. Falls back to colored initial avatar on `onError`.
-- **Profile page**: Staff/admin see "Add a photo" / "Change photo" link below avatar. URL input with validation (loads image to verify). Inline error for invalid URLs. Remove photo option.
-- **Role guard**: PATCH `/api/users/:id` strips `photoUrl` from request body for non-staff/non-admin users
-- **Consistency**: AvatarCircle with photoUrl used in: profile header, post cards, reply threads, home page (composer, story cards, category cards), admin panel user list
-- **Edge cases**: Broken image URLs fall back silently to colored initial avatar via `onError` handler
+## Staff Profile Photos (Implemented — File Upload)
+- **Schema**: `photoUrl` (text, nullable) on `users` table — stores relative path after upload (e.g. `/uploads/avatars/avatar-{userId}.jpg?v=timestamp`)
+- **AvatarCircle component**: Accepts optional `photoUrl` prop. Renders circular `<img>` with `object-fit: cover`. Falls back to colored initial avatar on `onError`.
+- **Profile page**: Staff/admin see tappable avatar with camera icon overlay. Tapping opens native file picker (`accept="image/*"` — shows camera roll on mobile). Selected image is resized/compressed client-side (max 400×400, JPEG 0.85 quality via Canvas API in `client/src/lib/image-utils.ts`). Circular preview shown before upload. "Save photo" button confirms upload. "Remove photo" link with inline confirm/cancel.
+- **Upload endpoint**: `POST /api/users/:id/avatar` — auth checked before multer processes file. Accepts multipart/form-data. Validates MIME (jpeg/png/webp/gif only) and file size (2MB cap). Saves to `/uploads/avatars/avatar-{userId}.jpg`. Cleans up temp files on failure.
+- **Static serving**: `/uploads` directory served via `express.static` in `server/index.ts`
+- **Role guard**: Only staff/admin can upload. PATCH `/api/users/:id` strips `photoUrl` from request body for non-staff/non-admin users.
+- **Consistency**: AvatarCircle with photoUrl used in: profile header, post cards, reply threads, home page, admin panel user list, event host card
+- **Edge cases**: Broken image URLs fall back silently to colored initial avatar. Existing external URLs continue to render. Clients/alumni see no photo upload UI.
 
 ## Event Detail Pages (Implemented)
 - **Event detail route**: `/events/:id` — new page at `client/src/pages/event-detail.tsx`

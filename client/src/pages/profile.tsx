@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -6,11 +6,11 @@ import { AvatarCircle } from "@/components/avatar-circle";
 import { PostCard } from "@/components/post-card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X, Camera, Trash2 } from "lucide-react";
+import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
+import { processAvatarImage } from "@/lib/image-utils";
 
 const roleBadgeColors: Record<string, string> = {
   client: "bg-[#34737A] text-white",
@@ -27,9 +27,12 @@ export default function ProfilePage() {
   const [editingBio, setEditingBio] = useState(false);
   const [bio, setBio] = useState(user?.bio || "");
   const [showMyPosts, setShowMyPosts] = useState(false);
-  const [editingPhoto, setEditingPhoto] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState(user?.photoUrl || "");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const [photoError, setPhotoError] = useState("");
+  const [processingPhoto, setProcessingPhoto] = useState(false);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
   const isAlumni = user?.role === "alumni";
@@ -55,40 +58,77 @@ export default function ProfilePage() {
     },
   });
 
-  const updatePhoto = useMutation({
-    mutationFn: async (url: string | null) => {
-      await apiRequest("PATCH", `/api/users/${user?.id}`, { photoUrl: url });
-      return url;
+  const uploadPhoto = useMutation({
+    mutationFn: async (blob: Blob) => {
+      const formData = new FormData();
+      formData.append("avatar", blob, "avatar.jpg");
+      const res = await fetch(`/api/users/${user?.id}/avatar`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ message: "Upload failed" }));
+        throw new Error(data.message);
+      }
+      return res.json();
     },
-    onSuccess: (savedUrl) => {
-      setEditingPhoto(false);
+    onSuccess: () => {
+      setPhotoPreview(null);
+      setPhotoBlob(null);
       setPhotoError("");
       refetchUser();
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-      toast({ title: savedUrl ? "Photo updated" : "Photo removed" });
+      toast({ title: "Photo updated" });
+    },
+    onError: () => {
+      setPhotoError("Something went wrong. Please try again.");
     },
   });
 
-  const handleSavePhoto = () => {
-    if (!photoUrl.trim()) {
-      setPhotoError("Please enter a URL.");
+  const removePhoto = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PATCH", `/api/users/${user?.id}`, { photoUrl: null });
+    },
+    onSuccess: () => {
+      setConfirmingRemove(false);
+      refetchUser();
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({ title: "Photo removed" });
+    },
+  });
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("Please select an image file.");
       return;
     }
     setPhotoError("");
-    const img = new Image();
-    img.onload = () => {
-      updatePhoto.mutate(photoUrl.trim());
-    };
-    img.onerror = () => {
-      setPhotoError("That link does not appear to be a valid image. Please try a different URL.");
-    };
-    img.src = photoUrl.trim();
+    setProcessingPhoto(true);
+    try {
+      const blob = await processAvatarImage(file);
+      setPhotoBlob(blob);
+      const url = URL.createObjectURL(blob);
+      setPhotoPreview(url);
+    } catch (err: any) {
+      setPhotoError(err.message || "Failed to process image.");
+    } finally {
+      setProcessingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
-  const handleRemovePhoto = () => {
-    setPhotoUrl("");
+  const handleSavePhoto = () => {
+    if (!photoBlob) return;
+    uploadPhoto.mutate(photoBlob);
+  };
+
+  const handleCancelPreview = () => {
+    setPhotoPreview(null);
+    setPhotoBlob(null);
     setPhotoError("");
-    updatePhoto.mutate(null);
   };
 
   const handleLogout = async () => {
@@ -103,16 +143,50 @@ export default function ProfilePage() {
       <div className="bg-[#FCF3EE] rounded-xl p-5 mb-4" data-testid="profile-header">
         <div className="flex items-start gap-4">
           <div className="flex flex-col items-center gap-1">
-            <AvatarCircle firstName={user.firstName} color={user.avatarColor} size="lg" photoUrl={user.photoUrl} />
-            {isStaffOrAdmin && !editingPhoto && (
+            {isStaffOrAdmin ? (
               <button
-                onClick={() => { setEditingPhoto(true); setPhotoUrl(user.photoUrl || ""); setPhotoError(""); }}
-                className="flex items-center gap-1 text-[10px] text-[#34737A] font-medium mt-1"
-                data-testid="button-edit-photo"
+                onClick={() => !processingPhoto && !uploadPhoto.isPending && fileInputRef.current?.click()}
+                className="relative group"
+                data-testid="button-avatar-tap"
+                type="button"
               >
-                <Camera className="w-3 h-3" />
-                {user.photoUrl ? "Change photo" : "Add a photo"}
+                {photoPreview ? (
+                  <img
+                    src={photoPreview}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-full object-cover"
+                    data-testid="img-photo-preview"
+                  />
+                ) : processingPhoto ? (
+                  <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#34737A]" />
+                  </div>
+                ) : (
+                  <AvatarCircle firstName={user.firstName} color={user.avatarColor} size="lg" photoUrl={user.photoUrl} />
+                )}
+                {!processingPhoto && !uploadPhoto.isPending && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-[#34737A] flex items-center justify-center border-2 border-white" data-testid="icon-camera-overlay">
+                    <Camera className="w-3 h-3 text-white" />
+                  </div>
+                )}
               </button>
+            ) : (
+              <AvatarCircle firstName={user.firstName} color={user.avatarColor} size="lg" photoUrl={user.photoUrl} />
+            )}
+            {isStaffOrAdmin && (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileSelect}
+                data-testid="input-file-photo"
+              />
+            )}
+            {isStaffOrAdmin && !photoPreview && (
+              <span className="text-[10px] text-[#34737A] font-medium mt-1" data-testid="text-photo-action">
+                {user.photoUrl ? "Change photo" : "Add a photo"}
+              </span>
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -158,33 +232,54 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {isStaffOrAdmin && editingPhoto && (
+        {isStaffOrAdmin && (photoPreview || photoError) && (
           <div className="mt-4 pt-3 border-t border-[#C7C2BF] space-y-2" data-testid="photo-edit-section">
-            <label className="text-xs font-semibold text-[#302D2E]">Profile Photo URL</label>
-            <Input
-              value={photoUrl}
-              onChange={(e) => { setPhotoUrl(e.target.value); setPhotoError(""); }}
-              placeholder="https://example.com/your-photo.jpg"
-              className="text-sm"
-              data-testid="input-photo-url"
-            />
-            <p className="text-[10px] text-[#C7C2BF] italic">Use a direct image link. Your photo will only be visible to the SJP community.</p>
             {photoError && (
               <p className="text-xs text-[#D32027]" data-testid="text-photo-error">{photoError}</p>
             )}
-            <div className="flex gap-2">
-              <Button size="sm" className="bg-[#34737A] text-white" onClick={handleSavePhoto} disabled={updatePhoto.isPending} data-testid="button-save-photo">
-                {updatePhoto.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Check className="w-3 h-3 mr-1" />} Save
-              </Button>
-              {user.photoUrl && (
-                <Button size="sm" variant="outline" className="text-[#D32027] border-[#D32027]" onClick={handleRemovePhoto} disabled={updatePhoto.isPending} data-testid="button-remove-photo">
-                  <Trash2 className="w-3 h-3 mr-1" /> Remove
+            {photoPreview && (
+              <div className="flex gap-2">
+                <Button size="sm" className="bg-[#34737A] text-white" onClick={handleSavePhoto} disabled={uploadPhoto.isPending} data-testid="button-save-photo">
+                  {uploadPhoto.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Check className="w-3 h-3 mr-1" />} Save photo
                 </Button>
-              )}
-              <Button size="sm" variant="outline" onClick={() => { setEditingPhoto(false); setPhotoError(""); }} data-testid="button-cancel-photo">
-                <X className="w-3 h-3 mr-1" /> Cancel
-              </Button>
-            </div>
+                <Button size="sm" variant="outline" onClick={handleCancelPreview} disabled={uploadPhoto.isPending} data-testid="button-cancel-photo">
+                  <X className="w-3 h-3 mr-1" /> Cancel
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {isStaffOrAdmin && user.photoUrl && !photoPreview && (
+          <div className="mt-3 pt-2" data-testid="remove-photo-section">
+            {confirmingRemove ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[#302D2E]">Remove your photo?</span>
+                <button
+                  onClick={() => removePhoto.mutate()}
+                  className="text-xs text-[#D32027] font-medium"
+                  disabled={removePhoto.isPending}
+                  data-testid="button-confirm-remove-photo"
+                >
+                  {removePhoto.isPending ? "Removing..." : "Confirm"}
+                </button>
+                <button
+                  onClick={() => setConfirmingRemove(false)}
+                  className="text-xs text-[#868180] font-medium"
+                  data-testid="button-cancel-remove-photo"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmingRemove(true)}
+                className="text-xs text-[#D32027] font-medium"
+                data-testid="button-remove-photo"
+              >
+                Remove photo
+              </button>
+            )}
           </div>
         )}
 

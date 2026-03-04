@@ -2,9 +2,36 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import session from "express-session";
 import bcrypt from "bcryptjs";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { storage } from "./storage";
 import { seedDatabase } from "./seed";
 import MemoryStore from "memorystore";
+
+const uploadsDir = path.resolve("uploads/avatars");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const allowedMimes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
+const avatarUpload = multer({
+  storage: multer.diskStorage({
+    destination: uploadsDir,
+    filename: (_req, _file, cb) => {
+      cb(null, `temp-${Date.now()}.jpg`);
+    },
+  }),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (allowedMimes.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("INVALID_TYPE"));
+    }
+  },
+});
 
 const SessionStore = MemoryStore(session);
 
@@ -133,6 +160,52 @@ export async function registerRoutes(
     if (!updated) return res.status(404).json({ message: "User not found" });
     const { password: _, ...safeUser } = updated;
     res.json(safeUser);
+  });
+
+  const requireStaffPhotoAuth = async (req: Request, res: Response, next: NextFunction) => {
+    const currentUser = await storage.getUser(req.session.userId!);
+    if (!currentUser) return res.status(401).json({ message: "Not authenticated" });
+    if (currentUser.role !== "staff" && currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Only staff and admin can upload photos" });
+    }
+    const isOwn = req.session.userId === req.params.id;
+    const isAdmin = currentUser.role === "admin";
+    if (!isOwn && !isAdmin) return res.status(403).json({ message: "Forbidden" });
+    next();
+  };
+
+  app.post("/api/users/:id/avatar", requireAuth, requireStaffPhotoAuth, (req: Request, res: Response, next: NextFunction) => {
+    avatarUpload.single("avatar")(req, res, (err: any) => {
+      if (err) {
+        if (err.message === "INVALID_TYPE") {
+          return res.status(400).json({ message: "Only JPEG, PNG, WebP, and GIF images are allowed." });
+        }
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ message: "File is too large. Maximum size is 2MB." });
+        }
+        return res.status(400).json({ message: "Upload failed." });
+      }
+      next();
+    });
+  }, async (req: Request, res: Response) => {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    const finalName = `avatar-${req.params.id}.jpg`;
+    const finalPath = path.join(uploadsDir, finalName);
+    try {
+      fs.renameSync(req.file.path, finalPath);
+      const photoUrl = `/uploads/avatars/${finalName}?v=${Date.now()}`;
+      const updated = await storage.updateUser(req.params.id, { photoUrl });
+      if (!updated) {
+        try { fs.unlinkSync(finalPath); } catch {}
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { password: _, ...safeUser } = updated;
+      res.json(safeUser);
+    } catch {
+      try { if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path); } catch {}
+      try { if (fs.existsSync(finalPath)) fs.unlinkSync(finalPath); } catch {}
+      res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
   });
 
   app.get("/api/posts", requireAuth, async (req, res) => {

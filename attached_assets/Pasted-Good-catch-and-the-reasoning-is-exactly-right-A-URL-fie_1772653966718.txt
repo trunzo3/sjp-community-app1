@@ -1,0 +1,77 @@
+Good catch, and the reasoning is exactly right. A URL field is a developer's solution to a non-developer problem. Here is the upgrade prompt.
+
+REPLIT PROMPT: Staff Profile Photos — Upgrade to File Upload
+This prompt upgrades the existing staff photo feature from URL input to direct file upload. The schema field photoUrl already exists and is already wired into the avatar component throughout the app. We are only changing how staff set that field, not how it renders. Everything else stays the same.
+
+WHAT CHANGED AND WHY
+The previous implementation used a URL input field. In practice, staff are social workers and nurses, not developers. Finding a direct image URL from LinkedIn, Facebook, or anywhere else requires steps most of this team will not know how to take. They all have a photo of themselves on their phone. This upgrade removes that friction entirely.
+
+WHAT TO BUILD
+Replace the URL input field on the staff/admin profile page with a standard file upload interface. The photoUrl field in the database stores the resulting image path or URL after upload, exactly as before. The rest of the app, the avatar component, the event host card, the feed, the admin panel, does not change.
+1. File upload UI on the profile page
+Replace the URL text input with:
+
+A circular tap target that shows either the current photo or the colored initial avatar
+A camera icon overlay in the bottom-right corner of the avatar circle, indicating it is tappable
+Tapping the avatar or the camera icon triggers a standard browser file input: <input type="file" accept="image/*">
+On mobile, accept="image/*" will offer the camera roll and camera directly. This is the intended behavior.
+Label the action "Change photo" if a photo exists, or "Add a photo" if it does not
+
+2. Client-side image handling before upload
+Before sending the file to the server:
+
+Resize and compress the image client-side using the browser's Canvas API. Target output: maximum 400x400 pixels, JPEG, quality 0.85. This keeps storage light and load times fast without requiring a library.
+Show a circular preview of the processed image immediately after the user selects a file, before upload begins. This gives staff confidence that the right photo was chosen.
+Show a small "Save photo" button beneath the preview. Do not auto-upload on file select. Staff should confirm before saving.
+
+The compression logic should live in a utility function, something like processAvatarImage(file): Promise<Blob>, so it can be reused if avatar upload is extended to other roles later.
+3. Server-side upload endpoint
+Add a new route: POST /api/users/:id/avatar
+
+Accept multipart/form-data with a single field named avatar
+Validate: file must be an image MIME type (image/jpeg, image/png, image/webp, image/gif). Reject anything else with a 400.
+Validate: file size after client compression should be small, but add a server-side cap of 2MB as a safety check.
+Save the file to a local directory, something like /uploads/avatars/, with a filename based on the user ID to prevent collisions: avatar-{userId}.jpg
+Update the user's photoUrl field in the database to the relative path or served URL of the saved file
+Return the updated user object
+
+Replit serves static files from the project root. Ensure the uploads directory is served so that the stored path resolves to a real URL accessible by the browser.
+
+Add a role check: only staff and admin can call this endpoint. Return 403 for other roles.
+
+4. Remove the old URL input
+Remove the URL text input field and its associated validation logic entirely from the profile page. The "Use a direct image link" helper text goes away. The "That link does not appear to be a valid image" error message goes away. Everything related to the URL input flow is replaced by the file upload flow.
+The photoUrl field in the database does not change. If any staff members added a URL manually under the old system and it is a valid image, it will continue to render correctly through the existing avatar component. No migration needed.
+5. Remove photo option
+Keep the ability for staff to remove their photo. Replace whatever the current "remove" UI is with a simple "Remove photo" text link that appears only when a photo exists. On click, this calls the existing PATCH endpoint to clear the photoUrl field. Confirm with a brief inline prompt: "Remove your photo?" with Confirm and Cancel options. No modal needed.
+
+EDGE CASES TO HANDLE
+
+If the upload fails server-side, show an inline error beneath the avatar: "Something went wrong. Please try again." Do not clear the preview.
+If the user selects a non-image file somehow (the accept attribute is not a hard block), catch it client-side before compression and show: "Please select an image file."
+If the selected image is very large (a raw phone photo can be 5-10MB), the compression step may take a moment. Show a subtle loading state on the avatar circle during processing, before the preview appears.
+The camera icon overlay should not appear while upload is in progress.
+Existing photoUrl values that are external URLs remain valid and continue to render. The upgrade only changes how new photos are set.
+
+
+DO NOT CHANGE
+
+The photoUrl column in the database
+The shared avatar component render logic
+Avatar behavior for clients and alumni
+Event host card rendering
+Any other profile page fields or functionality
+The admin panel
+
+
+ACCEPTANCE CRITERIA
+
+Staff and admin see a circular avatar with a camera icon overlay on their profile page
+Tapping the avatar opens a file picker that includes camera roll on mobile
+Selecting an image shows a circular preview immediately
+A "Save photo" button sends the compressed image to the server and updates the avatar throughout the app
+A "Remove photo" option appears when a photo exists and clears it on confirm
+File type and size are validated both client-side and server-side
+Non-image file selections are rejected with a clear message
+Clients and alumni see no change to their profile page or avatar experience
+Existing photo URLs set under the old system continue to render correctly
