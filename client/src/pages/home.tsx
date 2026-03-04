@@ -54,9 +54,6 @@ export default function HomePage() {
           <h1 className="text-xl font-bold text-white" data-testid="text-greeting">
             Welcome back, {user?.firstName}.
           </h1>
-          <p className="text-white/70 text-sm mt-2 leading-relaxed">
-            You're here not because you're broken, but because you're strong.
-          </p>
           <p className="text-white/40 text-xs mt-3 font-medium">Building community. Changing lives.</p>
         </div>
       </div>
