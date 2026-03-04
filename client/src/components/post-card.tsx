@@ -121,7 +121,7 @@ export function PostCard({ post, isPinnedSection = false }: { post: PostType; is
 
   return (
     <div
-      className={`${isPinnedSection ? "bg-[#F1EFEF]" : "bg-white"} rounded-xl p-4`}
+      className={`${isPinnedSection ? "bg-[#FAE8DF]" : "bg-white"} rounded-xl p-4`}
       style={{ borderLeft: showLeftBorder ? `4px solid ${leftBorderColor}` : undefined, borderRadius: showLeftBorder ? "4px 12px 12px 4px" : "12px" }}
       data-testid={`post-${post.id}`}
     >

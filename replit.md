@@ -65,7 +65,7 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 ## Community Feed Updates (Implemented)
 - **Post types**: 4 types only — update, win, question, need (milestone removed)
 - **Feed filters**: All, Needs, Wins, Questions
-- **Pinned posts**: Displayed above the composer (below privacy banner), with #F1EFEF gray background, 📌 pin icon + "Pinned" label, no left border color treatment
+- **Pinned posts**: Displayed above the composer (below privacy banner), with #FAE8DF warm peach background, 📌 pin icon + "Pinned" label, no left border color treatment
 - **Regular posts**: Displayed below the composer in the feed with white background and normal styling
 
 ## Security
