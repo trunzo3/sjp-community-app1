@@ -203,17 +203,66 @@ export async function registerRoutes(
     res.json(eventsData);
   });
 
+  app.get("/api/events/:id", requireAuth, async (req, res) => {
+    const user = await storage.getUser(req.session.userId!);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    const event = await storage.getEvent(req.params.id);
+    if (!event) return res.status(404).json({ message: "Event not found" });
+    const isStaffOrAdmin = user.role === "staff" || user.role === "admin";
+    if (!isStaffOrAdmin && !event.applicableStages.includes(user.stage)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    let host = null;
+    if (event.hostUserId) {
+      const hostUser = await storage.getUser(event.hostUserId);
+      if (hostUser) {
+        host = {
+          firstName: hostUser.firstName,
+          lastName: hostUser.lastName,
+          role: hostUser.role,
+          bio: hostUser.bio,
+          avatarColor: hostUser.avatarColor,
+          photoUrl: hostUser.photoUrl,
+        };
+      }
+    }
+    res.json({ ...event, host });
+  });
+
   app.get("/api/admin/events", requireStaffOrAdmin, async (_req, res) => {
     const allEvents = await storage.getAllEvents();
     res.json(allEvents);
   });
 
+  app.get("/api/staff-users", requireStaffOrAdmin, async (_req, res) => {
+    const staffUsers = await storage.getStaffUsers();
+    const safe = staffUsers.map(({ password, ...u }) => u);
+    res.json(safe);
+  });
+
+  app.get("/api/venue-locations", requireAuth, async (_req, res) => {
+    const locations = await storage.getVenueLocations();
+    res.json(locations);
+  });
+
   app.post("/api/events", requireStaffOrAdmin, async (req, res) => {
+    if (req.body.hostUserId) {
+      const host = await storage.getUser(req.body.hostUserId);
+      if (!host || (host.role !== "staff" && host.role !== "admin")) {
+        return res.status(400).json({ message: "Host must be a staff or admin user" });
+      }
+    }
     const event = await storage.createEvent({ ...req.body, createdBy: req.session.userId });
     res.json(event);
   });
 
   app.patch("/api/events/:id", requireStaffOrAdmin, async (req, res) => {
+    if (req.body.hostUserId) {
+      const host = await storage.getUser(req.body.hostUserId);
+      if (!host || (host.role !== "staff" && host.role !== "admin")) {
+        return res.status(400).json({ message: "Host must be a staff or admin user" });
+      }
+    }
     const updated = await storage.updateEvent(req.params.id, req.body);
     if (!updated) return res.status(404).json({ message: "Event not found" });
     res.json(updated);

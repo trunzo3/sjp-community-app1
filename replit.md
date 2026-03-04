@@ -88,6 +88,16 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **Consistency**: AvatarCircle with photoUrl used in: profile header, post cards, reply threads, home page (composer, story cards, category cards), admin panel user list
 - **Edge cases**: Broken image URLs fall back silently to colored initial avatar via `onError` handler
 
+## Event Detail Pages (Implemented)
+- **Event detail route**: `/events/:id` — new page at `client/src/pages/event-detail.tsx`
+- **Schema changes**: `venuePhotoUrl` (text, nullable) and `hostUserId` (uuid, nullable, FK to users) added to `events` table
+- **Venue locations table**: `venue_locations` (id, name, photoUrl) — seeded with 5 campus locations with placeholder Unsplash images
+- **Event cards**: Tappable → navigate to `/events/:id` (removed expand/collapse, now shows ChevronRight)
+- **Detail page shows**: venue photo (if exists), event name, type badge, date, time, location with "Get Directions" link (Apple/Google Maps), full description, host card
+- **Host card**: Shows staff avatar (photo or initial), name, role label, bio. Only appears when hostUserId is set.
+- **Admin event form**: Location is now a dropdown with 5 known venues + "Other" option. Known venues auto-populate venue photo URL. Host dropdown lists staff/admin users. Venue photo URL field for manual override.
+- **API routes**: GET `/api/events/:id` returns event with host user data, GET `/api/staff-users` returns staff/admin users, GET `/api/venue-locations` returns venue library
+
 ## Security
 - `/api/users` protected by requireStaffOrAdmin (not just requireAuth)
 - `/api/admin/*` endpoints protected by requireStaffOrAdmin

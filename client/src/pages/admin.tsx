@@ -62,7 +62,7 @@ type ResourceForm = {
 
 type EventForm = {
   name: string; eventType: string; date: string; startTime: string; endTime: string;
-  location: string; description: string;
+  location: string; customLocation: string; description: string; venuePhotoUrl: string; hostUserId: string;
   stages: { client: boolean; alumni: boolean };
 };
 
@@ -72,7 +72,7 @@ const emptyResourceForm: ResourceForm = {
 };
 
 const emptyEventForm: EventForm = {
-  name: "", eventType: "", date: "", startTime: "", endTime: "", location: "", description: "",
+  name: "", eventType: "", date: "", startTime: "", endTime: "", location: "", customLocation: "", description: "", venuePhotoUrl: "", hostUserId: "",
   stages: { client: false, alumni: false },
 };
 
@@ -309,16 +309,38 @@ function EventsTab() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: events, isLoading } = useQuery<any[]>({ queryKey: ["/api/admin/events"] });
+  const { data: venueLocations } = useQuery<any[]>({ queryKey: ["/api/venue-locations"] });
+  const { data: staffUsers } = useQuery<any[]>({ queryKey: ["/api/staff-users"] });
+
+  const venuePhotoMap: Record<string, string> = {};
+  venueLocations?.forEach((v: any) => { venuePhotoMap[v.name] = v.photoUrl; });
+
+  function handleLocationChange(value: string) {
+    if (value === "__other__") {
+      setFormData({ ...formData, location: "__other__", customLocation: "", venuePhotoUrl: "" });
+    } else {
+      const photo = venuePhotoMap[value] || "";
+      setFormData({ ...formData, location: value, customLocation: "", venuePhotoUrl: photo });
+    }
+  }
+
+  function getEffectiveLocation() {
+    if (formData.location === "__other__") return formData.customLocation;
+    return formData.location;
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       const stages: string[] = [];
       if (formData.stages.client) stages.push("client");
       if (formData.stages.alumni) stages.push("alumni");
-      const body = {
+      const body: any = {
         name: formData.name, eventType: formData.eventType, date: formData.date,
         startTime: formData.startTime, endTime: formData.endTime,
-        location: formData.location, description: formData.description, applicableStages: stages,
+        location: getEffectiveLocation(), description: formData.description,
+        venuePhotoUrl: formData.venuePhotoUrl || null,
+        hostUserId: formData.hostUserId || null,
+        applicableStages: stages,
       };
       if (editId) {
         await apiRequest("PATCH", `/api/events/${editId}`, body);
@@ -346,10 +368,15 @@ function EventsTab() {
 
   function openEdit(e: any) {
     setEditId(e.id);
+    const isKnownLocation = venueLocations?.some((v: any) => v.name === e.location);
     setFormData({
       name: e.name, eventType: e.eventType, date: e.date,
       startTime: e.startTime || "", endTime: e.endTime || "",
-      location: e.location || "", description: e.description || "",
+      location: isKnownLocation ? e.location : (e.location ? "__other__" : ""),
+      customLocation: isKnownLocation ? "" : (e.location || ""),
+      description: e.description || "",
+      venuePhotoUrl: e.venuePhotoUrl || "",
+      hostUserId: e.hostUserId || "",
       stages: { client: e.applicableStages?.includes("client"), alumni: e.applicableStages?.includes("alumni") },
     });
     setShowForm(true);
@@ -384,7 +411,28 @@ function EventsTab() {
             <Input type="time" value={formData.startTime} onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} data-testid="admin-input-start-time" />
             <Input type="time" value={formData.endTime} onChange={(e) => setFormData({ ...formData, endTime: e.target.value })} data-testid="admin-input-end-time" />
           </div>
-          <Input placeholder="Location" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
+          <Select value={formData.location} onValueChange={handleLocationChange}>
+            <SelectTrigger data-testid="admin-select-location"><SelectValue placeholder="Select location" /></SelectTrigger>
+            <SelectContent>
+              {venueLocations?.map((v: any) => (
+                <SelectItem key={v.id} value={v.name}>{v.name}</SelectItem>
+              ))}
+              <SelectItem value="__other__">Other (custom location)</SelectItem>
+            </SelectContent>
+          </Select>
+          {formData.location === "__other__" && (
+            <Input placeholder="Enter custom location" value={formData.customLocation} onChange={(e) => setFormData({ ...formData, customLocation: e.target.value })} data-testid="admin-input-custom-location" />
+          )}
+          <Input placeholder="Venue photo URL (optional)" value={formData.venuePhotoUrl} onChange={(e) => setFormData({ ...formData, venuePhotoUrl: e.target.value })} data-testid="admin-input-venue-photo" />
+          <Select value={formData.hostUserId} onValueChange={(v) => setFormData({ ...formData, hostUserId: v === "__none__" ? "" : v })}>
+            <SelectTrigger data-testid="admin-select-host"><SelectValue placeholder="Event Host (optional)" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">No host</SelectItem>
+              {staffUsers?.map((u: any) => (
+                <SelectItem key={u.id} value={u.id}>{u.firstName} {u.lastName}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="min-h-[60px] resize-none" />
           <div className="flex items-center gap-4">
             <span className="text-xs text-[#868180]">Stages:</span>

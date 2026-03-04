@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import {
-  users, posts, replies, resources, events, stories, reactions, surveys, userProgress,
+  users, posts, replies, resources, events, stories, reactions, surveys, userProgress, venueLocations,
   type User, type InsertUser,
   type Post, type InsertPost,
   type Reply, type InsertReply,
@@ -11,6 +11,7 @@ import {
   type Reaction, type InsertReaction,
   type Survey, type InsertSurvey,
   type UserProgress, type InsertUserProgress,
+  type VenueLocation, type InsertVenueLocation,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -58,6 +59,12 @@ export interface IStorage {
 
   getProgressByUser(userId: string): Promise<UserProgress[]>;
   upsertProgress(userId: string, pillar: string, progress: number): Promise<UserProgress>;
+
+  getEvent(id: string): Promise<Event | undefined>;
+  getStaffUsers(): Promise<User[]>;
+
+  getVenueLocations(): Promise<VenueLocation[]>;
+  createVenueLocation(loc: InsertVenueLocation): Promise<VenueLocation>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -316,6 +323,25 @@ export class DatabaseStorage implements IStorage {
     const [created] = await db.insert(userProgress)
       .values({ userId, pillar: pillar as any, progress })
       .returning();
+    return created;
+  }
+
+  async getEvent(id: string): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event;
+  }
+
+  async getStaffUsers(): Promise<User[]> {
+    const allUsers = await db.select().from(users);
+    return allUsers.filter(u => u.role === "staff" || u.role === "admin");
+  }
+
+  async getVenueLocations(): Promise<VenueLocation[]> {
+    return db.select().from(venueLocations);
+  }
+
+  async createVenueLocation(loc: InsertVenueLocation): Promise<VenueLocation> {
+    const [created] = await db.insert(venueLocations).values(loc).returning();
     return created;
   }
 }

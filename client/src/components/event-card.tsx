@@ -1,21 +1,6 @@
-import { Calendar, ChevronDown, ChevronUp, Clock, MapPin } from "lucide-react";
+import { Calendar, ChevronRight, Clock, MapPin } from "lucide-react";
 import { format } from "date-fns";
-
-const eventTypeLabels: Record<string, string> = {
-  community_meeting: "Community Meeting",
-  workshop: "Workshop",
-  celebration: "Celebration",
-  class: "Class",
-  partner_session: "Partner Session",
-};
-
-const eventTypeColors: Record<string, string> = {
-  community_meeting: "bg-[#34737A]/10 text-[#34737A]",
-  workshop: "bg-blue-100 text-blue-700",
-  celebration: "bg-purple-100 text-purple-700",
-  class: "bg-amber-100 text-amber-700",
-  partner_session: "bg-rose-100 text-rose-700",
-};
+import { useLocation } from "wouter";
 
 const stageTagStyles: Record<string, string> = {
   client: "text-[#34737A] bg-[#E8F0F1]",
@@ -31,20 +16,19 @@ function formatTime12h(t: string) {
   return `${h12}:${m} ${ampm}`;
 }
 
-export function EventCard({ event, expanded, onToggle, showStageTags = false }: {
+export function EventCard({ event, showStageTags = false }: {
   event: any;
-  expanded: boolean;
-  onToggle: () => void;
   showStageTags?: boolean;
 }) {
+  const [, navigate] = useLocation();
   const eventDate = new Date(event.date + "T00:00:00");
 
   return (
     <div className="bg-white rounded-xl overflow-hidden" data-testid={`event-card-${event.id}`}>
       <button
         className="w-full flex items-center gap-3 p-4 text-left"
-        onClick={onToggle}
-        data-testid={`button-expand-event-${event.id}`}
+        onClick={() => navigate(`/events/${event.id}`)}
+        data-testid={`button-view-event-${event.id}`}
       >
         <div className="shrink-0 w-12 h-12 rounded-lg bg-[#34737A] flex flex-col items-center justify-center">
           <span className="text-[10px] font-bold text-white/70 uppercase leading-none">
@@ -63,7 +47,7 @@ export function EventCard({ event, expanded, onToggle, showStageTags = false }: 
           {event.location && (
             <div className="flex items-center gap-1 mt-0.5 text-xs text-[#868180]">
               <MapPin className="w-3 h-3 shrink-0" />
-              <span>{event.location}</span>
+              <span className="truncate">{event.location}</span>
             </div>
           )}
           {showStageTags && event.applicableStages?.length > 0 && (
@@ -79,36 +63,8 @@ export function EventCard({ event, expanded, onToggle, showStageTags = false }: 
             </div>
           )}
         </div>
-        {expanded ? (
-          <ChevronUp className="w-4 h-4 text-[#C7C2BF] shrink-0" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-[#C7C2BF] shrink-0" />
-        )}
+        <ChevronRight className="w-4 h-4 text-[#C7C2BF] shrink-0" />
       </button>
-      {expanded && (
-        <div className="px-4 pb-4 pt-0 border-t border-[#F1EFEF]">
-          <div className="mt-3">
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${eventTypeColors[event.eventType] || ""}`}>
-              {eventTypeLabels[event.eventType] || event.eventType}
-            </span>
-          </div>
-          {event.description && (
-            <p className="text-xs text-[#868180] mt-2 leading-relaxed">{event.description}</p>
-          )}
-          {showStageTags && event.applicableStages?.length > 0 && (
-            <div className="flex gap-1.5 mt-2">
-              {event.applicableStages.map((s: string) => (
-                <span
-                  key={s}
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${stageTagStyles[s] || "bg-[#F1EFEF] text-[#868180]"}`}
-                >
-                  {s.charAt(0).toUpperCase() + s.slice(1)}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

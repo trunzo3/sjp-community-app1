@@ -25,7 +25,6 @@ export default function EventsPage() {
   const queryClient = useQueryClient();
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
   const [showForm, setShowForm] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "", eventType: "", date: "", startTime: "", endTime: "", location: "", description: "",
     stages: { client: false, alumni: false },
@@ -122,8 +121,6 @@ export default function EventsPage() {
             <EventCard
               key={event.id}
               event={event}
-              expanded={expandedId === event.id}
-              onToggle={() => setExpandedId(expandedId === event.id ? null : event.id)}
               showStageTags={isStaffOrAdmin}
             />
           ))}

@@ -1,0 +1,64 @@
+REPLIT PROMPT: Event Detail Pages
+The app currently shows events as list cards in /events with no tap-through behavior. We are adding a full event detail view, an expandable venue photo system tied to recurring campus locations, and a staff host field on each event that displays on the detail page.
+
+WHAT TO BUILD
+1. Event detail page
+When a user taps any event card, it routes to a new detail view at /events/:id. This page should display:
+Event name and type badge
+Date, start time, end time
+Location name with a "Get Directions" link that opens Apple Maps or Google Maps with the location name as the search query (tap-to-map)
+Full description (currently truncated on the card)
+Venue photo (see below)
+Staff host card (see below)
+A back button returning to the events list
+The existing event cards in /events should become tappable. No other behavior on the list view changes.
+
+2. Venue photo library
+Add an optional venuePhotoUrl field to the events table. This is a text field storing a URL.
+Seed the following recurring campus locations with placeholder image URLs. Use publicly accessible warm, neutral placeholder images (Unsplash source URLs are fine as temporary stand-ins, for example https://source.unsplash.com/800x400/?community+room or similar). Each location gets its own distinct placeholder:
+Main Campus — Community Room
+Main Campus — Garden Area
+Gateway Building — Room 102
+OSS Building — Main Hall
+Off Campus (generic exterior placeholder)
+When a staff member creates or edits an event and selects one of these known locations, the venue photo should auto-populate from the library. Staff can override with a custom URL if needed. The location field should become a dropdown that includes these five options plus a free-text "Other" option. If "Other" is selected, no photo auto-populates and the image field is left blank unless the staff member adds a custom URL manually.
+The schema should support adding new locations to this library without a code change — store the location-to-photo mapping in a seed table or config object that staff can extend later.
+
+3. Staff host on events
+Add an optional hostUserId field to the events table, referencing the users table. Only users with role staff or admin are valid selections.
+In the event creation and edit form in the admin panel, add a dropdown labeled "Event Host" that lists all staff and admin users by first and last name. This field is optional.
+On the event detail page, if a host is assigned, display a small host card showing:
+Their avatar (if they have a real profile photo uploaded) or their colored initial avatar as fallback
+Their first name and role label (e.g. "Sarah — Staff")
+A brief bio if one exists on their profile
+If no host is assigned, the host card does not appear. Do not show an empty state for this field.
+For staff profile photos specifically: add an optional photoUrl field to the users table (text, nullable). In the profile page, staff and admin users should see an "Add Photo" option that accepts a URL. This photo appears in their host card on event detail pages. Clients and alumni do not see this upload option on their own profiles — their avatar system remains unchanged. The intent is that a real staff photo creates familiarity for newcomers; if no photo is uploaded, the colored initial avatar is the fallback and functions fine.
+
+EDGE CASES TO HANDLE
+If an event has no venue photo and no known location match, the detail page shows no image, no broken image state. The layout should be graceful without a photo.
+If the host is a person who does not have an app account (for example an external partner running a session), leave the host field blank for now. The event description field is where that information should live in those cases. Do not build external host logic at this stage.
+Location names must match exactly between the dropdown and the photo library lookup. Protect against case sensitivity issues.
+
+SCHEMA CHANGES NEEDED
+events table: add venuePhotoUrl (text, nullable), hostUserId (uuid, nullable, FK to users)
+users table: add photoUrl (text, nullable)
+New config or seed structure: venue location library mapping location name to photo URL
+Run any required migrations and update the Drizzle schema in shared/schema.ts. Update server/storage.ts to include the new fields in all relevant CRUD operations. Update the API routes in server/routes.ts to return host user data (name, bio, avatarColor, photoUrl) when fetching a single event.
+
+DO NOT CHANGE
+The events list view layout or card design
+The bottom navigation
+Any existing admin panel tabs other than the event form
+Any client or alumni profile behavior
+The existing avatar color system for non-staff users
+
+ACCEPTANCE CRITERIA
+Tapping any event card navigates to a detail page
+Detail page shows all event fields including full description
+Tapping location opens maps on a real mobile device
+If a known venue is selected, the venue photo appears automatically
+Staff host card appears when a host is assigned, does not appear when unassigned
+Staff can upload a photo URL to their profile and it appears on event detail pages
+All new fields are optional and the UI degrades gracefully when empty
+Admin event form includes the new host dropdown and location dropdown with photo auto-fill behavior
+

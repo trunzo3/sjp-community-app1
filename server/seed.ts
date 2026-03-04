@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import { db } from "./db";
-import { users } from "@shared/schema";
+import { users, venueLocations } from "@shared/schema";
 
 function daysAgo(n: number): Date {
   const d = new Date();
@@ -29,7 +29,26 @@ function getNextWednesday(): string {
   return getNextDay(3);
 }
 
+async function seedVenueLocations() {
+  const existing = await db.select().from(venueLocations).limit(1);
+  if (existing.length > 0) return;
+
+  const venues = [
+    { name: "Main Campus — Community Room", photoUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=400&fit=crop" },
+    { name: "Main Campus — Garden Area", photoUrl: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&h=400&fit=crop" },
+    { name: "Gateway Building — Room 102", photoUrl: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&h=400&fit=crop" },
+    { name: "OSS Building — Main Hall", photoUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=400&fit=crop" },
+    { name: "Off Campus", photoUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop" },
+  ];
+
+  for (const v of venues) {
+    await db.insert(venueLocations).values(v).onConflictDoNothing();
+  }
+}
+
 export async function seedDatabase() {
+  await seedVenueLocations();
+
   const existingUsers = await db.select().from(users).limit(1);
   if (existingUsers.length > 0) return;
 
@@ -85,14 +104,22 @@ export async function seedDatabase() {
     await storage.createResource(r);
   }
 
+  const venuePhotoMap: Record<string, string> = {
+    "Main Campus — Community Room": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=400&fit=crop",
+    "Main Campus — Garden Area": "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&h=400&fit=crop",
+    "Gateway Building — Room 102": "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&h=400&fit=crop",
+    "OSS Building — Main Hall": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=400&fit=crop",
+    "Off Campus": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop",
+  };
+
   const seedEvents = [
-    { name: "Daily Community Meeting", eventType: "community_meeting" as const, date: today, startTime: "15:00", endTime: "16:00", location: "Main Campus — Community Room", applicableStages: ["client"], description: "Milestone celebrations, sobriety milestones, open discussion. You're here not because you're broken, but because you're strong.", createdBy: createdUsers.sarah },
-    { name: "New Resident Orientation", eventType: "class" as const, date: in2, startTime: "10:00", endTime: "12:00", location: "Gateway Building — Room 102", applicableStages: ["client"], description: "Welcome session for new community members. Program overview, campus tour, and getting set up with your resources.", createdBy: createdUsers.sarah },
-    { name: "Milestone Celebration Friday", eventType: "celebration" as const, date: getComingFriday(), startTime: "14:00", endTime: "15:00", location: "Main Campus — Community Room", applicableStages: ["client", "alumni"], description: "Celebrating sobriety milestones, program milestones, and personal wins. Come cheer on your community.", createdBy: createdUsers.sarah },
-    { name: "Resume Building Workshop", eventType: "workshop" as const, date: in4, startTime: "13:00", endTime: "15:00", location: "OSS Building — Computer Lab", applicableStages: ["client"], description: "Hands-on workshop to create or update your resume. Bring your work history — we'll help you tell your professional story.", createdBy: createdUsers.sarah },
+    { name: "Daily Community Meeting", eventType: "community_meeting" as const, date: today, startTime: "15:00", endTime: "16:00", location: "Main Campus — Community Room", venuePhotoUrl: venuePhotoMap["Main Campus — Community Room"], hostUserId: createdUsers.sarah, applicableStages: ["client"], description: "Milestone celebrations, sobriety milestones, open discussion. You're here not because you're broken, but because you're strong.", createdBy: createdUsers.sarah },
+    { name: "New Resident Orientation", eventType: "class" as const, date: in2, startTime: "10:00", endTime: "12:00", location: "Gateway Building — Room 102", venuePhotoUrl: venuePhotoMap["Gateway Building — Room 102"], hostUserId: createdUsers.sarah, applicableStages: ["client"], description: "Welcome session for new community members. Program overview, campus tour, and getting set up with your resources.", createdBy: createdUsers.sarah },
+    { name: "Milestone Celebration Friday", eventType: "celebration" as const, date: getComingFriday(), startTime: "14:00", endTime: "15:00", location: "Main Campus — Community Room", venuePhotoUrl: venuePhotoMap["Main Campus — Community Room"], applicableStages: ["client", "alumni"], description: "Celebrating sobriety milestones, program milestones, and personal wins. Come cheer on your community.", createdBy: createdUsers.sarah },
+    { name: "Resume Building Workshop", eventType: "workshop" as const, date: in4, startTime: "13:00", endTime: "15:00", location: "OSS Building — Main Hall", venuePhotoUrl: venuePhotoMap["OSS Building — Main Hall"], applicableStages: ["client"], description: "Hands-on workshop to create or update your resume. Bring your work history — we'll help you tell your professional story.", createdBy: createdUsers.sarah },
     { name: "Mulvaney's Kitchen Tour", eventType: "partner_session" as const, date: in7, startTime: "09:00", endTime: "11:00", location: "Mulvaney's B&L — 1215 19th St, Sacramento", applicableStages: ["client", "alumni"], description: "Tour the Mulvaney's kitchen, meet the team, and learn about the Career Pathway Program. Transportation provided from campus.", createdBy: createdUsers.sarah },
-    { name: "Wellness Wednesday: Yoga & Meditation", eventType: "workshop" as const, date: getNextWednesday(), startTime: "08:00", endTime: "09:00", location: "Main Campus — Garden Area", applicableStages: ["client", "alumni"], description: "Start your day with gentle yoga and guided meditation. All levels welcome. Mats provided.", createdBy: createdUsers.sarah },
-    { name: "Alumni Networking Brunch", eventType: "celebration" as const, date: in14, startTime: "10:00", endTime: "12:00", location: "Main Campus — Community Room", applicableStages: ["alumni"], description: "Quarterly gathering for SJP alumni. Share updates, connect with old friends, and meet women who graduated after you. Brunch provided.", createdBy: createdUsers.sarah },
+    { name: "Wellness Wednesday: Yoga & Meditation", eventType: "workshop" as const, date: getNextWednesday(), startTime: "08:00", endTime: "09:00", location: "Main Campus — Garden Area", venuePhotoUrl: venuePhotoMap["Main Campus — Garden Area"], hostUserId: createdUsers.sarah, applicableStages: ["client", "alumni"], description: "Start your day with gentle yoga and guided meditation. All levels welcome. Mats provided.", createdBy: createdUsers.sarah },
+    { name: "Alumni Networking Brunch", eventType: "celebration" as const, date: in14, startTime: "10:00", endTime: "12:00", location: "Main Campus — Community Room", venuePhotoUrl: venuePhotoMap["Main Campus — Community Room"], applicableStages: ["alumni"], description: "Quarterly gathering for SJP alumni. Share updates, connect with old friends, and meet women who graduated after you. Brunch provided.", createdBy: createdUsers.sarah },
   ];
 
   for (const e of seedEvents) {

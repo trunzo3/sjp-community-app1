@@ -10,6 +10,7 @@ import HomePage from "@/pages/home";
 import CommunityPage from "@/pages/community";
 import ResourcesPage from "@/pages/resources";
 import EventsPage from "@/pages/events";
+import EventDetailPage from "@/pages/event-detail";
 import ProfilePage from "@/pages/profile";
 import AdminPage from "@/pages/admin";
 import ShareStoryPage from "@/pages/share-story";
@@ -42,6 +43,7 @@ function AppContent() {
           <Route path="/community" component={CommunityPage} />
           <Route path="/resources" component={ResourcesPage} />
           <Route path="/events" component={EventsPage} />
+          <Route path="/events/:id" component={EventDetailPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/admin" component={AdminPage} />
           <Route path="/share-story" component={ShareStoryPage} />

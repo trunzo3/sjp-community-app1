@@ -67,9 +67,17 @@ export const events = pgTable("events", {
   endTime: time("end_time").notNull(),
   location: text("location"),
   description: text("description"),
+  venuePhotoUrl: text("venue_photo_url"),
+  hostUserId: uuid("host_user_id").references(() => users.id),
   applicableStages: text("applicable_stages").array().notNull(),
   createdBy: uuid("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const venueLocations = pgTable("venue_locations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  photoUrl: text("photo_url").notNull(),
 });
 
 export const reactionTypeEnum = pgEnum("reaction_type", ["heart", "clap", "pray", "fire", "star", "smile"]);
@@ -128,6 +136,7 @@ export const insertStorySchema = createInsertSchema(stories).omit({ id: true, cr
 export const insertReactionSchema = createInsertSchema(reactions).omit({ id: true, createdAt: true });
 export const insertSurveySchema = createInsertSchema(surveys).omit({ id: true, submittedAt: true });
 export const insertUserProgressSchema = createInsertSchema(userProgress).omit({ id: true });
+export const insertVenueLocationSchema = createInsertSchema(venueLocations).omit({ id: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -147,3 +156,5 @@ export type Survey = typeof surveys.$inferSelect;
 export type InsertSurvey = z.infer<typeof insertSurveySchema>;
 export type UserProgress = typeof userProgress.$inferSelect;
 export type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;
+export type VenueLocation = typeof venueLocations.$inferSelect;
+export type InsertVenueLocation = z.infer<typeof insertVenueLocationSchema>;
