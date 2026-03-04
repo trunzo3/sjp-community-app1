@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AvatarCircle } from "@/components/avatar-circle";
-import { ArrowLeft, Plus, Pencil, Trash2, Loader2, X, Check, ChevronDown, ChevronUp, Users, Camera, MapPin, Sparkles, BarChart3, MessageCircle, Shield, HelpCircle } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Loader2, X, Check, ChevronDown, ChevronUp, Users, Camera, MapPin, Sparkles, BarChart3, MessageCircle, Shield, HelpCircle, FileText, Upload, ToggleLeft, ToggleRight, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -1022,7 +1022,7 @@ function UsersTab() {
 function AiGuideTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [subTab, setSubTab] = useState<"faqs" | "trusted" | "crisis" | "analytics">("faqs");
+  const [subTab, setSubTab] = useState<"faqs" | "trusted" | "documents" | "crisis" | "analytics">("faqs");
 
   return (
     <div>
@@ -1030,6 +1030,7 @@ function AiGuideTab() {
         {[
           { key: "faqs" as const, label: "FAQs", icon: <HelpCircle className="w-3.5 h-3.5" /> },
           { key: "trusted" as const, label: "Trusted Answers", icon: <MessageCircle className="w-3.5 h-3.5" /> },
+          { key: "documents" as const, label: "Documents", icon: <FileText className="w-3.5 h-3.5" /> },
           { key: "crisis" as const, label: "Crisis Config", icon: <Shield className="w-3.5 h-3.5" /> },
           { key: "analytics" as const, label: "Analytics", icon: <BarChart3 className="w-3.5 h-3.5" /> },
         ].map((t) => (
@@ -1048,6 +1049,7 @@ function AiGuideTab() {
 
       {subTab === "faqs" && <FaqsSubTab />}
       {subTab === "trusted" && <TrustedAnswersSubTab />}
+      {subTab === "documents" && <DocumentsSubTab />}
       {subTab === "crisis" && <CrisisConfigSubTab />}
       {subTab === "analytics" && <AnalyticsSubTab />}
     </div>
@@ -1156,6 +1158,268 @@ function FaqsSubTab() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function DocumentsSubTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState("");
+  const [expandedChunks, setExpandedChunks] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ description: "", tags: "" });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const { data: documents, isLoading } = useQuery<any[]>({ queryKey: ["/api/admin/ai/documents"] });
+
+  const { data: chunks } = useQuery<any[]>({
+    queryKey: ["/api/admin/ai/documents", expandedChunks, "chunks"],
+    enabled: !!expandedChunks,
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/ai/documents/${expandedChunks}/chunks`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load chunks");
+      return res.json();
+    },
+  });
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadStatus("Uploading file...");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (description.trim()) formData.append("description", description.trim());
+      if (tags.trim()) formData.append("tags", tags.trim());
+
+      setUploadStatus("Extracting text & generating embeddings...");
+
+      const res = await fetch("/api/admin/ai/documents", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Upload failed" }));
+        throw new Error(err.message);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai/documents"] });
+      setDescription("");
+      setTags("");
+      toast({ title: "Document uploaded and processed" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      setUploadStatus("");
+      e.target.value = "";
+    }
+  };
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      await apiRequest("PATCH", `/api/admin/ai/documents/${id}`, { active });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai/documents"] });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingId) return;
+      await apiRequest("PATCH", `/api/admin/ai/documents/${editingId}`, {
+        description: editForm.description || null,
+        tags: editForm.tags,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai/documents"] });
+      setEditingId(null);
+      toast({ title: "Document updated" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/ai/documents/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai/documents"] });
+      setDeleteId(null);
+      toast({ title: "Document deleted" });
+    },
+  });
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const fileTypeIcon = (type: string) => {
+    return <FileText className={`w-4 h-4 ${type === "pdf" ? "text-red-500" : type === "docx" ? "text-blue-500" : "text-gray-500"}`} />;
+  };
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-[#34737A]" /></div>;
+
+  return (
+    <div>
+      <div className="bg-white rounded-xl border border-[#F1EFEF] p-4 mb-4" data-testid="document-upload-form">
+        <h3 className="text-sm font-semibold text-[#302D2E] mb-2">Upload Document</h3>
+        <p className="text-[10px] text-[#868180] mb-3">Upload PDF, Word (.docx), or text files. The AI Guide will use these documents to answer client questions.</p>
+        <div className="space-y-2 mb-3">
+          <Input placeholder="Description (optional)" value={description} onChange={e => setDescription(e.target.value)} data-testid="input-doc-description" />
+          <Input placeholder="Tags (comma-separated, optional)" value={tags} onChange={e => setTags(e.target.value)} data-testid="input-doc-tags" />
+        </div>
+        <label className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+          uploading ? "border-[#34737A]/30 bg-[#34737A]/5" : "border-[#F1EFEF] hover:border-[#34737A]/50 hover:bg-[#34737A]/5"
+        }`} data-testid="button-upload-document">
+          {uploading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-[#34737A]" />
+              <span className="text-xs text-[#34737A]">{uploadStatus}</span>
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4 text-[#868180]" />
+              <span className="text-xs text-[#868180]">Choose file (.pdf, .docx, .txt)</span>
+            </>
+          )}
+          <input
+            type="file"
+            accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+            onChange={handleUpload}
+            disabled={uploading}
+            className="hidden"
+            data-testid="input-file-document"
+          />
+        </label>
+      </div>
+
+      <div className="space-y-2" data-testid="documents-list">
+        {documents?.map((doc: any) => (
+          <div key={doc.id} className={`rounded-xl border overflow-hidden ${doc.active ? "bg-white border-[#F1EFEF]" : "bg-gray-50 border-gray-200 opacity-60"}`} data-testid={`doc-item-${doc.id}`}>
+            <div className="p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2 flex-1 min-w-0">
+                  {fileTypeIcon(doc.fileType)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#302D2E] truncate">{doc.originalName}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-[#868180] uppercase">{doc.fileType}</span>
+                      <span className="text-[10px] text-[#C7C2BF]">{formatSize(doc.fileSize)}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#34737A]/10 text-[#34737A]">{doc.chunkCount} chunks</span>
+                    </div>
+                    {doc.description && <p className="text-xs text-[#868180] mt-1 line-clamp-1">{doc.description}</p>}
+                    {doc.tags?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {doc.tags.map((tag: string) => (
+                          <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#A0845E]/10 text-[#A0845E]">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => toggleActiveMutation.mutate({ id: doc.id, active: !doc.active })}
+                    className="p-1.5 rounded-lg hover:bg-[#F1EFEF]"
+                    title={doc.active ? "Deactivate" : "Activate"}
+                    data-testid={`button-toggle-doc-${doc.id}`}
+                  >
+                    {doc.active ? <ToggleRight className="w-4 h-4 text-[#34737A]" /> : <ToggleLeft className="w-4 h-4 text-[#868180]" />}
+                  </button>
+                  <button
+                    onClick={() => setExpandedChunks(expandedChunks === doc.id ? null : doc.id)}
+                    className="p-1.5 rounded-lg hover:bg-[#F1EFEF]"
+                    title="Preview chunks"
+                    data-testid={`button-preview-doc-${doc.id}`}
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#868180]" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditForm({ description: doc.description || "", tags: (doc.tags || []).join(", ") });
+                      setEditingId(doc.id);
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-[#F1EFEF]"
+                    data-testid={`button-edit-doc-${doc.id}`}
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-[#868180]" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteId(doc.id)}
+                    className="p-1.5 rounded-lg hover:bg-red-50"
+                    data-testid={`button-delete-doc-${doc.id}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                  </button>
+                </div>
+              </div>
+
+              {editingId === doc.id && (
+                <div className="mt-3 pt-3 border-t border-[#F1EFEF] space-y-2">
+                  <Input placeholder="Description" value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} data-testid="input-edit-doc-desc" />
+                  <Input placeholder="Tags (comma-separated)" value={editForm.tags} onChange={e => setEditForm(f => ({ ...f, tags: e.target.value }))} data-testid="input-edit-doc-tags" />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="bg-[#34737A] hover:bg-[#2C6169]" data-testid="button-save-doc-edit">
+                      {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingId(null)} data-testid="button-cancel-doc-edit">Cancel</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {expandedChunks === doc.id && (
+              <div className="border-t border-[#F1EFEF] bg-gray-50 p-3 max-h-60 overflow-y-auto" data-testid={`doc-chunks-${doc.id}`}>
+                <p className="text-[10px] font-medium text-[#868180] mb-2">Extracted Chunks ({doc.chunkCount})</p>
+                {chunks ? (
+                  <div className="space-y-2">
+                    {chunks.map((chunk: any) => (
+                      <div key={chunk.id} className="bg-white rounded-lg border border-[#F1EFEF] p-2">
+                        <div className="flex items-center gap-1 mb-1">
+                          <span className="text-[10px] font-medium text-[#34737A]">#{chunk.chunkIndex + 1}</span>
+                          {chunk.metadata && <span className="text-[10px] text-[#868180] truncate">— {chunk.metadata}</span>}
+                        </div>
+                        <p className="text-[11px] text-[#302D2E] whitespace-pre-line line-clamp-4">{chunk.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-[#34737A]" /></div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        {(!documents || documents.length === 0) && (
+          <p className="text-xs text-[#C7C2BF] text-center py-4">No documents uploaded yet. Upload PDF, Word, or text files to give the AI Guide more context.</p>
+        )}
+      </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete the document and all its extracted text chunks. The AI Guide will no longer use this content.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-doc">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-red-600 hover:bg-red-700" data-testid="button-confirm-delete-doc">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

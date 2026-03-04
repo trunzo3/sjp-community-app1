@@ -45,6 +45,7 @@ function buildContextPrompt(results: RetrievalResult[]): string {
                   r.type === "event" ? "Event" :
                   r.type === "faq" ? "FAQ" :
                   r.type === "trusted_answer" ? "Trusted Answer" :
+                  r.type === "document" ? "Document" :
                   "Announcement";
     sections.push(`[${label}] "${r.title}": ${r.snippet}`);
   }

@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Sparkles, X, Send, BookOpen, Calendar, MessageCircle, HelpCircle, Megaphone, AlertTriangle, Loader2, ChevronRight, ExternalLink } from "lucide-react";
+import { Sparkles, X, Send, BookOpen, Calendar, MessageCircle, HelpCircle, Megaphone, AlertTriangle, Loader2, ChevronRight, ExternalLink, FileText } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface Citation {
@@ -40,30 +40,34 @@ interface ChatMessage {
 function CitationCard({ citation, onClick }: { citation: Citation; onClick: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const hasLink = !!citation.linkPath;
-  const isExpandable = citation.type === "faq" || citation.type === "trusted_answer";
+  const isExpandable = citation.type === "faq" || citation.type === "trusted_answer" || citation.type === "document";
 
   const icon = citation.type === "resource" ? <BookOpen className="w-3.5 h-3.5" /> :
                citation.type === "event" ? <Calendar className="w-3.5 h-3.5" /> :
                citation.type === "faq" ? <HelpCircle className="w-3.5 h-3.5" /> :
                citation.type === "announcement" ? <Megaphone className="w-3.5 h-3.5" /> :
+               citation.type === "document" ? <FileText className="w-3.5 h-3.5" /> :
                <MessageCircle className="w-3.5 h-3.5" />;
 
   const label = citation.type === "resource" ? "Resource" :
                 citation.type === "event" ? "Event" :
                 citation.type === "faq" ? "FAQ" :
                 citation.type === "announcement" ? "Post" :
+                citation.type === "document" ? "Document" :
                 "Answer";
 
   const colorClass = citation.type === "resource" ? "border-[#5DA592]/30 bg-[#5DA592]/5" :
                      citation.type === "event" ? "border-[#34737A]/30 bg-[#34737A]/5" :
                      citation.type === "faq" ? "border-[#979DB6]/30 bg-[#979DB6]/5" :
                      citation.type === "announcement" ? "border-[#EEBBA7]/30 bg-[#EEBBA7]/5" :
+                     citation.type === "document" ? "border-[#A0845E]/30 bg-[#A0845E]/5" :
                      "border-[#34737A]/30 bg-[#34737A]/5";
 
   const iconColor = citation.type === "resource" ? "text-[#5DA592]" :
                     citation.type === "event" ? "text-[#34737A]" :
                     citation.type === "faq" ? "text-[#979DB6]" :
                     citation.type === "announcement" ? "text-[#D18A5A]" :
+                    citation.type === "document" ? "text-[#A0845E]" :
                     "text-[#34737A]";
 
   const handleClick = () => {

@@ -20,7 +20,8 @@ The platform is built with a React, TypeScript, Tailwind CSS frontend using `sha
 - **API Structure**: Express API routes enforce session authentication and role-based access (`requireAuth`, `requireStaffOrAdmin`, `requireAdmin`).
 - **State Management**: TanStack Query is used for data fetching, with `staleTime: Infinity` requiring explicit query invalidation after mutations.
 - **Image Handling**: Client-side image resizing/compression and server-side storage for user avatars and venue photos.
-- **AI Guide**: Implements a Retrieval-Augmented Generation (RAG) pattern using `gpt-4o-mini` for content search, crisis detection, and response generation, with a focus on citation and trusted sources.
+- **AI Guide**: Implements a Retrieval-Augmented Generation (RAG) pattern using `gpt-4o-mini` for content search, crisis detection, and response generation, with a focus on citation and trusted sources. Supports hybrid search combining keyword matching with vector similarity via pgvector.
+- **Document RAG System**: Admin can upload PDF/DOCX/TXT files that are automatically chunked, embedded via OpenAI `text-embedding-3-small`, and stored in PostgreSQL with pgvector HNSW indexing. The AI Guide performs hybrid search (keyword + vector cosine similarity) to find relevant document content alongside FAQs, resources, events, and trusted answers.
 
 ### Feature Specifications
 - **Admin Panel**: Provides CRUD operations for resources, events, stories (with approval workflow), surveys (aggregate stats), and user management (roles, stage, graduation).
@@ -37,6 +38,9 @@ The platform is built with a React, TypeScript, Tailwind CSS frontend using `sha
 - **PostgreSQL**: Primary database.
 - **OpenAI**: Utilized for the AI Guide feature (`gpt-4o-mini`) via Replit AI Integrations.
 - **Multer**: Used for handling `multipart/form-data` for file uploads on the server.
+- **pdf-parse**: PDF text extraction for document RAG pipeline.
+- **mammoth**: Word document (.docx) text extraction for document RAG pipeline.
+- **pgvector**: PostgreSQL extension (v0.8.0) for vector similarity search with HNSW indexing.
 - **`bcryptjs`**: For password hashing and secure authentication.
 - **`wouter`**: Frontend routing.
 - **`react-router-dom`**: Used for frontend routing.

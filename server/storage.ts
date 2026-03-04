@@ -2,7 +2,7 @@ import { db } from "./db";
 import { eq, desc, and, sql, gte } from "drizzle-orm";
 import {
   users, posts, replies, resources, events, stories, reactions, surveys, userProgress, venueLocations,
-  aiFaqs, aiTrustedAnswers, aiCrisisConfig, aiQueryLogs,
+  aiFaqs, aiTrustedAnswers, aiCrisisConfig, aiQueryLogs, aiDocuments, aiDocumentChunks,
   type User, type InsertUser,
   type Post, type InsertPost,
   type Reply, type InsertReply,
@@ -17,6 +17,8 @@ import {
   type AiTrustedAnswer, type InsertAiTrustedAnswer,
   type AiCrisisConfig, type InsertAiCrisisConfig,
   type AiQueryLog, type InsertAiQueryLog,
+  type AiDocument, type InsertAiDocument,
+  type AiDocumentChunk, type InsertAiDocumentChunk,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -93,6 +95,17 @@ export interface IStorage {
 
   getPinnedPosts(): Promise<Post[]>;
   getFutureEvents(userStage?: string): Promise<Event[]>;
+
+  getDocuments(): Promise<AiDocument[]>;
+  getDocument(id: string): Promise<AiDocument | undefined>;
+  createDocument(doc: InsertAiDocument): Promise<AiDocument>;
+  updateDocument(id: string, data: Partial<InsertAiDocument>): Promise<AiDocument | undefined>;
+  deleteDocument(id: string): Promise<boolean>;
+  createDocumentChunks(chunks: InsertAiDocumentChunk[]): Promise<AiDocumentChunk[]>;
+  getDocumentChunks(documentId: string): Promise<AiDocumentChunk[]>;
+  deleteDocumentChunks(documentId: string): Promise<boolean>;
+  searchDocumentChunksByVector(queryEmbedding: number[], limit?: number): Promise<(AiDocumentChunk & { documentName: string; similarity: number })[]>;
+  getActiveDocumentChunks(): Promise<(AiDocumentChunk & { documentName: string })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -494,6 +507,99 @@ export class DatabaseStorage implements IStorage {
       allEvents = allEvents.filter(e => e.applicableStages.includes(userStage));
     }
     return allEvents;
+  }
+
+  async getDocuments(): Promise<AiDocument[]> {
+    return db.select().from(aiDocuments).orderBy(desc(aiDocuments.createdAt));
+  }
+
+  async getDocument(id: string): Promise<AiDocument | undefined> {
+    const [doc] = await db.select().from(aiDocuments).where(eq(aiDocuments.id, id));
+    return doc;
+  }
+
+  async createDocument(doc: InsertAiDocument): Promise<AiDocument> {
+    const [created] = await db.insert(aiDocuments).values(doc).returning();
+    return created;
+  }
+
+  async updateDocument(id: string, data: Partial<InsertAiDocument>): Promise<AiDocument | undefined> {
+    const [updated] = await db.update(aiDocuments).set(data).where(eq(aiDocuments.id, id)).returning();
+    return updated;
+  }
+
+  async deleteDocument(id: string): Promise<boolean> {
+    await db.delete(aiDocumentChunks).where(eq(aiDocumentChunks.documentId, id));
+    const result = await db.delete(aiDocuments).where(eq(aiDocuments.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async createDocumentChunks(chunks: InsertAiDocumentChunk[]): Promise<AiDocumentChunk[]> {
+    if (chunks.length === 0) return [];
+    const created = await db.insert(aiDocumentChunks).values(chunks).returning();
+    return created;
+  }
+
+  async getDocumentChunks(documentId: string): Promise<AiDocumentChunk[]> {
+    return db.select({
+      id: aiDocumentChunks.id,
+      documentId: aiDocumentChunks.documentId,
+      content: aiDocumentChunks.content,
+      chunkIndex: aiDocumentChunks.chunkIndex,
+      metadata: aiDocumentChunks.metadata,
+      embedding: aiDocumentChunks.embedding,
+      createdAt: aiDocumentChunks.createdAt,
+    }).from(aiDocumentChunks).where(eq(aiDocumentChunks.documentId, documentId)).orderBy(aiDocumentChunks.chunkIndex);
+  }
+
+  async deleteDocumentChunks(documentId: string): Promise<boolean> {
+    const result = await db.delete(aiDocumentChunks).where(eq(aiDocumentChunks.documentId, documentId)).returning();
+    return result.length > 0;
+  }
+
+  async searchDocumentChunksByVector(queryEmbedding: number[], limit = 10): Promise<(AiDocumentChunk & { documentName: string; similarity: number })[]> {
+    const embeddingStr = `[${queryEmbedding.join(",")}]`;
+    const results = await db.execute(sql`
+      SELECT c.id, c.document_id, c.content, c.chunk_index, c.metadata, c.created_at,
+             d.original_name as document_name,
+             1 - (c.embedding <=> ${embeddingStr}::vector) as similarity
+      FROM ai_document_chunks c
+      JOIN ai_documents d ON c.document_id = d.id
+      WHERE d.active = true AND c.embedding IS NOT NULL
+      ORDER BY c.embedding <=> ${embeddingStr}::vector
+      LIMIT ${limit}
+    `);
+    return (results.rows as any[]).map(r => ({
+      id: r.id,
+      documentId: r.document_id,
+      content: r.content,
+      chunkIndex: r.chunk_index,
+      metadata: r.metadata,
+      embedding: null,
+      createdAt: r.created_at,
+      documentName: r.document_name,
+      similarity: parseFloat(r.similarity),
+    }));
+  }
+
+  async getActiveDocumentChunks(): Promise<(AiDocumentChunk & { documentName: string })[]> {
+    const results = await db.execute(sql`
+      SELECT c.id, c.document_id, c.content, c.chunk_index, c.metadata, c.created_at,
+             d.original_name as document_name
+      FROM ai_document_chunks c
+      JOIN ai_documents d ON c.document_id = d.id
+      WHERE d.active = true
+    `);
+    return (results.rows as any[]).map(r => ({
+      id: r.id,
+      documentId: r.document_id,
+      content: r.content,
+      chunkIndex: r.chunk_index,
+      metadata: r.metadata,
+      embedding: null,
+      createdAt: r.created_at,
+      documentName: r.document_name,
+    }));
   }
 }
 

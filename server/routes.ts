@@ -10,6 +10,7 @@ import { seedDatabase } from "./seed";
 import MemoryStore from "memorystore";
 import { handleAiGuideQuery } from "./ai-guide";
 import { clearCrisisCache } from "./ai-crisis";
+import { extractText, chunkText, generateEmbeddings } from "./document-processor";
 
 const avatarsDir = path.resolve("uploads/avatars");
 if (!fs.existsSync(avatarsDir)) {
@@ -19,6 +20,11 @@ if (!fs.existsSync(avatarsDir)) {
 const venuesDir = path.resolve("uploads/venues");
 if (!fs.existsSync(venuesDir)) {
   fs.mkdirSync(venuesDir, { recursive: true });
+}
+
+const documentsDir = path.resolve("uploads/documents");
+if (!fs.existsSync(documentsDir)) {
+  fs.mkdirSync(documentsDir, { recursive: true });
 }
 
 const allowedMimes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -54,6 +60,30 @@ const venuePhotoUpload = multer({
       cb(null, true);
     } else {
       cb(new Error("INVALID_VENUE_TYPE"));
+    }
+  },
+});
+
+const documentAllowedMimes = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+]);
+
+const documentUpload = multer({
+  storage: multer.diskStorage({
+    destination: documentsDir,
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname) || ".bin";
+      cb(null, `doc-${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (documentAllowedMimes.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("INVALID_DOCUMENT_TYPE"));
     }
   },
 });
@@ -673,6 +703,101 @@ export async function registerRoutes(
       storage.getQueryLogStats(),
     ]);
     res.json({ logs, stats });
+  });
+
+  app.get("/api/admin/ai/documents", requireStaffOrAdmin, async (_req, res) => {
+    const documents = await storage.getDocuments();
+    res.json(documents);
+  });
+
+  app.post("/api/admin/ai/documents", requireStaffOrAdmin, documentUpload.single("file"), async (req: any, res) => {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    const file = req.file;
+    const filePath = file.path;
+
+    try {
+      const text = await extractText(filePath, file.mimetype);
+      if (!text || text.trim().length === 0) {
+        fs.unlinkSync(filePath);
+        return res.status(400).json({ message: "Could not extract text from file" });
+      }
+
+      const chunks = chunkText(text);
+      if (chunks.length === 0) {
+        fs.unlinkSync(filePath);
+        return res.status(400).json({ message: "No content chunks could be created from file" });
+      }
+
+      let embeddings: number[][] = [];
+      try {
+        embeddings = await generateEmbeddings(chunks.map(c => c.content));
+      } catch (embErr) {
+        console.error("[Documents] Embedding generation failed, storing without embeddings:", embErr);
+      }
+
+      const fileType = file.mimetype === "application/pdf" ? "pdf" :
+                       file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ? "docx" : "txt";
+
+      const description = req.body.description || null;
+      const tags = req.body.tags ? (typeof req.body.tags === "string" ? req.body.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : req.body.tags) : [];
+
+      const doc = await storage.createDocument({
+        fileName: file.filename,
+        originalName: file.originalname,
+        fileType,
+        fileSize: file.size,
+        description,
+        tags,
+        chunkCount: chunks.length,
+        active: true,
+        uploadedBy: req.session.userId!,
+      });
+
+      const chunkRecords = chunks.map((c, i) => ({
+        documentId: doc.id,
+        content: c.content,
+        chunkIndex: c.index,
+        metadata: c.metadata,
+        embedding: embeddings[i] || null,
+      }));
+
+      await storage.createDocumentChunks(chunkRecords);
+
+      res.status(201).json(doc);
+    } catch (err: any) {
+      console.error("[Documents] Upload processing error:", err);
+      try { fs.unlinkSync(filePath); } catch {}
+      res.status(500).json({ message: "Failed to process document: " + (err.message || "Unknown error") });
+    }
+  });
+
+  app.get("/api/admin/ai/documents/:id/chunks", requireStaffOrAdmin, async (req, res) => {
+    const chunks = await storage.getDocumentChunks(req.params.id);
+    res.json(chunks.map(c => ({ id: c.id, documentId: c.documentId, content: c.content, chunkIndex: c.chunkIndex, metadata: c.metadata, createdAt: c.createdAt })));
+  });
+
+  app.patch("/api/admin/ai/documents/:id", requireStaffOrAdmin, async (req, res) => {
+    const { description, tags, active } = req.body;
+    const updates: any = {};
+    if (description !== undefined) updates.description = description;
+    if (tags !== undefined) updates.tags = Array.isArray(tags) ? tags : tags.split(",").map((t: string) => t.trim()).filter(Boolean);
+    if (active !== undefined) updates.active = active;
+    const updated = await storage.updateDocument(req.params.id, updates);
+    if (!updated) return res.status(404).json({ message: "Document not found" });
+    res.json(updated);
+  });
+
+  app.delete("/api/admin/ai/documents/:id", requireStaffOrAdmin, async (req, res) => {
+    const doc = await storage.getDocument(req.params.id);
+    if (!doc) return res.status(404).json({ message: "Document not found" });
+    try {
+      const filePath = path.join(documentsDir, doc.fileName);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch {}
+    const deleted = await storage.deleteDocument(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Document not found" });
+    res.json({ success: true });
   });
 
   return httpServer;

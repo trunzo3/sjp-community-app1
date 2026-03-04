@@ -1,8 +1,9 @@
 import { storage } from "./storage";
 import type { Resource, Event, Post, AiFaq, AiTrustedAnswer } from "@shared/schema";
+import { generateQueryEmbedding } from "./document-processor";
 
 export interface RetrievalResult {
-  type: "resource" | "event" | "faq" | "trusted_answer" | "announcement";
+  type: "resource" | "event" | "faq" | "trusted_answer" | "announcement" | "document";
   id: string;
   title: string;
   snippet: string;
@@ -235,4 +236,60 @@ export class KeywordSearchProvider implements ContentSearchProvider {
   }
 }
 
-export const searchProvider = new KeywordSearchProvider();
+export class HybridSearchProvider implements ContentSearchProvider {
+  private keywordProvider = new KeywordSearchProvider();
+
+  async search(query: string, userStage?: string): Promise<RetrievalResult[]> {
+    const keywordResults = await this.keywordProvider.search(query, userStage);
+
+    let vectorResults: RetrievalResult[] = [];
+    try {
+      const queryEmbedding = await generateQueryEmbedding(query);
+      const vectorChunks = await storage.searchDocumentChunksByVector(queryEmbedding, 8);
+
+      vectorResults = vectorChunks
+        .filter(c => c.similarity > 0.3)
+        .map(c => ({
+          type: "document" as const,
+          id: c.id,
+          title: c.documentName + (c.metadata ? ` — ${c.metadata}` : ""),
+          snippet: truncate(c.content, 300),
+          score: Math.round(c.similarity * 100),
+          linkPath: "",
+        }));
+    } catch (err) {
+      console.error("[Retrieval] Vector search failed, falling back to keyword-only:", err);
+
+      try {
+        const activeChunks = await storage.getActiveDocumentChunks();
+        for (const chunk of activeChunks) {
+          const fieldScore = bestScore(query, chunk.content, chunk.documentName);
+          if (fieldScore > 20) {
+            vectorResults.push({
+              type: "document",
+              id: chunk.id,
+              title: chunk.documentName + (chunk.metadata ? ` — ${chunk.metadata}` : ""),
+              snippet: truncate(chunk.content, 300),
+              score: fieldScore,
+              linkPath: "",
+            });
+          }
+        }
+      } catch {}
+    }
+
+    const merged = [...keywordResults];
+    const existingIds = new Set(keywordResults.map(r => r.id));
+    for (const vr of vectorResults) {
+      if (!existingIds.has(vr.id)) {
+        merged.push(vr);
+        existingIds.add(vr.id);
+      }
+    }
+
+    merged.sort((a, b) => b.score - a.score);
+    return merged.slice(0, 10);
+  }
+}
+
+export const searchProvider = new HybridSearchProvider();

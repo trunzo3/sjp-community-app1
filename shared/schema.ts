@@ -1,7 +1,19 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, uuid, timestamp, boolean, integer, date, time, pgEnum, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, boolean, integer, date, time, pgEnum, uniqueIndex, customType } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+const vector = customType<{ data: number[]; driverParam: string }>({
+  dataType() {
+    return "vector(1536)";
+  },
+  toDriver(value: number[]): string {
+    return `[${value.join(",")}]`;
+  },
+  fromDriver(value: string): number[] {
+    return JSON.parse(value);
+  },
+});
 
 export const roleEnum = pgEnum("role", ["client", "alumni", "staff", "admin"]);
 export const stageEnum = pgEnum("stage", ["client", "alumni"]);
@@ -171,6 +183,30 @@ export const aiQueryLogs = pgTable("ai_query_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const aiDocuments = pgTable("ai_documents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  fileName: text("file_name").notNull(),
+  originalName: text("original_name").notNull(),
+  fileType: text("file_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  description: text("description"),
+  tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
+  chunkCount: integer("chunk_count").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  uploadedBy: uuid("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiDocumentChunks = pgTable("ai_document_chunks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  documentId: uuid("document_id").notNull().references(() => aiDocuments.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  chunkIndex: integer("chunk_index").notNull(),
+  metadata: text("metadata"),
+  embedding: vector("embedding"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertPostSchema = createInsertSchema(posts).omit({ id: true, createdAt: true });
 export const insertReplySchema = createInsertSchema(replies).omit({ id: true, createdAt: true });
@@ -216,3 +252,11 @@ export type AiCrisisConfig = typeof aiCrisisConfig.$inferSelect;
 export type InsertAiCrisisConfig = z.infer<typeof insertAiCrisisConfigSchema>;
 export type AiQueryLog = typeof aiQueryLogs.$inferSelect;
 export type InsertAiQueryLog = z.infer<typeof insertAiQueryLogSchema>;
+
+export const insertAiDocumentSchema = createInsertSchema(aiDocuments).omit({ id: true, createdAt: true });
+export const insertAiDocumentChunkSchema = createInsertSchema(aiDocumentChunks).omit({ id: true, createdAt: true });
+
+export type AiDocument = typeof aiDocuments.$inferSelect;
+export type InsertAiDocument = z.infer<typeof insertAiDocumentSchema>;
+export type AiDocumentChunk = typeof aiDocumentChunks.$inferSelect;
+export type InsertAiDocumentChunk = z.infer<typeof insertAiDocumentChunkSchema>;
