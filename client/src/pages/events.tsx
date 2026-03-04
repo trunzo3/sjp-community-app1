@@ -58,7 +58,7 @@ export default function EventsPage() {
 
   return (
     <div>
-      <div className="h-[3px] bg-[#979DB6] -mx-4 mb-4" />
+      <div className="h-[3px] bg-[#979DB6] -mx-4 md:mx-0 md:rounded-full mb-4" />
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-[#302D2E]" strokeWidth={2} />
@@ -116,7 +116,7 @@ export default function EventsPage() {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {events?.map((event: any) => (
             <EventCard
               key={event.id}
@@ -125,7 +125,7 @@ export default function EventsPage() {
             />
           ))}
           {events?.length === 0 && (
-            <div className="text-center py-8 text-sm text-[#C7C2BF]">No upcoming events.</div>
+            <div className="text-center py-8 text-sm text-[#C7C2BF] md:col-span-2">No upcoming events.</div>
           )}
         </div>
       )}

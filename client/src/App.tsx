@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { BottomNav } from "@/components/bottom-nav";
+import { DesktopSidebar } from "@/components/desktop-sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import LoginPage from "@/pages/login";
 import HomePage from "@/pages/home";
 import CommunityPage from "@/pages/community";
@@ -19,6 +21,7 @@ import { Loader2 } from "lucide-react";
 
 function AppContent() {
   const { user, isLoading } = useAuth();
+  const isMobile = useIsMobile();
 
   if (isLoading) {
     return (
@@ -37,7 +40,8 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#FFFBF9]">
-      <div className="max-w-[430px] mx-auto px-4 pt-4 pb-20">
+      {!isMobile && <DesktopSidebar />}
+      <div className={isMobile ? "max-w-[430px] mx-auto px-4 pt-4 pb-20" : "ml-[240px] px-6 pt-6 pb-8 max-w-[900px]"}>
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/community" component={CommunityPage} />
@@ -51,7 +55,7 @@ function AppContent() {
           <Route component={HomePage} />
         </Switch>
       </div>
-      <BottomNav />
+      {isMobile && <BottomNav />}
     </div>
   );
 }

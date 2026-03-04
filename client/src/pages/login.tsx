@@ -60,10 +60,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #34737A 0%, #2C6169 40%, #1F4F49 100%)" }}>
-      <div className="max-w-[430px] mx-auto px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, #34737A 0%, #2C6169 40%, #1F4F49 100%)" }}>
+      <div className="w-full max-w-[430px] mx-auto px-4 py-8">
         <div className="text-center mb-6 pt-4">
-          <img src={sjpLogo} alt="Saint John's Program for Real Change" className="mx-auto mb-4" style={{ height: "217.6px" }} data-testid="img-sjp-logo" />
+          <img src={sjpLogo} alt="Saint John's Program for Real Change" className="mx-auto mb-4 h-[160px] md:h-[200px]" data-testid="img-sjp-logo" />
           <h1 className="text-3xl font-bold text-white tracking-tight" data-testid="text-app-title">SJP Community</h1>
           <p className="text-white/70 text-sm mt-1">Building community. Changing lives.</p>
         </div>

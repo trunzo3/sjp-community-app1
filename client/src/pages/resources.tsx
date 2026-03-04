@@ -77,7 +77,7 @@ export default function ResourcesPage() {
 
   return (
     <div>
-      <div className="h-[3px] bg-[#5DA592] -mx-4 mb-4" />
+      <div className="h-[3px] bg-[#5DA592] -mx-4 md:mx-0 md:rounded-full mb-4" />
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-bold text-[#302D2E]" data-testid="text-resources-title">Resources</h1>
         {isStaffOrAdmin && (
@@ -135,9 +135,9 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      <div className="bg-[#FAE8DF] -mx-4 px-4 py-3 mb-4 space-y-2">
+      <div className="bg-[#FAE8DF] -mx-4 md:mx-0 md:rounded-xl px-4 py-3 mb-4 space-y-2">
         {isStaffOrAdmin && (
-          <div className="flex gap-1.5 overflow-x-auto" data-testid="stage-filters">
+          <div className="flex gap-1.5 overflow-x-auto md:flex-wrap" data-testid="stage-filters">
             {["all", "client", "alumni"].map((s) => (
               <button
                 key={s}
@@ -153,7 +153,7 @@ export default function ResourcesPage() {
           </div>
         )}
 
-        <div className="flex gap-1.5 overflow-x-auto" data-testid="pillar-filters">
+        <div className="flex gap-1.5 overflow-x-auto md:flex-wrap" data-testid="pillar-filters">
           {pillars.map((p) => (
             <button
               key={p}
@@ -172,7 +172,7 @@ export default function ResourcesPage() {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {resources?.map((r: any) => (
             <div key={r.id} className="bg-white rounded-xl p-4" data-testid={`resource-card-${r.id}`}>
               <div className="flex items-start justify-between gap-2">

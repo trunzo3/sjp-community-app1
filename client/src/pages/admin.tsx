@@ -108,9 +108,9 @@ export default function AdminPage() {
         </button>
         <h1 className="text-lg font-bold text-[#302D2E]" data-testid="text-admin-title">Admin Panel</h1>
       </div>
-      <div className="h-[3px] bg-[#D32027] -mx-4 mb-4" />
+      <div className="h-[3px] bg-[#D32027] -mx-4 md:mx-0 md:rounded-full mb-4" />
 
-      <div className="flex gap-1 overflow-x-auto pb-2 mb-4" data-testid="admin-tabs">
+      <div className="flex gap-1 overflow-x-auto md:flex-wrap pb-2 mb-4" data-testid="admin-tabs">
         {tabs.map((t) => (
           <button
             key={t.key}

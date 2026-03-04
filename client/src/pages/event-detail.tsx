@@ -71,8 +71,8 @@ export default function EventDetailPage() {
   const eventDate = new Date(event.date + "T00:00:00");
 
   return (
-    <div>
-      <div className="h-[3px] bg-[#979DB6] -mx-4 mb-4" />
+    <div className="max-w-[700px] md:mx-0">
+      <div className="h-[3px] bg-[#979DB6] -mx-4 md:mx-0 md:rounded-full mb-4" />
 
       <button
         onClick={() => navigate("/events")}
@@ -88,7 +88,7 @@ export default function EventDetailPage() {
           <img
             src={event.venuePhotoUrl}
             alt={event.location || "Venue"}
-            className="w-full h-48 object-cover"
+            className="w-full h-48 md:h-64 object-cover"
             onError={() => setVenueImgError(true)}
           />
         </div>

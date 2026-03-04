@@ -10,6 +10,7 @@ import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { getDueSurveyInterval } from "@/pages/survey";
 import { MyJourney } from "@/components/my-journey";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type StoryWithAuthor = {
   id: string;
@@ -102,6 +103,7 @@ export default function HomePage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [eventExpanded, setEventExpanded] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: stories } = useQuery<StoryWithAuthor[]>({ queryKey: ["/api/stories/featured"] });
   const { data: events } = useQuery<any[]>({ queryKey: ["/api/events"] });
@@ -129,6 +131,52 @@ export default function HomePage() {
   const categoryPosts = ["need", "win", "question", "update"]
     .filter((t) => latestByType[t])
     .map((t) => latestByType[t]);
+
+  const storiesAndEventSection = (
+    <>
+      {featuredStory && (
+        <div data-testid="stories-section">
+          <SectionHeader
+            icon={<BookOpen className="w-4 h-4" style={{ color: "#D32027" }} />}
+            title="Stories of Change"
+            color="#D32027"
+            linkText="Read more"
+            onLink={() => navigate("/share-story")}
+          />
+          <div className="mt-3 bg-[#FAE8DF] rounded-xl p-5" data-testid="featured-story-card">
+            <span className="text-4xl leading-none font-serif text-[#EEBBA7] block mb-1">{"\u201C\u201C"}</span>
+            <p className="text-sm italic text-[#302D2E] leading-relaxed" data-testid="text-featured-story">
+              {featuredStory.step3Content}
+            </p>
+            <div className="flex items-center gap-2 mt-4">
+              <AvatarCircle firstName={featuredStory.author.firstName} color={featuredStory.author.avatarColor} size="sm" photoUrl={featuredStory.author.photoUrl} />
+              <span className="text-xs font-semibold text-[#302D2E]">{featuredStory.author.firstName}</span>
+              <span className="text-xs font-medium text-[#34737A]">Alumni</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {nextEvent && (
+        <div data-testid="next-event-section">
+          <SectionHeader
+            icon={<Calendar className="w-4 h-4" style={{ color: "#34737A" }} />}
+            title="Next Event"
+            color="#34737A"
+            linkText="See all"
+            onLink={() => navigate("/events")}
+          />
+          <div className="mt-3">
+            <EventCard
+              event={nextEvent}
+              expanded={eventExpanded}
+              onToggle={() => setEventExpanded(!eventExpanded)}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="space-y-4">
@@ -170,29 +218,6 @@ export default function HomePage() {
         </div>
       )}
 
-      {featuredStory && (
-        <div data-testid="stories-section">
-          <SectionHeader
-            icon={<BookOpen className="w-4 h-4" style={{ color: "#D32027" }} />}
-            title="Stories of Change"
-            color="#D32027"
-            linkText="Read more"
-            onLink={() => navigate("/share-story")}
-          />
-          <div className="mt-3 bg-[#FAE8DF] rounded-xl p-5" data-testid="featured-story-card">
-            <span className="text-4xl leading-none font-serif text-[#EEBBA7] block mb-1">{"\u201C\u201C"}</span>
-            <p className="text-sm italic text-[#302D2E] leading-relaxed" data-testid="text-featured-story">
-              {featuredStory.step3Content}
-            </p>
-            <div className="flex items-center gap-2 mt-4">
-              <AvatarCircle firstName={featuredStory.author.firstName} color={featuredStory.author.avatarColor} size="sm" photoUrl={featuredStory.author.photoUrl} />
-              <span className="text-xs font-semibold text-[#302D2E]">{featuredStory.author.firstName}</span>
-              <span className="text-xs font-medium text-[#34737A]">Alumni</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {isAlumni && (
         <div
           className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
@@ -215,54 +240,70 @@ export default function HomePage() {
         </div>
       )}
 
-      {nextEvent && (
-        <div data-testid="next-event-section">
-          <SectionHeader
-            icon={<Calendar className="w-4 h-4" style={{ color: "#34737A" }} />}
-            title="Next Event"
-            color="#34737A"
-            linkText="See all"
-            onLink={() => navigate("/events")}
-          />
-          <div className="mt-3">
-            <EventCard
-              event={nextEvent}
-              expanded={eventExpanded}
-              onToggle={() => setEventExpanded(!eventExpanded)}
+      {!isMobile ? (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
+            {storiesAndEventSection}
+          </div>
+          <div className="space-y-4" data-testid="community-feed-section">
+            <SectionHeader
+              icon={<MessageCircle className="w-4 h-4" style={{ color: "#B8876F" }} />}
+              title="Community Feed"
+              color="#B8876F"
+              linkText="See all"
+              onLink={() => navigate("/community")}
             />
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate("/community")}
+                className="w-full flex items-center gap-3 bg-white rounded-full px-4 py-3 border border-[#F1EFEF] text-left"
+                style={{ borderRadius: "20px" }}
+                data-testid="slim-composer"
+              >
+                {user && <AvatarCircle firstName={user.firstName} color={user.avatarColor || "#607D8B"} size="sm" photoUrl={user.photoUrl} />}
+                <span className="text-sm text-[#C7C2BF]">Share something with the community...</span>
+              </button>
+              {pinnedPosts.map((post: any) => (
+                <PostCard key={post.id} post={post} isPinnedSection />
+              ))}
+              {categoryPosts.map((post: any) => (
+                <HomeCategoryCard key={post.id} post={post} />
+              ))}
+            </div>
           </div>
         </div>
+      ) : (
+        <>
+          {storiesAndEventSection}
+
+          <div data-testid="community-feed-section">
+            <SectionHeader
+              icon={<MessageCircle className="w-4 h-4" style={{ color: "#B8876F" }} />}
+              title="Community Feed"
+              color="#B8876F"
+              linkText="See all"
+              onLink={() => navigate("/community")}
+            />
+            <div className="mt-3 space-y-3">
+              <button
+                onClick={() => navigate("/community")}
+                className="w-full flex items-center gap-3 bg-white rounded-full px-4 py-3 border border-[#F1EFEF] text-left"
+                style={{ borderRadius: "20px" }}
+                data-testid="slim-composer"
+              >
+                {user && <AvatarCircle firstName={user.firstName} color={user.avatarColor || "#607D8B"} size="sm" photoUrl={user.photoUrl} />}
+                <span className="text-sm text-[#C7C2BF]">Share something with the community...</span>
+              </button>
+              {pinnedPosts.map((post: any) => (
+                <PostCard key={post.id} post={post} isPinnedSection />
+              ))}
+              {categoryPosts.map((post: any) => (
+                <HomeCategoryCard key={post.id} post={post} />
+              ))}
+            </div>
+          </div>
+        </>
       )}
-
-      <div data-testid="community-feed-section">
-        <SectionHeader
-          icon={<MessageCircle className="w-4 h-4" style={{ color: "#B8876F" }} />}
-          title="Community Feed"
-          color="#B8876F"
-          linkText="See all"
-          onLink={() => navigate("/community")}
-        />
-
-        <div className="mt-3 space-y-3">
-          <button
-            onClick={() => navigate("/community")}
-            className="w-full flex items-center gap-3 bg-white rounded-full px-4 py-3 border border-[#F1EFEF] text-left"
-            style={{ borderRadius: "20px" }}
-            data-testid="slim-composer"
-          >
-            {user && <AvatarCircle firstName={user.firstName} color={user.avatarColor || "#607D8B"} size="sm" photoUrl={user.photoUrl} />}
-            <span className="text-sm text-[#C7C2BF]">Share something with the community...</span>
-          </button>
-
-          {pinnedPosts.map((post: any) => (
-            <PostCard key={post.id} post={post} isPinnedSection />
-          ))}
-
-          {categoryPosts.map((post: any) => (
-            <HomeCategoryCard key={post.id} post={post} />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

@@ -20,9 +20,11 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - `client/src/pages/` — 9 pages (login, home, community, resources, events, profile, admin, share-story, survey)
 
 ## Key Design Decisions
-- Mobile-first at 430px max-width, centered on larger screens
+- Responsive layout: mobile (430px max-width, centered, bottom nav) and desktop (left sidebar nav, wider content area up to 900px)
+- Breakpoint at 768px (md:) — uses `useIsMobile` hook from `client/src/hooks/use-mobile.tsx`
 - No dark mode (out of scope)
-- Bottom nav with 5 tabs (Home, Community, Resources, Events, Profile)
+- Mobile: Bottom nav with 5 tabs (Home, Community, Resources, Events, Profile)
+- Desktop: Fixed left sidebar (240px wide) with same 5 tabs + Admin link for staff/admin
 - Content visibility rules enforced on backend (stage-based filtering)
 - Demo quick-login buttons on login page for hackathon/testing
 - Design tokens: Primary teal #34737A (SJP brand), dark teal #2C6169, deepest teal #1F4F49, red accent #D32027, muted accent #979DB6, text primary #302D2E, text secondary #868180, text muted #C7C2BF, page bg #FFFBF9, card bg white, light gray #F1EFEF
@@ -110,6 +112,17 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **Server validation**: POST `/api/posts` validates postType, requires milestoneType+milestoneCategory for milestone posts, strips them for other types.
 - **Feed filter**: "Milestones" filter pill added to community feed filters.
 - **No confetti**: Milestone posts use dignified warmth, no animation effects.
+
+## Responsive Layout (Implemented)
+- **App shell**: `client/src/App.tsx` — conditionally renders `DesktopSidebar` (md+) or `BottomNav` (mobile). Desktop content offset by `ml-[240px]` with max-width 900px.
+- **Desktop sidebar**: `client/src/components/desktop-sidebar.tsx` — fixed left, 240px wide, white bg, teal active states, SJP logo at top, nav links for all tabs + Admin (staff/admin only).
+- **Login**: Centered card on all screen sizes with `flex items-center justify-center min-h-screen`.
+- **Home page**: 2-column grid on desktop (stories+event | community feed), single stack on mobile.
+- **Events/Resources**: `md:grid-cols-2` card grids on desktop, single column on mobile.
+- **Community/Profile**: `max-w-[600px]` on desktop for readability.
+- **Event detail**: `max-w-[700px]`, taller venue image on desktop (`md:h-64`).
+- **Accent bars**: Use `md:mx-0 md:rounded-full` to avoid edge-to-edge bleed on desktop.
+- **Filters**: Use `md:flex-wrap` instead of horizontal scroll on desktop.
 
 ## Security
 - `/api/users` protected by requireStaffOrAdmin (not just requireAuth)

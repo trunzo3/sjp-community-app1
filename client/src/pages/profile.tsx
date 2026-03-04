@@ -138,8 +138,8 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div>
-      <div className="h-[3px] bg-[#EEBBA7] -mx-4 mb-4" />
+    <div className="max-w-[600px] md:mx-0">
+      <div className="h-[3px] bg-[#EEBBA7] -mx-4 md:mx-0 md:rounded-full mb-4" />
       <div className="bg-[#FCF3EE] rounded-xl p-5 mb-4" data-testid="profile-header">
         <div className="flex items-start gap-4">
           <div className="flex flex-col items-center gap-1">
