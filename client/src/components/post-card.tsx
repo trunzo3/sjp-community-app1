@@ -46,7 +46,6 @@ const postTypeBadgeColors: Record<string, string> = {
   win: "bg-emerald-100 text-emerald-800",
   question: "bg-amber-100 text-amber-800",
   need: "bg-red-100 text-red-800",
-  milestone: "bg-purple-100 text-purple-800",
 };
 
 const roleBadgeColors: Record<string, string> = {
@@ -69,7 +68,7 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export function PostCard({ post }: { post: PostType }) {
+export function PostCard({ post, isPinnedSection = false }: { post: PostType; isPinnedSection?: boolean }) {
   const { user } = useAuth();
   const [showReplies, setShowReplies] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -117,14 +116,21 @@ export function PostCard({ post }: { post: PostType }) {
 
   const userReaction = postReactions?.find(r => r.userId === user?.id);
 
+  const showLeftBorder = !isPinnedSection && (post.postType === "need" || post.postType === "question");
   const leftBorderColor = post.postType === "need" ? "#D32027" : post.postType === "question" ? "#979DB6" : "transparent";
 
   return (
     <div
-      className="bg-white rounded-xl p-4"
-      style={{ borderLeft: leftBorderColor !== "transparent" ? `4px solid ${leftBorderColor}` : undefined, borderRadius: leftBorderColor !== "transparent" ? "4px 12px 12px 4px" : "12px" }}
+      className={`${isPinnedSection ? "bg-[#F1EFEF]" : "bg-white"} rounded-xl p-4`}
+      style={{ borderLeft: showLeftBorder ? `4px solid ${leftBorderColor}` : undefined, borderRadius: showLeftBorder ? "4px 12px 12px 4px" : "12px" }}
       data-testid={`post-${post.id}`}
     >
+      {isPinnedSection && (
+        <div className="flex items-center gap-1 mb-2">
+          <span className="text-sm">📌</span>
+          <span className="text-[10px] font-medium text-[#868180]">Pinned</span>
+        </div>
+      )}
       <div className="flex items-start gap-3">
         <AvatarCircle firstName={post.author.firstName} color={post.author.avatarColor} size="sm" />
         <div className="flex-1 min-w-0">

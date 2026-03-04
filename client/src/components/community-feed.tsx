@@ -7,13 +7,12 @@ import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 
-const postTypes = ["update", "win", "question", "need", "milestone"] as const;
-const filterOptions = ["all", "need", "win", "milestone", "question"] as const;
+const postTypes = ["update", "win", "question", "need"] as const;
+const filterOptions = ["all", "need", "win", "question"] as const;
 const filterLabels: Record<string, string> = {
   all: "All",
   need: "Needs",
   win: "Wins",
-  milestone: "Milestones",
   question: "Questions",
 };
 
@@ -24,9 +23,12 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
   const [postType, setPostType] = useState<typeof postTypes[number]>("update");
   const queryClient = useQueryClient();
 
-  const { data: posts, isLoading } = useQuery<any[]>({
+  const { data: allPosts, isLoading } = useQuery<any[]>({
     queryKey: ["/api/posts", `?filter=${filter}`],
   });
+
+  const pinnedPosts = allPosts?.filter((p: any) => p.pinned) || [];
+  const regularPosts = allPosts?.filter((p: any) => !p.pinned) || [];
 
   const createPost = useMutation({
     mutationFn: async () => {
@@ -49,6 +51,14 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
           <p className="text-xs text-[#34737A] font-medium">
             Private space for the SJP community. What's shared here stays here.
           </p>
+        </div>
+      )}
+
+      {pinnedPosts.length > 0 && (
+        <div className="space-y-3" data-testid="pinned-posts-section">
+          {pinnedPosts.map((post: any) => (
+            <PostCard key={post.id} post={post} isPinnedSection />
+          ))}
         </div>
       )}
 
@@ -112,10 +122,10 @@ export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner
         </div>
       ) : (
         <div className="space-y-3">
-          {posts?.map((post: any) => (
+          {regularPosts.map((post: any) => (
             <PostCard key={post.id} post={post} />
           ))}
-          {posts?.length === 0 && (
+          {regularPosts.length === 0 && pinnedPosts.length === 0 && (
             <div className="text-center py-8 text-sm text-[#C7C2BF]">No posts yet. Be the first to share!</div>
           )}
         </div>

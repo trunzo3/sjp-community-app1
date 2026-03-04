@@ -10,7 +10,7 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **Routing:** wouter (frontend), Express (backend)
 
 ## Architecture
-- `shared/schema.ts` — Drizzle schema with all 8 tables (users, posts, replies, resources, events, stories, reactions, surveys)
+- `shared/schema.ts` — Drizzle schema with all 9 tables (users, posts, replies, resources, events, stories, reactions, surveys, user_progress)
 - `server/db.ts` — Database connection
 - `server/storage.ts` — IStorage interface + DatabaseStorage implementation
 - `server/routes.ts` — Express API routes with session auth, role-based middleware (requireAuth, requireStaffOrAdmin, requireAdmin)
@@ -61,6 +61,12 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **Admin editing**: Admin Panel > Users tab includes pillar progress sliders (0-100) per user when editing
 - **API**: GET `/api/progress/:userId` (auth), PUT `/api/admin/progress/:userId` (staff/admin)
 - **Pillar colors**: Community #34737A, Confidence #979DB6, Resilience #D32027, Readiness #5DA592, Wellness #EEBBA7
+
+## Community Feed Updates (Implemented)
+- **Post types**: 4 types only — update, win, question, need (milestone removed)
+- **Feed filters**: All, Needs, Wins, Questions
+- **Pinned posts**: Displayed above the composer (below privacy banner), with #F1EFEF gray background, 📌 pin icon + "Pinned" label, no left border color treatment
+- **Regular posts**: Displayed below the composer in the feed with white background and normal styling
 
 ## Security
 - `/api/users` protected by requireStaffOrAdmin (not just requireAuth)

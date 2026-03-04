@@ -5,7 +5,7 @@ import { z } from "zod";
 
 export const roleEnum = pgEnum("role", ["client", "alumni", "staff", "admin"]);
 export const stageEnum = pgEnum("stage", ["client", "alumni"]);
-export const postTypeEnum = pgEnum("post_type", ["update", "win", "question", "need", "milestone"]);
+export const postTypeEnum = pgEnum("post_type", ["update", "win", "question", "need"]);
 export const pillarEnum = pgEnum("pillar", ["community", "confidence", "resilience", "readiness", "wellness"]);
 export const resourceTypeEnum = pgEnum("resource_type", ["partner", "program", "service", "opportunity"]);
 export const eventTypeEnum = pgEnum("event_type", ["community_meeting", "workshop", "celebration", "class", "partner_session"]);
