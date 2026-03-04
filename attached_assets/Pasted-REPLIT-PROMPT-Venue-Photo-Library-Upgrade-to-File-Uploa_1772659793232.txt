@@ -1,0 +1,79 @@
+REPLIT PROMPT: Venue Photo Library — Upgrade to File Upload with Unsplash Placeholders
+This prompt upgrades the venue photo system from URL references to uploaded files, and seeds the library with real placeholder images pulled from Unsplash so the app looks alive immediately. The event detail page rendering does not change. Only how venue photos are stored and managed changes.
+
+CONTEXT
+The current implementation maps known location names to photo URLs. Staff cannot practically manage URLs any more than they can manage avatar URLs. The solution is the same: file upload with a simple UI. Additionally, the app currently has no real images in it. Before we show this to anyone, we need placeholder photos for each venue that look warm and real, not broken image states.
+
+PART 1: SEED PLACEHOLDER IMAGES FROM UNSPLASH
+Before building the upload UI, populate the venue library with real images using Unsplash's open access URLs. These require no API key for basic use. Do this in the seed script or a standalone setup script that can be run once.
+Fetch one image for each of the five known venue locations and save them to /uploads/venues/ with stable filenames. Use these Unsplash source URLs, which return a specific photo every time rather than a random one:
+
+Community Room — a warm community meeting room, round tables, soft lighting
+https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80
+Save as: venue-community-room.jpg
+Garden Area — an outdoor garden space, green, calm, natural light
+https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80
+Save as: venue-garden-area.jpg
+Gateway Building Room 102 — a classroom or training room, chairs, bright
+https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80
+Save as: venue-gateway-102.jpg
+OSS Building Main Hall — a communal hall or common area, open space
+https://images.unsplash.com/photo-1572025442646-866d16c84a54?w=800&q=80
+Save as: venue-oss-hall.jpg
+Off Campus — an outdoor urban or neighborhood scene, Sacramento-feeling
+https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80
+Save as: venue-off-campus.jpg
+
+Fetch each image using node-fetch or the built-in fetch, write the file to disk, and update the venue records in the database to point to the local served path rather than the external URL. If a fetch fails, log a warning and leave that venue's photo null rather than crashing.
+
+PART 2: VENUE PHOTO UPLOAD UI IN THE ADMIN PANEL
+Add a venue photo management section to the admin panel, either as part of the Events tab or as a standalone Venues sub-section. Staff should be able to see each venue name, its current photo, and replace that photo with an upload.
+For each venue location:
+
+Display the venue name
+Show the current photo as a small rectangular preview (16:9 ratio, rounded corners), or a neutral placeholder if no photo exists
+A "Change photo" button beneath each preview opens a file input: accept="image/*"
+On file select, show an immediate preview of the selected image before saving
+A "Save" button uploads the file to the server and updates the venue record
+No compression needed server-side for venue photos since these are staff-managed and quality matters. Apply a size cap of 5MB.
+
+Venue photos are staff-managed only. There is no venue photo UI for clients or alumni.
+
+PART 3: UPLOAD ENDPOINT FOR VENUE PHOTOS
+Add a route: POST /api/admin/venues/:venueId/photo
+
+Staff and admin only. Return 403 for other roles.
+Accept multipart/form-data with a single field named photo
+Validate MIME type: image/jpeg, image/png, image/webp only
+Validate size: max 5MB
+Save to /uploads/venues/venue-{venueId}.jpg, overwriting any previous file for that venue
+Update the venue record's photoUrl to the served path
+Return the updated venue record
+
+
+PART 4: UPDATE EVENT CREATION AND EDITING FORMS
+In the event creation and edit forms in the admin panel, the location field is a dropdown of known venues. When a venue is selected from the dropdown, the venue's current photo should appear as a small inline preview beneath the dropdown so staff can confirm the right space is selected. This is display only, no upload from the event form. Venue photos are managed in the venue library, not per-event.
+
+EDGE CASES
+
+If the Unsplash fetch fails for any venue during seeding, log the failure clearly and continue. Do not fail the whole seed.
+If a venue photo file is deleted from disk but the database still references the path, the event detail page should fall back gracefully with no broken image state. Use an onError handler on the image element that hides the photo container rather than showing a broken icon.
+Overwriting a venue photo should replace the file at the same path so existing event detail pages automatically show the updated photo without any database change.
+
+
+DO NOT CHANGE
+
+Event detail page rendering logic
+The location dropdown values
+Any client or alumni facing views
+The avatar system
+
+
+ACCEPTANCE CRITERIA
+
+All five venue locations have real placeholder photos visible in the app immediately after the seed script runs
+An admin can replace any venue photo via file upload in the admin panel
+The updated photo appears on all event detail pages for that venue without any additional steps
+The event creation form shows a venue photo preview when a location is selected
+Broken or missing venue photos degrade gracefully with no error state visible to users
+The Unsplash seed script logs clearly and does not crash on individual fetch failures

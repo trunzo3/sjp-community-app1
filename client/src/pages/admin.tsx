@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AvatarCircle } from "@/components/avatar-circle";
-import { ArrowLeft, Plus, Pencil, Trash2, Loader2, X, Check, ChevronDown, ChevronUp, Users } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Loader2, X, Check, ChevronDown, ChevronUp, Users, Camera, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -62,7 +62,7 @@ type ResourceForm = {
 
 type EventForm = {
   name: string; eventType: string; date: string; startTime: string; endTime: string;
-  location: string; customLocation: string; description: string; venuePhotoUrl: string; hostUserId: string;
+  location: string; customLocation: string; description: string; hostUserId: string;
   stages: { client: boolean; alumni: boolean };
 };
 
@@ -72,7 +72,7 @@ const emptyResourceForm: ResourceForm = {
 };
 
 const emptyEventForm: EventForm = {
-  name: "", eventType: "", date: "", startTime: "", endTime: "", location: "", customLocation: "", description: "", venuePhotoUrl: "", hostUserId: "",
+  name: "", eventType: "", date: "", startTime: "", endTime: "", location: "", customLocation: "", description: "", hostUserId: "",
   stages: { client: false, alumni: false },
 };
 
@@ -81,7 +81,7 @@ export default function AdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
-  const [tab, setTab] = useState<"resources" | "events" | "stories" | "surveys" | "users">("resources");
+  const [tab, setTab] = useState<"resources" | "events" | "venues" | "stories" | "surveys" | "users">("resources");
 
   const isAdmin = user?.role === "admin";
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
@@ -94,6 +94,7 @@ export default function AdminPage() {
   const tabs = [
     { key: "resources" as const, label: "Resources" },
     { key: "events" as const, label: "Events" },
+    { key: "venues" as const, label: "Venues" },
     { key: "stories" as const, label: "Stories" },
     { key: "surveys" as const, label: "Surveys" },
     { key: "users" as const, label: "Users" },
@@ -126,6 +127,7 @@ export default function AdminPage() {
 
       {tab === "resources" && <ResourcesTab />}
       {tab === "events" && <EventsTab />}
+      {tab === "venues" && <VenuesTab />}
       {tab === "stories" && <StoriesTab />}
       {tab === "surveys" && <SurveysTab />}
       {tab === "users" && <UsersTab />}
@@ -317,10 +319,9 @@ function EventsTab() {
 
   function handleLocationChange(value: string) {
     if (value === "__other__") {
-      setFormData({ ...formData, location: "__other__", customLocation: "", venuePhotoUrl: "" });
+      setFormData({ ...formData, location: "__other__", customLocation: "" });
     } else {
-      const photo = venuePhotoMap[value] || "";
-      setFormData({ ...formData, location: value, customLocation: "", venuePhotoUrl: photo });
+      setFormData({ ...formData, location: value, customLocation: "" });
     }
   }
 
@@ -334,17 +335,22 @@ function EventsTab() {
       const stages: string[] = [];
       if (formData.stages.client) stages.push("client");
       if (formData.stages.alumni) stages.push("alumni");
+      const effectiveLocation = getEffectiveLocation();
+      const venuePhoto = venuePhotoMap[effectiveLocation] || undefined;
       const body: any = {
         name: formData.name, eventType: formData.eventType, date: formData.date,
         startTime: formData.startTime, endTime: formData.endTime,
-        location: getEffectiveLocation(), description: formData.description,
-        venuePhotoUrl: formData.venuePhotoUrl || null,
+        location: effectiveLocation, description: formData.description,
         hostUserId: formData.hostUserId || null,
         applicableStages: stages,
       };
+      if (venuePhoto !== undefined) {
+        body.venuePhotoUrl = venuePhoto;
+      }
       if (editId) {
         await apiRequest("PATCH", `/api/events/${editId}`, body);
       } else {
+        if (!body.venuePhotoUrl) body.venuePhotoUrl = null;
         await apiRequest("POST", "/api/events", body);
       }
     },
@@ -375,7 +381,6 @@ function EventsTab() {
       location: isKnownLocation ? e.location : (e.location ? "__other__" : ""),
       customLocation: isKnownLocation ? "" : (e.location || ""),
       description: e.description || "",
-      venuePhotoUrl: e.venuePhotoUrl || "",
       hostUserId: e.hostUserId || "",
       stages: { client: e.applicableStages?.includes("client"), alumni: e.applicableStages?.includes("alumni") },
     });
@@ -423,7 +428,16 @@ function EventsTab() {
           {formData.location === "__other__" && (
             <Input placeholder="Enter custom location" value={formData.customLocation} onChange={(e) => setFormData({ ...formData, customLocation: e.target.value })} data-testid="admin-input-custom-location" />
           )}
-          <Input placeholder="Venue photo URL (optional)" value={formData.venuePhotoUrl} onChange={(e) => setFormData({ ...formData, venuePhotoUrl: e.target.value })} data-testid="admin-input-venue-photo" />
+          {formData.location && formData.location !== "__other__" && venuePhotoMap[formData.location] && (
+            <div className="rounded-lg overflow-hidden" data-testid="admin-venue-photo-preview">
+              <img
+                src={venuePhotoMap[formData.location]}
+                alt={formData.location}
+                className="w-full h-24 object-cover rounded-lg"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            </div>
+          )}
           <Select value={formData.hostUserId} onValueChange={(v) => setFormData({ ...formData, hostUserId: v === "__none__" ? "" : v })}>
             <SelectTrigger data-testid="admin-select-host"><SelectValue placeholder="Event Host (optional)" /></SelectTrigger>
             <SelectContent>
@@ -488,6 +502,132 @@ function EventsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function VenuesTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: venues, isLoading } = useQuery<any[]>({ queryKey: ["/api/venue-locations"] });
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [pendingFiles, setPendingFiles] = useState<Record<string, File>>({});
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+
+  const handleFileSelect = (venueId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please select an image file.", variant: "destructive" });
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviews(prev => ({ ...prev, [venueId]: url }));
+    setPendingFiles(prev => ({ ...prev, [venueId]: file }));
+    setImgErrors(prev => ({ ...prev, [venueId]: false }));
+  };
+
+  const handleSave = async (venueId: string) => {
+    const file = pendingFiles[venueId];
+    if (!file) return;
+    setUploadingId(venueId);
+    try {
+      const formData = new FormData();
+      formData.append("photo", file);
+      const res = await fetch(`/api/admin/venues/${venueId}/photo`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ message: "Upload failed" }));
+        throw new Error(data.message);
+      }
+      setPreviews(prev => { const n = { ...prev }; delete n[venueId]; return n; });
+      setPendingFiles(prev => { const n = { ...prev }; delete n[venueId]; return n; });
+      queryClient.invalidateQueries({ queryKey: ["/api/venue-locations"] });
+      toast({ title: "Venue photo updated" });
+    } catch (err: any) {
+      toast({ title: err.message || "Upload failed", variant: "destructive" });
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const handleCancel = (venueId: string) => {
+    setPreviews(prev => { const n = { ...prev }; delete n[venueId]; return n; });
+    setPendingFiles(prev => { const n = { ...prev }; delete n[venueId]; return n; });
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <MapPin className="w-4 h-4 text-[#34737A]" />
+        <p className="text-xs text-[#868180]">{venues?.length || 0} venue locations</p>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
+      ) : (
+        <div className="space-y-3">
+          {venues?.map((venue: any) => (
+            <div key={venue.id} className="bg-white rounded-xl p-3 space-y-2" data-testid={`admin-venue-${venue.id}`}>
+              <p className="text-sm font-medium text-[#302D2E]" data-testid={`venue-name-${venue.id}`}>{venue.name}</p>
+              <div className="rounded-lg overflow-hidden bg-[#F1EFEF]" style={{ aspectRatio: "16/9" }}>
+                {previews[venue.id] ? (
+                  <img src={previews[venue.id]} alt="Preview" className="w-full h-full object-cover" data-testid={`venue-preview-${venue.id}`} />
+                ) : venue.photoUrl && !imgErrors[venue.id] ? (
+                  <img
+                    src={venue.photoUrl}
+                    alt={venue.name}
+                    className="w-full h-full object-cover"
+                    onError={() => setImgErrors(prev => ({ ...prev, [venue.id]: true }))}
+                    data-testid={`venue-photo-${venue.id}`}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <MapPin className="w-8 h-8 text-[#C7C2BF]" />
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {previews[venue.id] ? (
+                  <>
+                    <Button
+                      size="sm"
+                      className="bg-[#34737A] text-white"
+                      onClick={() => handleSave(venue.id)}
+                      disabled={uploadingId === venue.id}
+                      data-testid={`button-save-venue-photo-${venue.id}`}
+                    >
+                      {uploadingId === venue.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
+                      Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleCancel(venue.id)} disabled={uploadingId === venue.id} data-testid={`button-cancel-venue-photo-${venue.id}`}>
+                      <X className="w-3 h-3 mr-1" /> Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => handleFileSelect(venue.id, e)}
+                      data-testid={`input-venue-photo-${venue.id}`}
+                    />
+                    <span className="inline-flex items-center gap-1 text-xs text-[#34737A] font-medium px-2 py-1 rounded-lg border border-[#34737A]/20 hover:bg-[#34737A]/5 transition-colors">
+                      <Camera className="w-3 h-3" />
+                      Change photo
+                    </span>
+                  </label>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

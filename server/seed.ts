@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
+import fs from "fs";
+import path from "path";
 import { storage } from "./storage";
 import { db } from "./db";
 import { users, venueLocations } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 function daysAgo(n: number): Date {
   const d = new Date();
@@ -29,20 +32,57 @@ function getNextWednesday(): string {
   return getNextDay(3);
 }
 
+const venueImageMap: { name: string; unsplashUrl: string; filename: string }[] = [
+  { name: "Main Campus — Community Room", unsplashUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80", filename: "venue-community-room.jpg" },
+  { name: "Main Campus — Garden Area", unsplashUrl: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80", filename: "venue-garden-area.jpg" },
+  { name: "Gateway Building — Room 102", unsplashUrl: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80", filename: "venue-gateway-102.jpg" },
+  { name: "OSS Building — Main Hall", unsplashUrl: "https://images.unsplash.com/photo-1572025442646-866d16c84a54?w=800&q=80", filename: "venue-oss-hall.jpg" },
+  { name: "Off Campus", unsplashUrl: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80", filename: "venue-off-campus.jpg" },
+];
+
+async function downloadVenueImage(url: string, filepath: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { redirect: "follow" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buffer = Buffer.from(await res.arrayBuffer());
+    fs.writeFileSync(filepath, buffer);
+    return true;
+  } catch (err: any) {
+    console.warn(`[seed] Failed to download venue image from ${url}: ${err.message}`);
+    return false;
+  }
+}
+
 async function seedVenueLocations() {
+  const venuesDir = path.resolve("uploads/venues");
+  if (!fs.existsSync(venuesDir)) {
+    fs.mkdirSync(venuesDir, { recursive: true });
+  }
+
   const existing = await db.select().from(venueLocations).limit(1);
-  if (existing.length > 0) return;
+  if (existing.length > 0) {
+    for (const venue of venueImageMap) {
+      const filepath = path.join(venuesDir, venue.filename);
+      if (!fs.existsSync(filepath)) {
+        const ok = await downloadVenueImage(venue.unsplashUrl, filepath);
+        if (ok) {
+          const localUrl = `/uploads/venues/${venue.filename}`;
+          await db.update(venueLocations).set({ photoUrl: localUrl }).where(eq(venueLocations.name, venue.name));
+          console.log(`[seed] Downloaded and updated venue photo: ${venue.name}`);
+        }
+      }
+    }
+    return;
+  }
 
-  const venues = [
-    { name: "Main Campus — Community Room", photoUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=400&fit=crop" },
-    { name: "Main Campus — Garden Area", photoUrl: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&h=400&fit=crop" },
-    { name: "Gateway Building — Room 102", photoUrl: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&h=400&fit=crop" },
-    { name: "OSS Building — Main Hall", photoUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=400&fit=crop" },
-    { name: "Off Campus", photoUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop" },
-  ];
-
-  for (const v of venues) {
-    await db.insert(venueLocations).values(v).onConflictDoNothing();
+  for (const venue of venueImageMap) {
+    const filepath = path.join(venuesDir, venue.filename);
+    const ok = await downloadVenueImage(venue.unsplashUrl, filepath);
+    const photoUrl = ok ? `/uploads/venues/${venue.filename}` : "";
+    await db.insert(venueLocations).values({ name: venue.name, photoUrl }).onConflictDoNothing();
+    if (ok) {
+      console.log(`[seed] Seeded venue with photo: ${venue.name}`);
+    }
   }
 }
 
@@ -104,13 +144,10 @@ export async function seedDatabase() {
     await storage.createResource(r);
   }
 
-  const venuePhotoMap: Record<string, string> = {
-    "Main Campus — Community Room": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=400&fit=crop",
-    "Main Campus — Garden Area": "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&h=400&fit=crop",
-    "Gateway Building — Room 102": "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&h=400&fit=crop",
-    "OSS Building — Main Hall": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=400&fit=crop",
-    "Off Campus": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop",
-  };
+  const venuePhotoMap: Record<string, string> = {};
+  for (const v of venueImageMap) {
+    venuePhotoMap[v.name] = `/uploads/venues/${v.filename}`;
+  }
 
   const seedEvents = [
     { name: "Daily Community Meeting", eventType: "community_meeting" as const, date: today, startTime: "15:00", endTime: "16:00", location: "Main Campus — Community Room", venuePhotoUrl: venuePhotoMap["Main Campus — Community Room"], hostUserId: createdUsers.sarah, applicableStages: ["client"], description: "Milestone celebrations, sobriety milestones, open discussion. You're here not because you're broken, but because you're strong.", createdBy: createdUsers.sarah },

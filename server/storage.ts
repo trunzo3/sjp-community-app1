@@ -64,7 +64,9 @@ export interface IStorage {
   getStaffUsers(): Promise<User[]>;
 
   getVenueLocations(): Promise<VenueLocation[]>;
+  getVenueLocation(id: string): Promise<VenueLocation | undefined>;
   createVenueLocation(loc: InsertVenueLocation): Promise<VenueLocation>;
+  updateVenueLocation(id: string, data: Partial<InsertVenueLocation>): Promise<VenueLocation | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -343,6 +345,16 @@ export class DatabaseStorage implements IStorage {
   async createVenueLocation(loc: InsertVenueLocation): Promise<VenueLocation> {
     const [created] = await db.insert(venueLocations).values(loc).returning();
     return created;
+  }
+
+  async getVenueLocation(id: string): Promise<VenueLocation | undefined> {
+    const [venue] = await db.select().from(venueLocations).where(eq(venueLocations.id, id));
+    return venue;
+  }
+
+  async updateVenueLocation(id: string, data: Partial<InsertVenueLocation>): Promise<VenueLocation | undefined> {
+    const [updated] = await db.update(venueLocations).set(data).where(eq(venueLocations.id, id)).returning();
+    return updated;
   }
 }
 

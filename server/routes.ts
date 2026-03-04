@@ -9,16 +9,22 @@ import { storage } from "./storage";
 import { seedDatabase } from "./seed";
 import MemoryStore from "memorystore";
 
-const uploadsDir = path.resolve("uploads/avatars");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+const avatarsDir = path.resolve("uploads/avatars");
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true });
+}
+
+const venuesDir = path.resolve("uploads/venues");
+if (!fs.existsSync(venuesDir)) {
+  fs.mkdirSync(venuesDir, { recursive: true });
 }
 
 const allowedMimes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const venueAllowedMimes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const avatarUpload = multer({
   storage: multer.diskStorage({
-    destination: uploadsDir,
+    destination: avatarsDir,
     filename: (_req, _file, cb) => {
       cb(null, `temp-${Date.now()}.jpg`);
     },
@@ -29,6 +35,23 @@ const avatarUpload = multer({
       cb(null, true);
     } else {
       cb(new Error("INVALID_TYPE"));
+    }
+  },
+});
+
+const venuePhotoUpload = multer({
+  storage: multer.diskStorage({
+    destination: venuesDir,
+    filename: (_req, _file, cb) => {
+      cb(null, `temp-venue-${Date.now()}.jpg`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (venueAllowedMimes.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("INVALID_VENUE_TYPE"));
     }
   },
 });
@@ -190,7 +213,7 @@ export async function registerRoutes(
   }, async (req: Request, res: Response) => {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
     const finalName = `avatar-${req.params.id}.jpg`;
-    const finalPath = path.join(uploadsDir, finalName);
+    const finalPath = path.join(avatarsDir, finalName);
     try {
       fs.renameSync(req.file.path, finalPath);
       const photoUrl = `/uploads/avatars/${finalName}?v=${Date.now()}`;
@@ -328,6 +351,39 @@ export async function registerRoutes(
   app.get("/api/venue-locations", requireAuth, async (_req, res) => {
     const locations = await storage.getVenueLocations();
     res.json(locations);
+  });
+
+  app.post("/api/admin/venues/:venueId/photo", requireStaffOrAdmin, (req: Request, res: Response, next: NextFunction) => {
+    venuePhotoUpload.single("photo")(req, res, (err: any) => {
+      if (err) {
+        if (err.message === "INVALID_VENUE_TYPE") {
+          return res.status(400).json({ message: "Only JPEG, PNG, and WebP images are allowed." });
+        }
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ message: "File is too large. Maximum size is 5MB." });
+        }
+        return res.status(400).json({ message: "Upload failed." });
+      }
+      next();
+    });
+  }, async (req: Request, res: Response) => {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    const venue = await storage.getVenueLocation(req.params.venueId);
+    if (!venue) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+      return res.status(404).json({ message: "Venue not found" });
+    }
+    const finalName = `venue-${req.params.venueId}.jpg`;
+    const finalPath = path.join(venuesDir, finalName);
+    try {
+      fs.renameSync(req.file.path, finalPath);
+      const photoUrl = `/uploads/venues/${finalName}?v=${Date.now()}`;
+      const updated = await storage.updateVenueLocation(req.params.venueId, { photoUrl });
+      res.json(updated);
+    } catch {
+      try { if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path); } catch {}
+      res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
   });
 
   app.post("/api/events", requireStaffOrAdmin, async (req, res) => {

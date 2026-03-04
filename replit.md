@@ -97,7 +97,8 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - **Event cards**: Tappable → navigate to `/events/:id` (removed expand/collapse, now shows ChevronRight)
 - **Detail page shows**: venue photo (if exists), event name, type badge, date, time, location with "Get Directions" link (Apple/Google Maps), full description, host card
 - **Host card**: Shows staff avatar (photo or initial), name, role label, bio. Only appears when hostUserId is set.
-- **Admin event form**: Location is now a dropdown with 5 known venues + "Other" option. Known venues auto-populate venue photo URL. Host dropdown lists staff/admin users. Venue photo URL field for manual override.
+- **Admin event form**: Location is now a dropdown with 5 known venues + "Other" option. Known venues auto-populate venue photo from venue library. Host dropdown lists staff/admin users. Venue photo preview shown when a known venue is selected.
+- **Admin Venues tab**: New "Venues" tab in admin panel showing all venue locations with current photos. Staff/admin can tap "Change photo" to select a new image (jpeg/png/webp, 5MB max). Preview shown before save. Upload endpoint: `POST /api/admin/venues/:venueId/photo`.
 - **API routes**: GET `/api/events/:id` returns event with host user data, GET `/api/staff-users` returns staff/admin users, GET `/api/venue-locations` returns venue library
 
 ## Milestone Post Cards (Implemented)
