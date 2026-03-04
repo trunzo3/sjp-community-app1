@@ -156,5 +156,22 @@ export async function seedDatabase() {
     await storage.createSurvey(s);
   }
 
+  const pillars = ["community", "confidence", "resilience", "readiness", "wellness"] as const;
+  const progressData: Record<string, number[]> = {
+    destiny: [80, 65, 50, 35, 70],
+    angela: [30, 20, 15, 10, 25],
+    keisha: [25, 15, 20, 10, 30],
+    maria: [90, 75, 70, 80, 85],
+    monica: [100, 100, 100, 100, 100],
+    tasha: [100, 100, 100, 100, 100],
+    denise: [100, 100, 100, 100, 100],
+  };
+
+  for (const [name, values] of Object.entries(progressData)) {
+    for (let i = 0; i < pillars.length; i++) {
+      await storage.upsertProgress(createdUsers[name], pillars[i], values[i]);
+    }
+  }
+
   console.log("Seed data inserted successfully.");
 }

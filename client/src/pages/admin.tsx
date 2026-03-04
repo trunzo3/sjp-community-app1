@@ -673,13 +673,27 @@ function SurveysTab() {
   );
 }
 
+const progressPillars = [
+  { key: "community", label: "Community", color: "#34737A" },
+  { key: "confidence", label: "Confidence", color: "#979DB6" },
+  { key: "resilience", label: "Resilience", color: "#D32027" },
+  { key: "readiness", label: "Readiness", color: "#5DA592" },
+  { key: "wellness", label: "Wellness", color: "#EEBBA7" },
+];
+
 function UsersTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [editData, setEditData] = useState({ role: "", stage: "", graduationDate: "" });
+  const [progressValues, setProgressValues] = useState<Record<string, number>>({});
 
   const { data: users, isLoading } = useQuery<any[]>({ queryKey: ["/api/users"] });
+
+  const { data: editUserProgress } = useQuery<any[]>({
+    queryKey: ["/api/progress", editUserId || ""],
+    enabled: !!editUserId,
+  });
 
   const updateUser = useMutation({
     mutationFn: async () => {
@@ -688,10 +702,15 @@ function UsersTab() {
         stage: editData.stage,
         graduationDate: editData.graduationDate || null,
       });
+      for (const [pillar, progress] of Object.entries(progressValues)) {
+        await apiRequest("PUT", `/api/admin/progress/${editUserId}`, { pillar, progress });
+      }
     },
     onSuccess: () => {
       setEditUserId(null);
+      setProgressValues({});
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/progress"] });
       toast({ title: "User updated" });
     },
   });
@@ -699,6 +718,18 @@ function UsersTab() {
   function openEdit(u: any) {
     setEditUserId(u.id);
     setEditData({ role: u.role, stage: u.stage, graduationDate: u.graduationDate || "" });
+    setProgressValues({});
+  }
+
+  function getProgressValue(pillar: string): number {
+    if (progressValues[pillar] !== undefined) return progressValues[pillar];
+    const entry = editUserProgress?.find((p: any) => p.pillar === pillar);
+    return entry?.progress ?? 0;
+  }
+
+  function setProgress(pillar: string, value: number) {
+    const clamped = Math.max(0, Math.min(100, value));
+    setProgressValues({ ...progressValues, [pillar]: clamped });
   }
 
   return (
@@ -739,6 +770,28 @@ function UsersTab() {
                   <div>
                     <label className="text-xs text-[#868180] mb-1 block">Graduation Date</label>
                     <Input type="date" value={editData.graduationDate} onChange={(e) => setEditData({ ...editData, graduationDate: e.target.value })} data-testid="admin-input-graduation-date" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#868180] mb-1.5 block">Pillar Progress</label>
+                    <div className="space-y-1.5">
+                      {progressPillars.map((p) => (
+                        <div key={p.key} className="flex items-center gap-2">
+                          <span className="text-[10px] font-semibold w-20" style={{ color: p.color }}>{p.label}</span>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={getProgressValue(p.key)}
+                            onChange={(e) => setProgress(p.key, parseInt(e.target.value) || 0)}
+                            className="h-7 text-xs w-16 text-center"
+                            data-testid={`admin-input-progress-${p.key}`}
+                          />
+                          <div className="flex-1 h-1.5 rounded-full bg-[#F1EFEF] overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${getProgressValue(p.key)}%`, backgroundColor: p.color }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" className="bg-[#34737A] text-white" onClick={() => updateUser.mutate()} disabled={updateUser.isPending} data-testid="button-admin-save-user">

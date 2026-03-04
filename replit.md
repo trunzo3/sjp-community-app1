@@ -54,6 +54,14 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
   - Profile: #EEBBA7 peach 3px top border, #FCF3EE cream header section bg
   - Admin: #D32027 red 3px top border below title
 
+## My Journey Progress Dashboard (Implemented)
+- **Table**: `user_progress` (id, userId, pillar, progress 0-100) with unique constraint on (userId, pillar)
+- **Component**: `client/src/components/my-journey.tsx` — SVG circular progress rings, positioned between hero banner and Stories carousel on Home page
+- **Visibility**: Clients and alumni see their dashboard; staff/admin do not see it on their own Home page
+- **Admin editing**: Admin Panel > Users tab includes pillar progress sliders (0-100) per user when editing
+- **API**: GET `/api/progress/:userId` (auth), PUT `/api/admin/progress/:userId` (staff/admin)
+- **Pillar colors**: Community #34737A, Confidence #979DB6, Resilience #D32027, Readiness #5DA592, Wellness #EEBBA7
+
 ## Security
 - `/api/users` protected by requireStaffOrAdmin (not just requireAuth)
 - `/api/admin/*` endpoints protected by requireStaffOrAdmin

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { getDueSurveyInterval } from "@/pages/survey";
+import { MyJourney } from "@/components/my-journey";
 
 type StoryWithAuthor = {
   id: string;
@@ -59,6 +60,8 @@ export default function HomePage() {
           <p className="text-white/40 text-xs mt-3 font-medium">Building community. Changing lives.</p>
         </div>
       </div>
+
+      <MyJourney />
 
       {stories && stories.length > 0 && (
         <div data-testid="stories-carousel">
