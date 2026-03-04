@@ -129,6 +129,48 @@ export const userProgress = pgTable("user_progress", {
   uniqueIndex("user_progress_user_pillar_idx").on(table.userId, table.pillar),
 ]);
 
+export const aiFaqs = pgTable("ai_faqs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  tags: text("tags").array().notNull(),
+  category: text("category"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiTrustedAnswers = pgTable("ai_trusted_answers", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  triggerPhrases: text("trigger_phrases").array().notNull(),
+  answer: text("answer").notNull(),
+  category: text("category"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiCrisisConfig = pgTable("ai_crisis_config", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  triggerWords: text("trigger_words").array().notNull(),
+  crisisMessage: text("crisis_message").notNull(),
+  crisisResources: text("crisis_resources").notNull(),
+  notMonitoredDisclaimer: text("not_monitored_disclaimer").notNull(),
+  active: boolean("active").notNull().default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aiQueryLogs = pgTable("ai_query_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  query: text("query").notNull(),
+  matchedContentType: text("matched_content_type"),
+  matchedContentId: uuid("matched_content_id"),
+  confidence: integer("confidence").notNull().default(0),
+  responseGenerated: boolean("response_generated").notNull().default(false),
+  crisisDetected: boolean("crisis_detected").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertPostSchema = createInsertSchema(posts).omit({ id: true, createdAt: true });
 export const insertReplySchema = createInsertSchema(replies).omit({ id: true, createdAt: true });
@@ -160,3 +202,17 @@ export type UserProgress = typeof userProgress.$inferSelect;
 export type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;
 export type VenueLocation = typeof venueLocations.$inferSelect;
 export type InsertVenueLocation = z.infer<typeof insertVenueLocationSchema>;
+
+export const insertAiFaqSchema = createInsertSchema(aiFaqs).omit({ id: true, createdAt: true });
+export const insertAiTrustedAnswerSchema = createInsertSchema(aiTrustedAnswers).omit({ id: true, createdAt: true });
+export const insertAiCrisisConfigSchema = createInsertSchema(aiCrisisConfig).omit({ id: true, updatedAt: true });
+export const insertAiQueryLogSchema = createInsertSchema(aiQueryLogs).omit({ id: true, createdAt: true });
+
+export type AiFaq = typeof aiFaqs.$inferSelect;
+export type InsertAiFaq = z.infer<typeof insertAiFaqSchema>;
+export type AiTrustedAnswer = typeof aiTrustedAnswers.$inferSelect;
+export type InsertAiTrustedAnswer = z.infer<typeof insertAiTrustedAnswerSchema>;
+export type AiCrisisConfig = typeof aiCrisisConfig.$inferSelect;
+export type InsertAiCrisisConfig = z.infer<typeof insertAiCrisisConfigSchema>;
+export type AiQueryLog = typeof aiQueryLogs.$inferSelect;
+export type InsertAiQueryLog = z.infer<typeof insertAiQueryLogSchema>;

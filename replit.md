@@ -1,134 +1,47 @@
 # SJP Community Platform
 
-A private, mobile-first community web app for Saint John's Program for Real Change — a Sacramento nonprofit serving women experiencing homelessness, addiction, justice involvement, and domestic violence.
+## Overview
+The SJP Community Platform is a private, mobile-first web application designed for Saint John's Program for Real Change, a Sacramento-based nonprofit assisting women experiencing homelessness, addiction, justice involvement, and domestic violence. The platform aims to provide a supportive digital community, facilitate access to resources, and empower beneficiaries through features like guided storytelling, progress tracking, and peer interaction.
 
-## Tech Stack
-- **Frontend:** React + TypeScript + Tailwind CSS + shadcn/ui
-- **Backend:** Node.js + Express
-- **Database:** PostgreSQL with Drizzle ORM
-- **Auth:** Session-based with bcryptjs
-- **Routing:** wouter (frontend), Express (backend)
+## User Preferences
+I prefer clear, concise, and professional communication. Please prioritize iterative development, providing updates and asking for confirmation before implementing major changes or complex features. For code, I appreciate well-structured, readable, and maintainable solutions.
 
-## Architecture
-- `shared/schema.ts` — Drizzle schema with all 9 tables (users, posts, replies, resources, events, stories, reactions, surveys, user_progress)
-- `server/db.ts` — Database connection
-- `server/storage.ts` — IStorage interface + DatabaseStorage implementation
-- `server/routes.ts` — Express API routes with session auth, role-based middleware (requireAuth, requireStaffOrAdmin, requireAdmin)
-- `server/seed.ts` — Seed data (12 users, 12 resources, 7 events, 8 posts, 3 stories, 6 surveys)
-- `client/src/lib/auth.tsx` — AuthProvider context with login/logout/demoLogin
-- `client/src/components/` — Shared components (AvatarCircle, BottomNav, PostCard, CommunityFeed, EventCard, MyJourney)
-- `client/src/pages/` — 9 pages (login, home, community, resources, events, profile, admin, share-story, survey)
+## System Architecture
+The platform is built with a React, TypeScript, Tailwind CSS frontend using `shadcn/ui`, a Node.js and Express backend, and a PostgreSQL database with Drizzle ORM. Authentication is session-based with `bcryptjs`. Routing is handled by `wouter` on the frontend and Express on the backend.
 
-## Key Design Decisions
-- Responsive layout: mobile (430px max-width, centered, bottom nav) and desktop (left sidebar nav, wider content area up to 900px)
-- Breakpoint at 768px (md:) — uses `useIsMobile` hook from `client/src/hooks/use-mobile.tsx`
-- No dark mode (out of scope)
-- Mobile: Bottom nav with 5 tabs (Home, Community, Resources, Events, Profile)
-- Desktop: Fixed left sidebar (240px wide) with same 5 tabs + Admin link for staff/admin
-- Content visibility rules enforced on backend (stage-based filtering)
-- Demo quick-login buttons on login page for hackathon/testing
-- Design tokens: Primary teal #34737A (SJP brand), dark teal #2C6169, deepest teal #1F4F49, red accent #D32027, muted accent #979DB6, text primary #302D2E, text secondary #868180, text muted #C7C2BF, page bg #FFFBF9, card bg white, light gray #F1EFEF
-- `staleTime: Infinity` in queryClient — must explicitly invalidate queries after mutations
-- `apiRequest(method, url, data)` — NOT `(url, options)` like fetch
-- queryKey uses array format for TanStack Query: `["/api/endpoint", param]`
+### UI/UX Decisions
+- **Responsive Design**: Mobile-first approach with a bottom navigation bar for small screens and a fixed left sidebar for desktop (`md:` breakpoint at 768px).
+- **Color Scheme**: Uses SJP brand colors: primary teal (`#34737A`), with complementary dark teal, deepest teal, red accent (`#D32027`), muted accent, and various text/background shades. Avatar colors rotate through 5 brand colors.
+- **Page Differentiation**: Each primary page (Home, Community, Resources, Events, Profile, Admin) features a subtle 3px top border in a distinct accent color for visual identity.
+- **Component Reusability**: Common components like `AvatarCircle`, `BottomNav`, `PostCard`, `CommunityFeed`, `EventCard`, and `MyJourney` are centralized.
 
-## Prompt 2 Features (Implemented)
-- **Admin Panel** (`/admin`): 4-tab management (Resources, Events, Stories, Surveys) + Users tab (admin-only). Full CRUD for resources/events, story approval workflow (approve/community_only/revision_requested), survey aggregate stats, user role/stage/graduation management.
-- **Guided Storytelling** (`/share-story`): 3-step form for alumni (Where were you? → What changed? → Where are you now?) with sharing permission toggle. Stories with sharing ON go to pending review; sharing OFF appear immediately in carousel.
-- **Alumni Survey** (`/survey`): Interval-based (3/6/12 month) check-in form. Survey prompt card on Home page when due. Tracks employment, housing, raise/promotion, support needs.
-- **Wiring**: Profile "Admin Panel" → `/admin`, Profile "Share Your Story" → `/share-story`, Home "Write it" → `/share-story`, Home survey card → `/survey`
+### Technical Implementations
+- **Database Schema**: Comprehensive Drizzle schema covering users, posts, replies, resources, events, stories, reactions, surveys, and user progress.
+- **API Structure**: Express API routes enforce session authentication and role-based access (`requireAuth`, `requireStaffOrAdmin`, `requireAdmin`).
+- **State Management**: TanStack Query is used for data fetching, with `staleTime: Infinity` requiring explicit query invalidation after mutations.
+- **Image Handling**: Client-side image resizing/compression and server-side storage for user avatars and venue photos.
+- **AI Guide**: Implements a Retrieval-Augmented Generation (RAG) pattern using `gpt-4o-mini` for content search, crisis detection, and response generation, with a focus on citation and trusted sources.
 
-## Post-Build Update Features (Implemented)
-- **Reactions System**: 6 emoji reactions (heart, clap, pray, fire, star, smile) on community posts. Toggle behavior — tapping same reaction removes it, tapping different one switches. Reaction counts displayed as badges below post content. Uses `reactions` table with unique user-per-post constraint (toggle logic in API).
-- **Story Revision Workflow**: Admin/staff can now "Request Revision" on pending stories with a revision note. Stories get `revision_requested` status (orange badge). Alumni see revision banner on `/share-story` page with the staff note. Staff can still approve/community-only stories with revision_requested status.
-- **Schema additions**: `reactions` table (id, postId, userId, reactionType, createdAt), `revision_note` column on stories, `revision_requested` added to `approval_status` enum, `reaction_type` enum.
+### Feature Specifications
+- **Admin Panel**: Provides CRUD operations for resources, events, stories (with approval workflow), surveys (aggregate stats), and user management (roles, stage, graduation).
+- **Guided Storytelling**: A multi-step form for alumni to share their stories with privacy controls and an admin review process.
+- **Alumni Survey**: Interval-based check-in forms to track key progress metrics (employment, housing, etc.).
+- **Reactions System**: Emoji reactions on community posts with toggle functionality and count display.
+- **My Journey Progress Dashboard**: Visual progress tracking for clients/alumni across predefined pillars, editable by staff/admin.
+- **Home Page Layout**: Structured sections (Hero Banner, My Journey, Stories of Change, Next Event, Community Feed) with distinct headers and content displays.
+- **Community Feed**: Supports various post types (update, win, question, need) with filtering and a pinned post feature. Milestone posts have a unique visual treatment and selection process.
+- **Event Detail Pages**: Dedicated pages for events displaying detailed information, venue photos, and host profiles.
+- **User Profile Photos**: Staff/admin can upload profile photos via a dedicated UI, with client-side processing and server-side storage.
 
-## Color Fixes & Page Differentiation (Implemented)
-- **Avatar colors**: All user avatars now use 5 brand colors rotating: #34737A (dark teal), #5DA592 (sage green), #D32027 (red), #979DB6 (dusty lavender), #EEBBA7 (peach). Applied to seed data, login demo buttons, and all avatar displays.
-- **Role badges**: All role badges (Admin/Staff/Client/Alumni) now use #34737A dark teal background with white text.
-- **Need post left border**: Confirmed #D32027 (true red).
-- **Filter pills**: Active pill uses #34737A, inactive pills use #F1EFEF bg with #302D2E text.
-- **Page differentiation**: Each page has a subtle accent for visual identity:
-  - Home: Hero banner (no change needed)
-  - Community: #34737A dark teal 3px top border, privacy banner changed to #FCF3EE cream bg
-  - Resources: #5DA592 sage green 3px top border, #FAE8DF peach tint background strip behind filter pills
-  - Events: #979DB6 dusty lavender 3px top border
-  - Profile: #EEBBA7 peach 3px top border, #FCF3EE cream header section bg
-  - Admin: #D32027 red 3px top border below title
-
-## My Journey Progress Dashboard (Implemented)
-- **Table**: `user_progress` (id, userId, pillar, progress 0-100) with unique constraint on (userId, pillar)
-- **Component**: `client/src/components/my-journey.tsx` — SVG circular progress rings, positioned between hero banner and Stories carousel on Home page
-- **Visibility**: Clients and alumni see their dashboard; staff/admin do not see it on their own Home page
-- **Admin editing**: Admin Panel > Users tab includes pillar progress sliders (0-100) per user when editing
-- **API**: GET `/api/progress/:userId` (auth), PUT `/api/admin/progress/:userId` (staff/admin)
-- **Pillar colors**: Community #34737A, Confidence #979DB6, Resilience #D32027, Readiness #5DA592, Wellness #EEBBA7
-
-## Home Page Layout Restructure (Implemented)
-- **Layout order**: Hero Banner → My Journey → Stories of Change → Next Event → Community Feed
-- **Section headers**: Each section below My Journey has a colored header with icon, title, and "See all →" / "Read more →" link
-  - Stories of Change: #D32027 red, BookOpen icon
-  - Next Event: #34737A teal, Calendar icon
-  - Community Feed: #B8876F warm brown, MessageCircle icon
-- **Stories of Change**: Single featured quote card with #FAE8DF peach bg, decorative quotation marks, italic text, author avatar + "Alumni" label. No carousel.
-- **Next Event**: Collapsible card with colored date block (month + day), event name, time, location. Expands to show description + stage tags.
-- **Community Feed**: Slim composer bar (pill shape, redirects to /community) → pinned posts → one latest post per category (need/win/question/update)
-- **Category post cards**: Colored banner strip at top with dot + uppercase label + timestamp. Heart reaction count + reply count below content.
-- **Post type banner colors**: Need=#FBEAEA/#D32027, Win=#E6F2EF/#5DA592, Question=#EDEEF3/#979DB6, Update=#E8F0F1/#34737A
-
-## Community Feed Updates (Implemented)
-- **Post types**: 4 types only — update, win, question, need (milestone removed)
-- **Feed filters**: All, Needs, Wins, Questions
-- **Pinned posts**: Displayed above the composer (below privacy banner), with #FAE8DF warm peach background, 📌 pin icon + "Pinned" label, no left border color treatment
-- **Regular posts**: Displayed below the composer in the feed with white background and normal styling
-
-## Staff Profile Photos (Implemented — File Upload)
-- **Schema**: `photoUrl` (text, nullable) on `users` table — stores relative path after upload (e.g. `/uploads/avatars/avatar-{userId}.jpg?v=timestamp`)
-- **AvatarCircle component**: Accepts optional `photoUrl` prop. Renders circular `<img>` with `object-fit: cover`. Falls back to colored initial avatar on `onError`.
-- **Profile page**: Staff/admin see tappable avatar with camera icon overlay. Tapping opens native file picker (`accept="image/*"` — shows camera roll on mobile). Selected image is resized/compressed client-side (max 400×400, JPEG 0.85 quality via Canvas API in `client/src/lib/image-utils.ts`). Circular preview shown before upload. "Save photo" button confirms upload. "Remove photo" link with inline confirm/cancel.
-- **Upload endpoint**: `POST /api/users/:id/avatar` — auth checked before multer processes file. Accepts multipart/form-data. Validates MIME (jpeg/png/webp/gif only) and file size (2MB cap). Saves to `/uploads/avatars/avatar-{userId}.jpg`. Cleans up temp files on failure.
-- **Static serving**: `/uploads` directory served via `express.static` in `server/index.ts`
-- **Role guard**: Only staff/admin can upload. PATCH `/api/users/:id` strips `photoUrl` from request body for non-staff/non-admin users.
-- **Consistency**: AvatarCircle with photoUrl used in: profile header, post cards, reply threads, home page, admin panel user list, event host card
-- **Edge cases**: Broken image URLs fall back silently to colored initial avatar. Existing external URLs continue to render. Clients/alumni see no photo upload UI.
-
-## Event Detail Pages (Implemented)
-- **Event detail route**: `/events/:id` — new page at `client/src/pages/event-detail.tsx`
-- **Schema changes**: `venuePhotoUrl` (text, nullable) and `hostUserId` (uuid, nullable, FK to users) added to `events` table
-- **Venue locations table**: `venue_locations` (id, name, photoUrl) — seeded with 5 campus locations with placeholder Unsplash images
-- **Event cards**: Tappable → navigate to `/events/:id` (removed expand/collapse, now shows ChevronRight)
-- **Detail page shows**: venue photo (if exists), event name, type badge, date, time, location with "Get Directions" link (Apple/Google Maps), full description, host card
-- **Host card**: Shows staff avatar (photo or initial), name, role label, bio. Only appears when hostUserId is set.
-- **Admin event form**: Location is now a dropdown with 5 known venues + "Other" option. Known venues auto-populate venue photo from venue library. Host dropdown lists staff/admin users. Venue photo preview shown when a known venue is selected.
-- **Admin Venues tab**: New "Venues" tab in admin panel showing all venue locations with current photos. Staff/admin can tap "Change photo" to select a new image (jpeg/png/webp, 5MB max). Preview shown before save. Upload endpoint: `POST /api/admin/venues/:venueId/photo`.
-- **API routes**: GET `/api/events/:id` returns event with host user data, GET `/api/staff-users` returns staff/admin users, GET `/api/venue-locations` returns venue library
-
-## Milestone Post Cards (Implemented)
-- **Schema**: `milestoneType` (text, nullable) and `milestoneCategory` (text, nullable) added to `posts` table. `"milestone"` added to `post_type` enum.
-- **Milestone picker**: `client/src/components/milestone-picker.tsx` — scrollable grid of tappable tiles grouped by 6 categories (Recovery, My Journey at Saint John's, Work and Career, Family, Housing, Personal Growth) plus "Something else worth celebrating" custom option.
-- **Category color scheme**: Recovery=#C8882A, Journey=#34737A, Work=#5DA592, Family=#E8956D, Housing=#979DB6, Growth=#B8A832. Each has unique background tint and lucide icon.
-- **Card design**: Milestone posts render with 4px colored left border (category color), tinted background, category icon in top right, bold milestone label as headline, personal note beneath. Standard author/reactions/replies unchanged.
-- **Composer flow**: Selecting "Milestone" pill replaces text input with picker. Selecting a tile highlights it (teal). Optional personal note field appears after selection. "Something else" is a tile that opens free-text input on click.
-- **Server validation**: POST `/api/posts` validates postType, requires milestoneType+milestoneCategory for milestone posts, strips them for other types.
-- **Feed filter**: "Milestones" filter pill added to community feed filters.
-- **No confetti**: Milestone posts use dignified warmth, no animation effects.
-
-## Responsive Layout (Implemented)
-- **App shell**: `client/src/App.tsx` — conditionally renders `DesktopSidebar` (md+) or `BottomNav` (mobile). Desktop content offset by `ml-[240px]` with max-width 900px.
-- **Desktop sidebar**: `client/src/components/desktop-sidebar.tsx` — fixed left, 240px wide, white bg, teal active states, SJP logo at top, nav links for all tabs + Admin (staff/admin only).
-- **Login**: Centered card on all screen sizes with `flex items-center justify-center min-h-screen`.
-- **Home page**: 2-column grid on desktop (stories+event | community feed), single stack on mobile.
-- **Events/Resources**: `md:grid-cols-2` card grids on desktop, single column on mobile.
-- **Community/Profile**: `max-w-[600px]` on desktop for readability.
-- **Event detail**: `max-w-[700px]`, taller venue image on desktop (`md:h-64`).
-- **Accent bars**: Use `md:mx-0 md:rounded-full` to avoid edge-to-edge bleed on desktop.
-- **Filters**: Use `md:flex-wrap` instead of horizontal scroll on desktop.
-
-## Security
-- `/api/users` protected by requireStaffOrAdmin (not just requireAuth)
-- `/api/admin/*` endpoints protected by requireStaffOrAdmin
-- `/api/admin/users/:id` protected by requireStaffOrAdmin (staff and admin can edit users)
-- Admin page has frontend guard redirecting non-staff/admin to profile
-- Story creation restricted to alumni role
-- Survey creation restricted to alumni role
-- `stripPasswords()` handles Date instances before object spread
+## External Dependencies
+- **PostgreSQL**: Primary database.
+- **OpenAI**: Utilized for the AI Guide feature (`gpt-4o-mini`) via Replit AI Integrations.
+- **Multer**: Used for handling `multipart/form-data` for file uploads on the server.
+- **`bcryptjs`**: For password hashing and secure authentication.
+- **`wouter`**: Frontend routing.
+- **`react-router-dom`**: Used for frontend routing.
+- **`tailwindcss`**: CSS framework for styling.
+- **`shadcn/ui`**: UI component library.
+- **TanStack Query**: For data fetching, caching, and state management.
+- **Unsplash**: Placeholder images for seeded venue locations.
+- **Apple/Google Maps**: Integration for "Get Directions" links on event detail pages.

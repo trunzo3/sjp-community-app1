@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { BottomNav } from "@/components/bottom-nav";
 import { DesktopSidebar } from "@/components/desktop-sidebar";
+import { AiGuide } from "@/components/ai-guide";
 import { useIsMobile } from "@/hooks/use-mobile";
 import LoginPage from "@/pages/login";
 import HomePage from "@/pages/home";
@@ -56,6 +57,7 @@ function AppContent() {
         </Switch>
       </div>
       {isMobile && <BottomNav />}
+      <AiGuide />
     </div>
   );
 }

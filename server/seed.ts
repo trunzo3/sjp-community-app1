@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { storage } from "./storage";
 import { db } from "./db";
-import { users, venueLocations } from "@shared/schema";
+import { users, venueLocations, aiFaqs, aiTrustedAnswers, aiCrisisConfig } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 function daysAgo(n: number): Date {
@@ -86,8 +86,67 @@ async function seedVenueLocations() {
   }
 }
 
+async function seedAiContent() {
+  const existingFaqsList = await db.select().from(aiFaqs).limit(1);
+
+  if (existingFaqsList.length === 0) {
+  const faqData = [
+    { question: "What are the program hours?", answer: "The SJP residential program operates 24/7. Structured programming runs Monday through Friday, 8 AM to 5 PM, with evening and weekend activities available. Check the Events page for the current schedule.", tags: ["hours", "schedule", "program"], category: "Program Info", sortOrder: 0 },
+    { question: "Is transportation available?", answer: "SJP provides transportation assistance for program-related activities, job interviews, and medical appointments. Speak with your case manager to arrange transportation. Sacramento Regional Transit passes may also be available.", tags: ["transportation", "bus", "ride", "transit"], category: "Program Info", sortOrder: 1 },
+    { question: "Is childcare provided?", answer: "Yes! SJP's Children's Program provides on-site childcare and educational support for children of program participants. Children receive tutoring, enrichment activities, and social-emotional support while you focus on your recovery.", tags: ["childcare", "children", "kids", "daycare"], category: "Program Info", sortOrder: 2 },
+    { question: "What are the graduation requirements?", answer: "Graduation from SJP requires completing all five program pillars (Community, Confidence, Resilience, Readiness, and Wellness), maintaining stable employment, securing housing, and completing your individualized recovery plan. Your case manager can review your specific progress.", tags: ["graduation", "requirements", "complete", "finish"], category: "Program Info", sortOrder: 3 },
+    { question: "What benefits are available after graduation?", answer: "As an alumni, you maintain access to the SJP community, alumni events, resource referrals, and the alumni mentoring program. You can continue using the community app, attend celebrations, and access partner services. Check the Resources page for current offerings.", tags: ["alumni", "benefits", "after graduation", "graduate"], category: "Alumni", sortOrder: 4 },
+    { question: "How do I contact my case manager?", answer: "Your case manager is available during regular program hours (Mon-Fri, 8 AM - 5 PM). You can find them in the staff offices on campus, or ask at the front desk. For urgent matters outside business hours, contact the on-duty staff member.", tags: ["case manager", "contact", "staff", "help"], category: "Support", sortOrder: 5 },
+    { question: "How do I access community resources?", answer: "Browse the Resources page in this app to find partner organizations, services, and opportunities filtered by category. Resources are matched to your current program stage. If you need help navigating resources, your case manager can assist you.", tags: ["resources", "services", "help", "community"], category: "Resources", sortOrder: 6 },
+    { question: "How do I share my success story?", answer: "Alumni can share their success stories through the app! Go to the Community page and look for the Share Story option. Stories go through a brief review by staff before being featured. Your story can inspire other women on their journey.", tags: ["story", "share", "success", "alumni"], category: "Community", sortOrder: 7 },
+    { question: "What wellness programs are available?", answer: "SJP offers various wellness programs including yoga, meditation, nutrition education, fitness activities, and mental health support. Check the Events page for upcoming wellness workshops and classes.", tags: ["wellness", "yoga", "meditation", "health", "fitness"], category: "Wellness", sortOrder: 8 },
+    { question: "How do I sign up for events?", answer: "Browse upcoming events on the Events page. Most SJP events are open to all current participants at your program stage. Some partner events may require RSVP — check the event details for specific instructions.", tags: ["events", "sign up", "register", "RSVP"], category: "Events", sortOrder: 9 },
+  ];
+
+    for (const faq of faqData) {
+      await storage.createFaq({ ...faq, active: true });
+    }
+  }
+
+  const existingTa = await db.select().from(aiTrustedAnswers).limit(1);
+  if (existingTa.length === 0) {
+    const trustedAnswerData = [
+      { triggerPhrases: ["when is the next event", "upcoming events", "what events are coming up", "next workshop"], answer: "Check the Events page for all upcoming events, workshops, and community gatherings. Events are filtered to show what's relevant for your current program stage.", category: "Events" },
+      { triggerPhrases: ["who is my case manager", "find my case manager", "talk to someone", "need help"], answer: "Your case manager is available during program hours (Mon-Fri, 8 AM - 5 PM) in the staff offices. You can also ask at the front desk. For immediate assistance, speak with any on-duty staff member.", category: "Support" },
+      { triggerPhrases: ["housing help", "need housing", "find housing", "apartment", "place to live"], answer: "SJP has housing resources and partner organizations that can help. Check the Resources page under the 'Readiness' pillar for housing assistance programs. Your case manager can also provide personalized housing guidance.", category: "Resources" },
+      { triggerPhrases: ["job help", "find a job", "employment", "resume", "interview"], answer: "SJP offers employment readiness support through the Readiness pillar. Check the Resources page for job training programs, resume assistance, and employment partners. Your case manager can connect you with specific opportunities.", category: "Resources" },
+      { triggerPhrases: ["how is my progress", "my journey", "my pillars", "how am I doing"], answer: "You can view your progress across all five pillars on the Home page under 'My Journey.' Each pillar shows your completion percentage. Talk to your case manager for a detailed progress review.", category: "Progress" },
+      { triggerPhrases: ["what is sjp", "about the program", "saint john's program", "what does sjp do"], answer: "Saint John's Program for Real Change is a comprehensive recovery program for women. The program is built around five pillars: Community, Confidence, Resilience, Readiness, and Wellness. SJP provides housing, education, employment support, childcare, and a supportive community to help women build self-sufficient lives.", category: "Program Info" },
+    ];
+
+    for (const ta of trustedAnswerData) {
+      await storage.createTrustedAnswer({ ...ta, active: true });
+    }
+  }
+
+  const existingCrisis = await db.select().from(aiCrisisConfig).limit(1);
+  if (existingCrisis.length === 0) {
+    await storage.upsertCrisisConfig({
+      triggerWords: [
+        "suicidal", "suicide", "kill myself", "end my life", "want to die",
+        "hurt myself", "self harm", "self-harm", "cutting myself",
+        "overdose", "abuse", "being abused", "domestic violence",
+        "emergency", "in danger", "not safe", "unsafe",
+        "relapse", "using again", "started drinking", "started using"
+      ],
+      crisisMessage: "It sounds like you may be going through a really difficult time. You are not alone, and help is available right now.",
+      crisisResources: "988 Suicide & Crisis Lifeline: Call or text 988 (24/7)\nCrisis Text Line: Text HOME to 741741\nNational Domestic Violence Hotline: 1-800-799-7233\nSAMHSA Helpline: 1-800-662-4357\nSJP Staff: Available on campus Mon-Fri 8 AM - 5 PM",
+      notMonitoredDisclaimer: "This app is not monitored 24/7. If you are in immediate danger, please call 911 or go to your nearest emergency room. The resources listed above are available around the clock.",
+      active: true,
+    });
+  }
+
+  console.log("AI content seeded successfully.");
+}
+
 export async function seedDatabase() {
   await seedVenueLocations();
+  await seedAiContent();
 
   const existingUsers = await db.select().from(users).limit(1);
   if (existingUsers.length > 0) return;

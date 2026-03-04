@@ -1,7 +1,8 @@
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, gte } from "drizzle-orm";
 import {
   users, posts, replies, resources, events, stories, reactions, surveys, userProgress, venueLocations,
+  aiFaqs, aiTrustedAnswers, aiCrisisConfig, aiQueryLogs,
   type User, type InsertUser,
   type Post, type InsertPost,
   type Reply, type InsertReply,
@@ -12,6 +13,10 @@ import {
   type Survey, type InsertSurvey,
   type UserProgress, type InsertUserProgress,
   type VenueLocation, type InsertVenueLocation,
+  type AiFaq, type InsertAiFaq,
+  type AiTrustedAnswer, type InsertAiTrustedAnswer,
+  type AiCrisisConfig, type InsertAiCrisisConfig,
+  type AiQueryLog, type InsertAiQueryLog,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -67,6 +72,27 @@ export interface IStorage {
   getVenueLocation(id: string): Promise<VenueLocation | undefined>;
   createVenueLocation(loc: InsertVenueLocation): Promise<VenueLocation>;
   updateVenueLocation(id: string, data: Partial<InsertVenueLocation>): Promise<VenueLocation | undefined>;
+
+  getFaqs(activeOnly?: boolean): Promise<AiFaq[]>;
+  createFaq(faq: InsertAiFaq): Promise<AiFaq>;
+  updateFaq(id: string, data: Partial<InsertAiFaq>): Promise<AiFaq | undefined>;
+  deleteFaq(id: string): Promise<boolean>;
+
+  getTrustedAnswers(activeOnly?: boolean): Promise<AiTrustedAnswer[]>;
+  createTrustedAnswer(ta: InsertAiTrustedAnswer): Promise<AiTrustedAnswer>;
+  updateTrustedAnswer(id: string, data: Partial<InsertAiTrustedAnswer>): Promise<AiTrustedAnswer | undefined>;
+  deleteTrustedAnswer(id: string): Promise<boolean>;
+
+  getCrisisConfig(): Promise<AiCrisisConfig | undefined>;
+  getCrisisConfigAdmin(): Promise<AiCrisisConfig | undefined>;
+  upsertCrisisConfig(config: InsertAiCrisisConfig): Promise<AiCrisisConfig>;
+
+  createQueryLog(log: InsertAiQueryLog): Promise<AiQueryLog>;
+  getQueryLogs(limit?: number, offset?: number): Promise<AiQueryLog[]>;
+  getQueryLogStats(): Promise<{ totalQueries: number; noMatchQueries: number; crisisCount: number; topQueries: { query: string; count: number }[] }>;
+
+  getPinnedPosts(): Promise<Post[]>;
+  getFutureEvents(userStage?: string): Promise<Event[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -355,6 +381,119 @@ export class DatabaseStorage implements IStorage {
   async updateVenueLocation(id: string, data: Partial<InsertVenueLocation>): Promise<VenueLocation | undefined> {
     const [updated] = await db.update(venueLocations).set(data).where(eq(venueLocations.id, id)).returning();
     return updated;
+  }
+
+  async getFaqs(activeOnly = false): Promise<AiFaq[]> {
+    if (activeOnly) {
+      return db.select().from(aiFaqs).where(eq(aiFaqs.active, true)).orderBy(aiFaqs.sortOrder);
+    }
+    return db.select().from(aiFaqs).orderBy(aiFaqs.sortOrder);
+  }
+
+  async createFaq(faq: InsertAiFaq): Promise<AiFaq> {
+    const [created] = await db.insert(aiFaqs).values(faq).returning();
+    return created;
+  }
+
+  async updateFaq(id: string, data: Partial<InsertAiFaq>): Promise<AiFaq | undefined> {
+    const [updated] = await db.update(aiFaqs).set(data).where(eq(aiFaqs.id, id)).returning();
+    return updated;
+  }
+
+  async deleteFaq(id: string): Promise<boolean> {
+    const result = await db.delete(aiFaqs).where(eq(aiFaqs.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getTrustedAnswers(activeOnly = false): Promise<AiTrustedAnswer[]> {
+    if (activeOnly) {
+      return db.select().from(aiTrustedAnswers).where(eq(aiTrustedAnswers.active, true)).orderBy(desc(aiTrustedAnswers.createdAt));
+    }
+    return db.select().from(aiTrustedAnswers).orderBy(desc(aiTrustedAnswers.createdAt));
+  }
+
+  async createTrustedAnswer(ta: InsertAiTrustedAnswer): Promise<AiTrustedAnswer> {
+    const [created] = await db.insert(aiTrustedAnswers).values(ta).returning();
+    return created;
+  }
+
+  async updateTrustedAnswer(id: string, data: Partial<InsertAiTrustedAnswer>): Promise<AiTrustedAnswer | undefined> {
+    const [updated] = await db.update(aiTrustedAnswers).set(data).where(eq(aiTrustedAnswers.id, id)).returning();
+    return updated;
+  }
+
+  async deleteTrustedAnswer(id: string): Promise<boolean> {
+    const result = await db.delete(aiTrustedAnswers).where(eq(aiTrustedAnswers.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getCrisisConfig(): Promise<AiCrisisConfig | undefined> {
+    const [config] = await db.select().from(aiCrisisConfig).where(eq(aiCrisisConfig.active, true)).limit(1);
+    return config;
+  }
+
+  async getCrisisConfigAdmin(): Promise<AiCrisisConfig | undefined> {
+    const [config] = await db.select().from(aiCrisisConfig).limit(1);
+    return config;
+  }
+
+  async upsertCrisisConfig(config: InsertAiCrisisConfig): Promise<AiCrisisConfig> {
+    const existing = await this.getCrisisConfigAdmin();
+    if (existing) {
+      const [updated] = await db.update(aiCrisisConfig)
+        .set({ ...config, updatedAt: new Date() })
+        .where(eq(aiCrisisConfig.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(aiCrisisConfig).values(config).returning();
+    return created;
+  }
+
+  async createQueryLog(log: InsertAiQueryLog): Promise<AiQueryLog> {
+    const [created] = await db.insert(aiQueryLogs).values(log).returning();
+    return created;
+  }
+
+  async getQueryLogs(limit = 100, offset = 0): Promise<AiQueryLog[]> {
+    return db.select().from(aiQueryLogs).orderBy(desc(aiQueryLogs.createdAt)).limit(limit).offset(offset);
+  }
+
+  async getQueryLogStats(): Promise<{ totalQueries: number; noMatchQueries: number; crisisCount: number; topQueries: { query: string; count: number }[] }> {
+    const totalResult = await db.select({ count: sql<number>`count(*)` }).from(aiQueryLogs);
+    const totalQueries = Number(totalResult[0].count);
+
+    const noMatchResult = await db.select({ count: sql<number>`count(*)` }).from(aiQueryLogs)
+      .where(eq(aiQueryLogs.matchedContentType, "none"));
+    const noMatchQueries = Number(noMatchResult[0].count);
+
+    const crisisResult = await db.select({ count: sql<number>`count(*)` }).from(aiQueryLogs)
+      .where(eq(aiQueryLogs.crisisDetected, true));
+    const crisisCount = Number(crisisResult[0].count);
+
+    const topQueriesResult = await db.execute(sql`
+      SELECT query, COUNT(*)::integer as count 
+      FROM ai_query_logs 
+      GROUP BY query 
+      ORDER BY count DESC 
+      LIMIT 20
+    `);
+    const topQueries = (topQueriesResult.rows as any[]).map(r => ({ query: r.query, count: Number(r.count) }));
+
+    return { totalQueries, noMatchQueries, crisisCount, topQueries };
+  }
+
+  async getPinnedPosts(): Promise<Post[]> {
+    return db.select().from(posts).where(eq(posts.pinned, true)).orderBy(desc(posts.createdAt));
+  }
+
+  async getFutureEvents(userStage?: string): Promise<Event[]> {
+    const today = new Date().toISOString().split("T")[0];
+    let allEvents = await db.select().from(events).where(gte(events.date, today)).orderBy(events.date);
+    if (userStage) {
+      allEvents = allEvents.filter(e => e.applicableStages.includes(userStage));
+    }
+    return allEvents;
   }
 }
 

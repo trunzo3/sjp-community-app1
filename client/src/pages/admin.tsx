@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AvatarCircle } from "@/components/avatar-circle";
-import { ArrowLeft, Plus, Pencil, Trash2, Loader2, X, Check, ChevronDown, ChevronUp, Users, Camera, MapPin } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Loader2, X, Check, ChevronDown, ChevronUp, Users, Camera, MapPin, Sparkles, BarChart3, MessageCircle, Shield, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -81,7 +81,7 @@ export default function AdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
-  const [tab, setTab] = useState<"resources" | "events" | "venues" | "stories" | "surveys" | "users">("resources");
+  const [tab, setTab] = useState<"resources" | "events" | "venues" | "stories" | "surveys" | "users" | "ai_guide">("resources");
 
   const isAdmin = user?.role === "admin";
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
@@ -98,6 +98,7 @@ export default function AdminPage() {
     { key: "stories" as const, label: "Stories" },
     { key: "surveys" as const, label: "Surveys" },
     { key: "users" as const, label: "Users" },
+    { key: "ai_guide" as const, label: "AI Guide" },
   ];
 
   return (
@@ -131,6 +132,7 @@ export default function AdminPage() {
       {tab === "stories" && <StoriesTab />}
       {tab === "surveys" && <SurveysTab />}
       {tab === "users" && <UsersTab />}
+      {tab === "ai_guide" && <AiGuideTab />}
     </div>
   );
 }
@@ -1012,6 +1014,374 @@ function UsersTab() {
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+function AiGuideTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [subTab, setSubTab] = useState<"faqs" | "trusted" | "crisis" | "analytics">("faqs");
+
+  return (
+    <div>
+      <div className="flex gap-1 mb-4 overflow-x-auto md:flex-wrap" data-testid="ai-guide-sub-tabs">
+        {[
+          { key: "faqs" as const, label: "FAQs", icon: <HelpCircle className="w-3.5 h-3.5" /> },
+          { key: "trusted" as const, label: "Trusted Answers", icon: <MessageCircle className="w-3.5 h-3.5" /> },
+          { key: "crisis" as const, label: "Crisis Config", icon: <Shield className="w-3.5 h-3.5" /> },
+          { key: "analytics" as const, label: "Analytics", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+        ].map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setSubTab(t.key)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              subTab === t.key ? "bg-[#34737A] text-white" : "bg-[#F1EFEF] text-[#868180]"
+            }`}
+            data-testid={`button-ai-subtab-${t.key}`}
+          >
+            {t.icon}{t.label}
+          </button>
+        ))}
+      </div>
+
+      {subTab === "faqs" && <FaqsSubTab />}
+      {subTab === "trusted" && <TrustedAnswersSubTab />}
+      {subTab === "crisis" && <CrisisConfigSubTab />}
+      {subTab === "analytics" && <AnalyticsSubTab />}
+    </div>
+  );
+}
+
+function FaqsSubTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ question: "", answer: "", tags: "", category: "", sortOrder: 0, active: true });
+
+  const { data: faqs, isLoading } = useQuery<any[]>({ queryKey: ["/api/admin/ai/faqs"] });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = { ...form, tags: form.tags.split(",").map(t => t.trim()).filter(Boolean) };
+      if (editingId) {
+        await apiRequest("PATCH", `/api/admin/ai/faqs/${editingId}`, payload);
+      } else {
+        await apiRequest("POST", "/api/admin/ai/faqs", payload);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai/faqs"] });
+      setShowForm(false);
+      setEditingId(null);
+      toast({ title: editingId ? "FAQ updated" : "FAQ created" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/admin/ai/faqs/${id}`); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai/faqs"] });
+      toast({ title: "FAQ deleted" });
+    },
+  });
+
+  const openCreate = () => {
+    setForm({ question: "", answer: "", tags: "", category: "", sortOrder: (faqs?.length || 0), active: true });
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const openEdit = (faq: any) => {
+    setForm({ question: faq.question, answer: faq.answer, tags: (faq.tags || []).join(", "), category: faq.category || "", sortOrder: faq.sortOrder, active: faq.active });
+    setEditingId(faq.id);
+    setShowForm(true);
+  };
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-[#34737A]" /></div>;
+
+  return (
+    <div>
+      {showForm ? (
+        <div className="space-y-3" data-testid="faq-form">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[#302D2E]">{editingId ? "Edit FAQ" : "New FAQ"}</h3>
+            <button onClick={() => setShowForm(false)} className="text-[#868180]"><X className="w-4 h-4" /></button>
+          </div>
+          <Input placeholder="Question" value={form.question} onChange={e => setForm(f => ({ ...f, question: e.target.value }))} data-testid="input-faq-question" />
+          <Textarea placeholder="Answer" value={form.answer} onChange={e => setForm(f => ({ ...f, answer: e.target.value }))} rows={4} data-testid="input-faq-answer" />
+          <Input placeholder="Tags (comma-separated)" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} data-testid="input-faq-tags" />
+          <div className="flex gap-2">
+            <Input placeholder="Category" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="flex-1" data-testid="input-faq-category" />
+            <Input type="number" placeholder="Order" value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: parseInt(e.target.value) || 0 }))} className="w-20" data-testid="input-faq-order" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: !!v }))} data-testid="checkbox-faq-active" />
+            <span className="text-xs text-[#868180]">Active</span>
+          </div>
+          <Button onClick={() => saveMutation.mutate()} disabled={!form.question || !form.answer || saveMutation.isPending} className="w-full bg-[#34737A] hover:bg-[#2C6169]" data-testid="button-save-faq">
+            {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save FAQ"}
+          </Button>
+        </div>
+      ) : (
+        <>
+          <Button onClick={openCreate} className="w-full mb-3 bg-[#34737A] hover:bg-[#2C6169]" data-testid="button-add-faq">
+            <Plus className="w-4 h-4 mr-1" /> Add FAQ
+          </Button>
+          <div className="space-y-2">
+            {faqs?.map((faq: any) => (
+              <div key={faq.id} className={`p-3 rounded-xl border ${faq.active ? "bg-white border-[#F1EFEF]" : "bg-gray-50 border-gray-200 opacity-60"}`} data-testid={`faq-item-${faq.id}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#302D2E]">{faq.question}</p>
+                    <p className="text-xs text-[#868180] mt-1 line-clamp-2">{faq.answer}</p>
+                    {faq.tags?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {faq.tags.map((tag: string) => (
+                          <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#34737A]/10 text-[#34737A]">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button onClick={() => openEdit(faq)} className="p-1.5 rounded-lg hover:bg-[#F1EFEF]" data-testid={`button-edit-faq-${faq.id}`}><Pencil className="w-3.5 h-3.5 text-[#868180]" /></button>
+                    <button onClick={() => deleteMutation.mutate(faq.id)} className="p-1.5 rounded-lg hover:bg-red-50" data-testid={`button-delete-faq-${faq.id}`}><Trash2 className="w-3.5 h-3.5 text-red-400" /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {(!faqs || faqs.length === 0) && <p className="text-xs text-[#C7C2BF] text-center py-4">No FAQs yet</p>}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function TrustedAnswersSubTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ triggerPhrases: "", answer: "", category: "", active: true });
+
+  const { data: answers, isLoading } = useQuery<any[]>({ queryKey: ["/api/admin/ai/trusted-answers"] });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = { ...form, triggerPhrases: form.triggerPhrases.split(",").map(t => t.trim()).filter(Boolean) };
+      if (editingId) {
+        await apiRequest("PATCH", `/api/admin/ai/trusted-answers/${editingId}`, payload);
+      } else {
+        await apiRequest("POST", "/api/admin/ai/trusted-answers", payload);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai/trusted-answers"] });
+      setShowForm(false);
+      setEditingId(null);
+      toast({ title: editingId ? "Trusted answer updated" : "Trusted answer created" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/admin/ai/trusted-answers/${id}`); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai/trusted-answers"] });
+      toast({ title: "Trusted answer deleted" });
+    },
+  });
+
+  const openCreate = () => {
+    setForm({ triggerPhrases: "", answer: "", category: "", active: true });
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const openEdit = (ta: any) => {
+    setForm({ triggerPhrases: (ta.triggerPhrases || []).join(", "), answer: ta.answer, category: ta.category || "", active: ta.active });
+    setEditingId(ta.id);
+    setShowForm(true);
+  };
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-[#34737A]" /></div>;
+
+  return (
+    <div>
+      {showForm ? (
+        <div className="space-y-3" data-testid="trusted-answer-form">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[#302D2E]">{editingId ? "Edit Trusted Answer" : "New Trusted Answer"}</h3>
+            <button onClick={() => setShowForm(false)} className="text-[#868180]"><X className="w-4 h-4" /></button>
+          </div>
+          <Input placeholder="Trigger phrases (comma-separated)" value={form.triggerPhrases} onChange={e => setForm(f => ({ ...f, triggerPhrases: e.target.value }))} data-testid="input-ta-phrases" />
+          <Textarea placeholder="Answer" value={form.answer} onChange={e => setForm(f => ({ ...f, answer: e.target.value }))} rows={4} data-testid="input-ta-answer" />
+          <Input placeholder="Category" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} data-testid="input-ta-category" />
+          <div className="flex items-center gap-2">
+            <Checkbox checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: !!v }))} data-testid="checkbox-ta-active" />
+            <span className="text-xs text-[#868180]">Active</span>
+          </div>
+          <Button onClick={() => saveMutation.mutate()} disabled={!form.triggerPhrases || !form.answer || saveMutation.isPending} className="w-full bg-[#34737A] hover:bg-[#2C6169]" data-testid="button-save-ta">
+            {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Trusted Answer"}
+          </Button>
+        </div>
+      ) : (
+        <>
+          <Button onClick={openCreate} className="w-full mb-3 bg-[#34737A] hover:bg-[#2C6169]" data-testid="button-add-ta">
+            <Plus className="w-4 h-4 mr-1" /> Add Trusted Answer
+          </Button>
+          <div className="space-y-2">
+            {answers?.map((ta: any) => (
+              <div key={ta.id} className={`p-3 rounded-xl border ${ta.active ? "bg-white border-[#F1EFEF]" : "bg-gray-50 border-gray-200 opacity-60"}`} data-testid={`ta-item-${ta.id}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap gap-1 mb-1">
+                      {ta.triggerPhrases?.map((p: string) => (
+                        <span key={p} className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">{p}</span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[#868180] line-clamp-2">{ta.answer}</p>
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button onClick={() => openEdit(ta)} className="p-1.5 rounded-lg hover:bg-[#F1EFEF]" data-testid={`button-edit-ta-${ta.id}`}><Pencil className="w-3.5 h-3.5 text-[#868180]" /></button>
+                    <button onClick={() => deleteMutation.mutate(ta.id)} className="p-1.5 rounded-lg hover:bg-red-50" data-testid={`button-delete-ta-${ta.id}`}><Trash2 className="w-3.5 h-3.5 text-red-400" /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {(!answers || answers.length === 0) && <p className="text-xs text-[#C7C2BF] text-center py-4">No trusted answers yet</p>}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function CrisisConfigSubTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({
+    triggerWords: "", crisisMessage: "", crisisResources: "", notMonitoredDisclaimer: "", active: true,
+  });
+  const { data: config, isLoading } = useQuery<any>({ queryKey: ["/api/admin/ai/crisis-config"] });
+
+  useEffect(() => {
+    if (config) {
+      setForm({
+        triggerWords: (config.triggerWords || []).join(", "),
+        crisisMessage: config.crisisMessage || "",
+        crisisResources: config.crisisResources || "",
+        notMonitoredDisclaimer: config.notMonitoredDisclaimer || "",
+        active: config.active !== false,
+      });
+    }
+  }, [config]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PUT", "/api/admin/ai/crisis-config", {
+        ...form,
+        triggerWords: form.triggerWords.split(",").map(t => t.trim()).filter(Boolean),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai/crisis-config"] });
+      toast({ title: "Crisis configuration saved" });
+    },
+  });
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-[#34737A]" /></div>;
+
+  return (
+    <div className="space-y-3" data-testid="crisis-config-form">
+      <p className="text-xs text-[#868180]">Configure crisis detection trigger words and the response shown to users in distress.</p>
+      <div>
+        <label className="text-xs font-medium text-[#302D2E] mb-1 block">Trigger Words (comma-separated)</label>
+        <Textarea value={form.triggerWords} onChange={e => setForm(f => ({ ...f, triggerWords: e.target.value }))} rows={3} data-testid="input-crisis-triggers" />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-[#302D2E] mb-1 block">Crisis Message</label>
+        <Textarea value={form.crisisMessage} onChange={e => setForm(f => ({ ...f, crisisMessage: e.target.value }))} rows={2} data-testid="input-crisis-message" />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-[#302D2E] mb-1 block">Crisis Resources</label>
+        <Textarea value={form.crisisResources} onChange={e => setForm(f => ({ ...f, crisisResources: e.target.value }))} rows={5} data-testid="input-crisis-resources" />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-[#302D2E] mb-1 block">"Not Monitored" Disclaimer</label>
+        <Textarea value={form.notMonitoredDisclaimer} onChange={e => setForm(f => ({ ...f, notMonitoredDisclaimer: e.target.value }))} rows={2} data-testid="input-crisis-disclaimer" />
+      </div>
+      <div className="flex items-center gap-2">
+        <Checkbox checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: !!v }))} data-testid="checkbox-crisis-active" />
+        <span className="text-xs text-[#868180]">Active</span>
+      </div>
+      <Button onClick={() => saveMutation.mutate()} disabled={!form.triggerWords || !form.crisisMessage || saveMutation.isPending} className="w-full bg-[#34737A] hover:bg-[#2C6169]" data-testid="button-save-crisis">
+        {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Crisis Configuration"}
+      </Button>
+    </div>
+  );
+}
+
+function AnalyticsSubTab() {
+  const { data, isLoading } = useQuery<{ logs: any[]; stats: { totalQueries: number; noMatchQueries: number; crisisCount: number; topQueries: { query: string; count: number }[] } }>({
+    queryKey: ["/api/admin/ai/query-logs"],
+  });
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-[#34737A]" /></div>;
+
+  const stats = data?.stats;
+  const logs = data?.logs || [];
+
+  return (
+    <div className="space-y-4" data-testid="ai-analytics">
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-white rounded-xl border border-[#F1EFEF] p-3 text-center" data-testid="stat-total-queries">
+          <p className="text-xl font-bold text-[#34737A]">{stats?.totalQueries || 0}</p>
+          <p className="text-[10px] text-[#868180]">Total Queries</p>
+        </div>
+        <div className="bg-white rounded-xl border border-[#F1EFEF] p-3 text-center" data-testid="stat-no-match">
+          <p className="text-xl font-bold text-amber-600">{stats?.noMatchQueries || 0}</p>
+          <p className="text-[10px] text-[#868180]">No Matches</p>
+        </div>
+        <div className="bg-white rounded-xl border border-[#F1EFEF] p-3 text-center" data-testid="stat-crisis">
+          <p className="text-xl font-bold text-red-600">{stats?.crisisCount || 0}</p>
+          <p className="text-[10px] text-[#868180]">Crisis Detected</p>
+        </div>
+      </div>
+
+      {stats?.topQueries && stats.topQueries.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-[#302D2E] mb-2">Top Queries</h3>
+          <div className="space-y-1.5">
+            {stats.topQueries.slice(0, 10).map((q, i) => (
+              <div key={i} className="flex items-center justify-between bg-white rounded-lg border border-[#F1EFEF] px-3 py-2">
+                <p className="text-xs text-[#302D2E] truncate flex-1">{q.query}</p>
+                <span className="text-xs font-medium text-[#34737A] ml-2">{q.count}x</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stats?.noMatchQueries && stats.noMatchQueries > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-[#302D2E] mb-2">Recent Unmatched Queries</h3>
+          <p className="text-[10px] text-[#868180] mb-2">Consider adding FAQs or trusted answers for these topics.</p>
+          <div className="space-y-1">
+            {logs.filter(l => l.matchedContentType === "none").slice(0, 10).map((l: any, i: number) => (
+              <div key={i} className="bg-amber-50 rounded-lg border border-amber-100 px-3 py-2">
+                <p className="text-xs text-amber-800">{l.query}</p>
+                <p className="text-[10px] text-amber-600 mt-0.5">{l.createdAt ? new Date(l.createdAt).toLocaleDateString() : ""}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(!stats?.totalQueries || stats.totalQueries === 0) && (
+        <p className="text-xs text-[#C7C2BF] text-center py-4">No query data yet. Analytics will appear once users start using the AI Guide.</p>
       )}
     </div>
   );

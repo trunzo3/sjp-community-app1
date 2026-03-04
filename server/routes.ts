@@ -8,6 +8,8 @@ import fs from "fs";
 import { storage } from "./storage";
 import { seedDatabase } from "./seed";
 import MemoryStore from "memorystore";
+import { handleAiGuideQuery } from "./ai-guide";
+import { clearCrisisCache } from "./ai-crisis";
 
 const avatarsDir = path.resolve("uploads/avatars");
 if (!fs.existsSync(avatarsDir)) {
@@ -571,6 +573,106 @@ export async function registerRoutes(
     if (progress < 0 || progress > 100) return res.status(400).json({ message: "progress must be 0-100" });
     const result = await storage.upsertProgress(req.params.userId, pillar, progress);
     res.json(result);
+  });
+
+  app.post("/api/ai-guide/query", requireAuth, async (req, res) => {
+    const { query } = req.body;
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
+      return res.status(400).json({ message: "query is required" });
+    }
+    if (query.length > 500) {
+      return res.status(400).json({ message: "query too long (max 500 characters)" });
+    }
+    const user = await storage.getUser(req.session.userId!);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    const result = await handleAiGuideQuery(query.trim(), user.id, user.stage);
+    res.json(result);
+  });
+
+  app.get("/api/admin/ai/faqs", requireStaffOrAdmin, async (_req, res) => {
+    const faqs = await storage.getFaqs();
+    res.json(faqs);
+  });
+
+  app.post("/api/admin/ai/faqs", requireStaffOrAdmin, async (req, res) => {
+    const { question, answer, tags, category, sortOrder, active } = req.body;
+    if (!question || !answer) return res.status(400).json({ message: "question and answer required" });
+    const faq = await storage.createFaq({
+      question, answer,
+      tags: tags || [],
+      category: category || null,
+      sortOrder: sortOrder || 0,
+      active: active !== false,
+    });
+    res.status(201).json(faq);
+  });
+
+  app.patch("/api/admin/ai/faqs/:id", requireStaffOrAdmin, async (req, res) => {
+    const updated = await storage.updateFaq(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ message: "FAQ not found" });
+    res.json(updated);
+  });
+
+  app.delete("/api/admin/ai/faqs/:id", requireStaffOrAdmin, async (req, res) => {
+    const deleted = await storage.deleteFaq(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "FAQ not found" });
+    res.json({ success: true });
+  });
+
+  app.get("/api/admin/ai/trusted-answers", requireStaffOrAdmin, async (_req, res) => {
+    const answers = await storage.getTrustedAnswers();
+    res.json(answers);
+  });
+
+  app.post("/api/admin/ai/trusted-answers", requireStaffOrAdmin, async (req, res) => {
+    const { triggerPhrases, answer, category, active } = req.body;
+    if (!triggerPhrases?.length || !answer) return res.status(400).json({ message: "triggerPhrases and answer required" });
+    const ta = await storage.createTrustedAnswer({
+      triggerPhrases, answer,
+      category: category || null,
+      active: active !== false,
+    });
+    res.status(201).json(ta);
+  });
+
+  app.patch("/api/admin/ai/trusted-answers/:id", requireStaffOrAdmin, async (req, res) => {
+    const updated = await storage.updateTrustedAnswer(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ message: "Trusted answer not found" });
+    res.json(updated);
+  });
+
+  app.delete("/api/admin/ai/trusted-answers/:id", requireStaffOrAdmin, async (req, res) => {
+    const deleted = await storage.deleteTrustedAnswer(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Trusted answer not found" });
+    res.json({ success: true });
+  });
+
+  app.get("/api/admin/ai/crisis-config", requireStaffOrAdmin, async (_req, res) => {
+    const config = await storage.getCrisisConfigAdmin();
+    res.json(config || null);
+  });
+
+  app.put("/api/admin/ai/crisis-config", requireStaffOrAdmin, async (req, res) => {
+    const { triggerWords, crisisMessage, crisisResources, notMonitoredDisclaimer, active } = req.body;
+    if (!triggerWords?.length || !crisisMessage || !crisisResources || !notMonitoredDisclaimer) {
+      return res.status(400).json({ message: "All crisis config fields required" });
+    }
+    const config = await storage.upsertCrisisConfig({
+      triggerWords, crisisMessage, crisisResources, notMonitoredDisclaimer,
+      active: active !== false,
+    });
+    clearCrisisCache();
+    res.json(config);
+  });
+
+  app.get("/api/admin/ai/query-logs", requireStaffOrAdmin, async (req, res) => {
+    const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+    const offset = parseInt(req.query.offset as string) || 0;
+    const [logs, stats] = await Promise.all([
+      storage.getQueryLogs(limit, offset),
+      storage.getQueryLogStats(),
+    ]);
+    res.json({ logs, stats });
   });
 
   return httpServer;
