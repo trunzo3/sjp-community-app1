@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { AvatarCircle } from "@/components/avatar-circle";
 import { PostCard } from "@/components/post-card";
-import { BookOpen, Calendar, MessageCircle, ChevronDown, ChevronUp, ArrowRight, CornerDownLeft } from "lucide-react";
+import { BookOpen, Calendar, MessageCircle, ArrowRight, CornerDownLeft } from "lucide-react";
+import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { getDueSurveyInterval } from "@/pages/survey";
 import { MyJourney } from "@/components/my-journey";
 
@@ -95,13 +96,6 @@ function SectionHeader({ icon, title, color, linkText, onLink }: {
       </div>
     </div>
   );
-}
-
-function formatTime12h(time24: string) {
-  const [h, m] = time24.split(":").map(Number);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const hour12 = h % 12 || 12;
-  return `${hour12}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
 
 export default function HomePage() {
@@ -230,48 +224,12 @@ export default function HomePage() {
             linkText="See all"
             onLink={() => navigate("/events")}
           />
-          <div className="mt-3 bg-white rounded-xl overflow-hidden" data-testid="next-event-card">
-            <button
-              className="w-full flex items-center gap-3 p-4 text-left"
-              onClick={() => setEventExpanded(!eventExpanded)}
-              data-testid="button-expand-event"
-            >
-              <div className="shrink-0 w-12 h-12 rounded-lg bg-[#34737A] flex flex-col items-center justify-center">
-                <span className="text-[10px] font-bold text-white/70 uppercase leading-none">
-                  {format(new Date(nextEvent.date + "T00:00:00"), "MMM").toUpperCase()}
-                </span>
-                <span className="text-lg font-bold text-white leading-none mt-0.5">
-                  {format(new Date(nextEvent.date + "T00:00:00"), "d")}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-[#302D2E]">{nextEvent.name}</h3>
-                <p className="text-xs text-[#868180] mt-0.5">
-                  {formatTime12h(nextEvent.startTime)} · {nextEvent.location}
-                </p>
-              </div>
-              {eventExpanded ? (
-                <ChevronUp className="w-4 h-4 text-[#C7C2BF] shrink-0" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-[#C7C2BF] shrink-0" />
-              )}
-            </button>
-            {eventExpanded && (
-              <div className="px-4 pb-4 pt-0 border-t border-[#F1EFEF]">
-                {nextEvent.description && (
-                  <p className="text-xs text-[#868180] mt-3 leading-relaxed">{nextEvent.description}</p>
-                )}
-                {nextEvent.applicableStages && nextEvent.applicableStages.length > 0 && (
-                  <div className="flex gap-1.5 mt-2">
-                    {nextEvent.applicableStages.map((stage: string) => (
-                      <span key={stage} className="text-[10px] px-2 py-0.5 rounded-full bg-[#F1EFEF] text-[#868180] font-medium capitalize">
-                        {stage}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="mt-3">
+            <EventCard
+              event={nextEvent}
+              expanded={eventExpanded}
+              onToggle={() => setEventExpanded(!eventExpanded)}
+            />
           </div>
         </div>
       )}

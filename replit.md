@@ -16,7 +16,7 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 - `server/routes.ts` — Express API routes with session auth, role-based middleware (requireAuth, requireStaffOrAdmin, requireAdmin)
 - `server/seed.ts` — Seed data (12 users, 12 resources, 7 events, 8 posts, 3 stories, 6 surveys)
 - `client/src/lib/auth.tsx` — AuthProvider context with login/logout/demoLogin
-- `client/src/components/` — Shared components (AvatarCircle, BottomNav, PostCard, CommunityFeed)
+- `client/src/components/` — Shared components (AvatarCircle, BottomNav, PostCard, CommunityFeed, EventCard, MyJourney)
 - `client/src/pages/` — 9 pages (login, home, community, resources, events, profile, admin, share-story, survey)
 
 ## Key Design Decisions

@@ -1,0 +1,62 @@
+# Events Page — Collapsible Cards Redesign
+
+**Checkpoint before running: "pre-events-redesign"**
+
+Redesign the Events page cards to match the collapsible event card already on the Home page ("Next Event" section). The Home page card is the design reference — the Events page cards should look identical in structure, just repeated for every upcoming event.
+
+---
+
+## Card Layout — Collapsed (Default)
+
+All event cards start collapsed. Each collapsed card shows:
+
+- **Left:** Colored date block (rounded square, month abbreviation + day number, white text). Same style as the Home page event card date block.
+- **Middle:**
+  - Event name (14px, bold)
+  - Time with clock icon (12px, gray, format "3:00 PM – 4:00 PM")
+  - Location with pin icon (12px, gray)
+- **Right:** Small ▾ chevron to indicate expandable
+- **Staff/Admin only:** Small stage tag pills ("Client", "Alumni", or both) visible in the collapsed view, positioned below the location line. Hidden from Client and Alumni users. Client tags use #34737A text on #E8F0F1 background. Alumni tags use #5DA592 text on #E6F2EF background.
+
+No text is truncated in the collapsed view. Name, time, and location are always fully visible.
+
+---
+
+## Card Layout — Expanded (On Tap)
+
+Tapping a card expands it to show additional details below a subtle divider line. Same expand/collapse behavior as the Home page event card:
+
+- Event type badge (e.g., "Community Meeting", "Workshop", "Celebration", "Class", "Partner Session") — colored pill
+- Full description text — no truncation, full paragraph visible
+- Stage tags repeated here for Staff/Admin
+
+Tapping again collapses the card. Only one card expanded at a time — expanding a new card collapses the previous one.
+
+---
+
+## Page Header
+
+- "Events" title with calendar line icon
+- Count of upcoming events below the title (e.g., "5 upcoming")
+- "+ New Event" button visible to Staff and Admin only
+
+---
+
+## Consistency Rule
+
+The event card component should be shared or identical between the Home page and Events page. If a user sees the "Next Event" card on Home and then taps "See all →" to go to the Events page, the cards should look the same — same date block style, same typography, same expand behavior, same chevron. The only difference is the Events page shows all events and the Home page shows one.
+
+---
+
+## Sort Order
+
+Sorted by event date ascending — soonest upcoming event first. No change from current behavior.
+
+---
+
+## Do Not Change
+
+- The Home page layout or "Next Event" section — leave as is
+- Content visibility rules — clients see client-tagged and all-stage events, alumni see alumni-tagged and all-stage events, staff see everything
+- Any other page
+- Event data model or database
