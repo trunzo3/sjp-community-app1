@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { CommunityFeed } from "@/components/community-feed";
 import { AvatarCircle } from "@/components/avatar-circle";
-import { ChevronLeft, ChevronRight, Sparkles, Calendar, ArrowRight } from "lucide-react";
+import { PostCard } from "@/components/post-card";
+import { BookOpen, Calendar, MessageCircle, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { getDueSurveyInterval } from "@/pages/survey";
 import { MyJourney } from "@/components/my-journey";
 
@@ -20,14 +21,48 @@ type StoryWithAuthor = {
   author: { firstName: string; avatarColor: string };
 };
 
+const postTypeColors: Record<string, { dot: string; label: string; bg: string }> = {
+  need: { dot: "#D32027", label: "#D32027", bg: "#FBEAEA" },
+  win: { dot: "#5DA592", label: "#5DA592", bg: "#E6F2EF" },
+  question: { dot: "#979DB6", label: "#979DB6", bg: "#EDEEF3" },
+  update: { dot: "#34737A", label: "#34737A", bg: "#E8F0F1" },
+};
+
+function SectionHeader({ icon, title, color, linkText, onLink }: {
+  icon: React.ReactNode;
+  title: string;
+  color: string;
+  linkText: string;
+  onLink: () => void;
+}) {
+  return (
+    <div className="pb-2" style={{ borderBottom: `2px solid ${color}26` }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {icon}
+          <span className="text-sm font-bold" style={{ color }}>{title}</span>
+        </div>
+        <button
+          onClick={onLink}
+          className="text-xs font-medium flex items-center gap-0.5"
+          style={{ color }}
+          data-testid={`link-${title.toLowerCase().replace(/\s/g, "-")}`}
+        >
+          {linkText} <ArrowRight className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
-  const [storyIndex, setStoryIndex] = useState(0);
-  const [expandedStory, setExpandedStory] = useState<string | null>(null);
+  const [eventExpanded, setEventExpanded] = useState(false);
 
   const { data: stories } = useQuery<StoryWithAuthor[]>({ queryKey: ["/api/stories/featured"] });
   const { data: events } = useQuery<any[]>({ queryKey: ["/api/events"] });
+  const { data: allPosts } = useQuery<any[]>({ queryKey: ["/api/posts", "?filter=all"] });
   const { data: existingSurveys } = useQuery<any[]>({
     queryKey: ["/api/surveys/user", user?.id || ""],
     enabled: !!user?.id && user?.role === "alumni",
@@ -35,9 +70,22 @@ export default function HomePage() {
 
   const nextEvent = events?.[0];
   const isAlumni = user?.role === "alumni";
+  const featuredStory = stories?.[0];
 
   const completedIntervals = existingSurveys?.map((s: any) => s.intervalMonths) || [];
   const dueInterval = getDueSurveyInterval(user?.graduationDate || null, completedIntervals);
+
+  const pinnedPosts = allPosts?.filter((p: any) => p.pinned) || [];
+  const nonPinnedPosts = allPosts?.filter((p: any) => !p.pinned) || [];
+
+  const latestByType: Record<string, any> = {};
+  for (const type of ["need", "win", "question", "update"]) {
+    const found = nonPinnedPosts.find((p: any) => p.postType === type);
+    if (found) latestByType[type] = found;
+  }
+  const categoryPosts = ["need", "win", "question", "update"]
+    .filter((t) => latestByType[t])
+    .map((t) => latestByType[t]);
 
   return (
     <div className="space-y-4">
@@ -60,97 +108,46 @@ export default function HomePage() {
 
       <MyJourney />
 
-      {stories && stories.length > 0 && (
-        <div data-testid="stories-carousel">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-[#302D2E]">Stories of Change</h2>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setStoryIndex(Math.max(0, storyIndex - 1))}
-                className="p-1 rounded-full text-[#868180] hover:bg-[#F1EFEF] transition-colors disabled:opacity-30"
-                disabled={storyIndex === 0}
-                data-testid="button-story-prev"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setStoryIndex(Math.min((stories?.length || 1) - 1, storyIndex + 1))}
-                className="p-1 rounded-full text-[#868180] hover:bg-[#F1EFEF] transition-colors disabled:opacity-30"
-                disabled={storyIndex >= (stories?.length || 1) - 1}
-                data-testid="button-story-next"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+      {isAlumni && dueInterval && (
+        <div className="bg-[#FEF3C7] rounded-xl p-4" data-testid="survey-card">
+          <p className="text-sm font-semibold text-[#92400E]">
+            It's time for your {dueInterval}-month check-in!
+          </p>
+          <p className="text-xs text-[#B45309] mt-0.5">
+            Your feedback helps Saint John's continue to improve.
+          </p>
+          <Button
+            size="sm"
+            className="bg-[#92400E] text-white mt-3"
+            onClick={() => navigate("/survey")}
+            data-testid="button-take-survey"
+          >
+            Take Survey <ArrowRight className="w-3 h-3 ml-1" />
+          </Button>
+        </div>
+      )}
 
-          <div className="overflow-hidden">
-            <div
-              className="flex transition-transform duration-300"
-              style={{ transform: `translateX(-${storyIndex * 100}%)` }}
-            >
-              {stories.map((story) => (
-                <div key={story.id} className="w-full shrink-0 pr-2">
-                  <div className="bg-white rounded-xl p-4" data-testid={`story-card-${story.id}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <AvatarCircle firstName={story.author.firstName} color={story.author.avatarColor} size="sm" />
-                      <div>
-                        <span className="text-sm font-semibold text-[#302D2E]">{story.author.firstName}</span>
-                        <div className="flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-[#34737A]" />
-                          <span className="text-[10px] font-medium text-[#34737A]">Featured Story</span>
-                        </div>
-                      </div>
-                    </div>
-                    {expandedStory === story.id ? (
-                      <div className="space-y-3 mt-2">
-                        <div>
-                          <p className="text-[10px] font-bold text-[#34737A] uppercase tracking-wider mb-0.5">Where were you?</p>
-                          <p className="text-xs text-[#302D2E] leading-relaxed">{story.step1Content}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-[#34737A] uppercase tracking-wider mb-0.5">What changed?</p>
-                          <p className="text-xs text-[#302D2E] leading-relaxed">{story.step2Content}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-[#34737A] uppercase tracking-wider mb-0.5">Where are you now?</p>
-                          <p className="text-xs text-[#302D2E] leading-relaxed">{story.step3Content}</p>
-                        </div>
-                        <button
-                          onClick={() => setExpandedStory(null)}
-                          className="text-xs font-medium text-[#34737A]"
-                          data-testid={`button-collapse-story-${story.id}`}
-                        >
-                          Show less
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-xs text-[#868180] line-clamp-2 leading-relaxed">{story.step3Content}</p>
-                        <button
-                          onClick={() => setExpandedStory(story.id)}
-                          className="text-xs font-medium text-[#34737A] mt-1"
-                          data-testid={`button-read-story-${story.id}`}
-                        >
-                          Read more
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
+      {featuredStory && (
+        <div data-testid="stories-section">
+          <SectionHeader
+            icon={<BookOpen className="w-4 h-4" style={{ color: "#D32027" }} />}
+            title="Stories of Change"
+            color="#D32027"
+            linkText="Read more"
+            onLink={() => navigate("/share-story")}
+          />
+          <div className="mt-3 bg-[#FAE8DF] rounded-xl p-5" data-testid="featured-story-card">
+            <span className="text-4xl leading-none font-serif text-[#EEBBA7]">"</span>
+            <p className="text-sm italic text-[#302D2E] leading-relaxed mt-1" data-testid="text-featured-story">
+              {featuredStory.step3Content}
+            </p>
+            <div className="flex items-center gap-2 mt-4">
+              <AvatarCircle firstName={featuredStory.author.firstName} color={featuredStory.author.avatarColor} size="sm" />
+              <div>
+                <span className="text-xs font-semibold text-[#302D2E]">{featuredStory.author.firstName}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-[#34737A] text-white ml-2">Alumni</span>
+              </div>
             </div>
-          </div>
-
-          <div className="flex justify-center gap-1.5 mt-2">
-            {stories.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setStoryIndex(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === storyIndex ? "bg-[#34737A]" : "bg-[#C7C2BF]"}`}
-                data-testid={`button-story-dot-${i}`}
-              />
-            ))}
           </div>
         </div>
       )}
@@ -177,39 +174,121 @@ export default function HomePage() {
         </div>
       )}
 
-      <CommunityFeed />
-
       {nextEvent && (
-        <div className="bg-white rounded-xl p-4" data-testid="next-event-card">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4 text-[#34737A]" />
-            <span className="text-xs font-bold text-[#868180] uppercase tracking-wider">Next Event</span>
+        <div data-testid="next-event-section">
+          <SectionHeader
+            icon={<Calendar className="w-4 h-4" style={{ color: "#34737A" }} />}
+            title="Next Event"
+            color="#34737A"
+            linkText="See all"
+            onLink={() => navigate("/events")}
+          />
+          <div className="mt-3 bg-white rounded-xl overflow-hidden" data-testid="next-event-card">
+            <button
+              className="w-full flex items-center gap-3 p-4 text-left"
+              onClick={() => setEventExpanded(!eventExpanded)}
+              data-testid="button-expand-event"
+            >
+              <div className="shrink-0 w-12 h-12 rounded-lg bg-[#34737A] flex flex-col items-center justify-center">
+                <span className="text-[10px] font-bold text-white/70 uppercase leading-none">
+                  {format(new Date(nextEvent.date + "T00:00:00"), "MMM")}
+                </span>
+                <span className="text-lg font-bold text-white leading-none mt-0.5">
+                  {format(new Date(nextEvent.date + "T00:00:00"), "d")}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-[#302D2E]">{nextEvent.name}</h3>
+                <p className="text-xs text-[#868180] mt-0.5">
+                  {nextEvent.startTime?.slice(0, 5)} – {nextEvent.endTime?.slice(0, 5)} · {nextEvent.location}
+                </p>
+              </div>
+              {eventExpanded ? (
+                <ChevronUp className="w-4 h-4 text-[#C7C2BF] shrink-0" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-[#C7C2BF] shrink-0" />
+              )}
+            </button>
+            {eventExpanded && (
+              <div className="px-4 pb-4 pt-0 border-t border-[#F1EFEF]">
+                {nextEvent.description && (
+                  <p className="text-xs text-[#868180] mt-3 leading-relaxed">{nextEvent.description}</p>
+                )}
+                {nextEvent.applicableStages && nextEvent.applicableStages.length > 0 && (
+                  <div className="flex gap-1.5 mt-2">
+                    {nextEvent.applicableStages.map((stage: string) => (
+                      <span key={stage} className="text-[10px] px-2 py-0.5 rounded-full bg-[#F1EFEF] text-[#868180] font-medium capitalize">
+                        {stage}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <h3 className="text-sm font-semibold text-[#302D2E]">{nextEvent.name}</h3>
-          <p className="text-xs text-[#868180] mt-1">
-            {format(new Date(nextEvent.date + "T00:00:00"), "EEEE, MMM d")} at {nextEvent.startTime?.slice(0, 5)} - {nextEvent.location}
-          </p>
         </div>
       )}
 
-      {isAlumni && dueInterval && (
-        <div className="bg-[#FEF3C7] rounded-xl p-4" data-testid="survey-card">
-          <p className="text-sm font-semibold text-[#92400E]">
-            It's time for your {dueInterval}-month check-in!
-          </p>
-          <p className="text-xs text-[#B45309] mt-0.5">
-            Your feedback helps Saint John's continue to improve.
-          </p>
-          <Button
-            size="sm"
-            className="bg-[#92400E] text-white mt-3"
-            onClick={() => navigate("/survey")}
-            data-testid="button-take-survey"
+      <div data-testid="community-feed-section">
+        <SectionHeader
+          icon={<MessageCircle className="w-4 h-4" style={{ color: "#B8876F" }} />}
+          title="Community Feed"
+          color="#B8876F"
+          linkText="See all"
+          onLink={() => navigate("/community")}
+        />
+
+        <div className="mt-3 space-y-3">
+          <button
+            onClick={() => navigate("/community")}
+            className="w-full flex items-center gap-3 bg-white rounded-full px-4 py-3 border border-[#F1EFEF] text-left"
+            data-testid="slim-composer"
           >
-            Take Survey <ArrowRight className="w-3 h-3 ml-1" />
-          </Button>
+            {user && <AvatarCircle firstName={user.firstName} color={user.avatarColor || "#607D8B"} size="sm" />}
+            <span className="text-sm text-[#C7C2BF]">Share something with the community...</span>
+          </button>
+
+          {pinnedPosts.map((post: any) => (
+            <PostCard key={post.id} post={post} isPinnedSection />
+          ))}
+
+          {categoryPosts.map((post: any) => {
+            const colors = postTypeColors[post.postType] || postTypeColors.update;
+            return (
+              <div key={post.id} className="bg-white rounded-xl overflow-hidden" data-testid={`home-post-${post.id}`}>
+                <div className="flex items-center justify-between px-4 py-2" style={{ backgroundColor: colors.bg }}>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.dot }} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.label }}>
+                      {post.postType}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#C7C2BF]">
+                    {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                  </span>
+                </div>
+                <div className="p-4">
+                  <div className="flex items-start gap-3">
+                    <AvatarCircle firstName={post.author.firstName} color={post.author.avatarColor} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-semibold text-[#302D2E]">{post.author.firstName}</span>
+                      <p className="text-sm text-[#302D2E] mt-1 leading-relaxed">{post.content}</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-xs text-[#C7C2BF] flex items-center gap-1">
+                          ❤️ {post.reactions?.length || 0}
+                        </span>
+                        <span className="text-xs text-[#C7C2BF] flex items-center gap-1">
+                          💬 {post.replies?.length || 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
     </div>
   );
 }
