@@ -325,7 +325,7 @@ export async function registerRoutes(
     res.json(survey);
   });
 
-  app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
+  app.patch("/api/admin/users/:id", requireStaffOrAdmin, async (req, res) => {
     const { role, stage, graduationDate } = req.body;
     const updateData: any = {};
     if (role) updateData.role = role;

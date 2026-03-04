@@ -65,7 +65,7 @@ A private, mobile-first community web app for Saint John's Program for Real Chan
 ## Security
 - `/api/users` protected by requireStaffOrAdmin (not just requireAuth)
 - `/api/admin/*` endpoints protected by requireStaffOrAdmin
-- `/api/admin/users/:id` protected by requireAdmin (admin-only)
+- `/api/admin/users/:id` protected by requireStaffOrAdmin (staff and admin can edit users)
 - Admin page has frontend guard redirecting non-staff/admin to profile
 - Story creation restricted to alumni role
 - Survey creation restricted to alumni role

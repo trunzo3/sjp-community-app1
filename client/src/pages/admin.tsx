@@ -95,7 +95,7 @@ export default function AdminPage() {
     { key: "events" as const, label: "Events" },
     { key: "stories" as const, label: "Stories" },
     { key: "surveys" as const, label: "Surveys" },
-    ...(isAdmin ? [{ key: "users" as const, label: "Users" }] : []),
+    { key: "users" as const, label: "Users" },
   ];
 
   return (
@@ -127,7 +127,7 @@ export default function AdminPage() {
       {tab === "events" && <EventsTab />}
       {tab === "stories" && <StoriesTab />}
       {tab === "surveys" && <SurveysTab />}
-      {tab === "users" && isAdmin && <UsersTab />}
+      {tab === "users" && <UsersTab />}
     </div>
   );
 }
