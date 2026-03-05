@@ -104,7 +104,7 @@ export class KeywordSearchProvider implements ContentSearchProvider {
       if (fieldScore > 20) {
         const details = [
           r.providerName ? `Provider: ${r.providerName}` : null,
-          r.pillar ? `Pillar: ${r.pillar}` : null,
+          r.pillar ? `Category: ${r.pillar}` : null,
           r.type ? `Type: ${r.type}` : null,
         ].filter(Boolean).join(" | ");
         results.push({
@@ -218,7 +218,7 @@ export class KeywordSearchProvider implements ContentSearchProvider {
       for (const r of resources.slice(0, 3)) {
         const details = [
           r.providerName ? `Provider: ${r.providerName}` : null,
-          r.pillar ? `Pillar: ${r.pillar}` : null,
+          r.pillar ? `Category: ${r.pillar}` : null,
         ].filter(Boolean).join(" | ");
         results.push({
           type: "resource",

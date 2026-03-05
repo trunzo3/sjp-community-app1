@@ -19,6 +19,7 @@ export const roleEnum = pgEnum("role", ["client", "alumni", "staff", "admin"]);
 export const stageEnum = pgEnum("stage", ["client", "alumni"]);
 export const postTypeEnum = pgEnum("post_type", ["update", "win", "question", "need", "milestone"]);
 export const pillarEnum = pgEnum("pillar", ["community", "confidence", "resilience", "readiness", "wellness"]);
+export const resourceCategoryEnum = pgEnum("resource_category", ["jobs", "housing", "childcare", "transportation", "health", "money", "legal", "education"]);
 export const categoryEnum = pgEnum("category", ["journey", "employment", "housing", "finance", "parenting", "community"]);
 export const resourceTypeEnum = pgEnum("resource_type", ["partner", "program", "service", "opportunity"]);
 export const eventTypeEnum = pgEnum("event_type", ["community_meeting", "workshop", "celebration", "class", "partner_session"]);
@@ -65,7 +66,7 @@ export const resources = pgTable("resources", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description"),
-  pillar: pillarEnum("pillar").notNull(),
+  pillar: resourceCategoryEnum("pillar").notNull(),
   type: resourceTypeEnum("type").notNull(),
   providerName: text("provider_name"),
   phone: text("phone"),

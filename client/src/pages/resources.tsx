@@ -22,13 +22,20 @@ function getResourceAge(createdAt: string | null): string {
   return `${diffDays} days ago`;
 }
 
-const pillars = ["all", "community", "confidence", "resilience", "readiness", "wellness"];
-const pillarColors: Record<string, string> = {
-  community: "#34737A",
-  confidence: "#F59E0B",
-  resilience: "#EF4444",
-  readiness: "#3B82F6",
-  wellness: "#8B5CF6",
+const categories = ["all", "jobs", "housing", "childcare", "transportation", "health", "money", "legal", "education"];
+const categoryLabels: Record<string, string> = {
+  jobs: "Jobs", housing: "Housing", childcare: "Childcare", transportation: "Transportation",
+  health: "Health", money: "Money", legal: "Legal", education: "Education",
+};
+const categoryColors: Record<string, string> = {
+  jobs: "#3B82F6",
+  housing: "#8B5CF6",
+  childcare: "#F59E0B",
+  transportation: "#6366F1",
+  health: "#EF4444",
+  money: "#10B981",
+  legal: "#F97316",
+  education: "#34737A",
 };
 
 export default function ResourcesPage() {
@@ -36,7 +43,7 @@ export default function ResourcesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
-  const [pillarFilter, setPillarFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [stageFilter, setStageFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,7 +52,7 @@ export default function ResourcesPage() {
   });
 
   const queryParams = new URLSearchParams();
-  if (pillarFilter !== "all") queryParams.set("pillar", pillarFilter);
+  if (categoryFilter !== "all") queryParams.set("pillar", categoryFilter);
   if (isStaffOrAdmin && stageFilter !== "all") queryParams.set("stage", stageFilter);
 
   const { data: resources, isLoading } = useQuery<any[]>({
@@ -98,10 +105,10 @@ export default function ResourcesPage() {
           <Textarea placeholder="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="min-h-[60px] resize-none" data-testid="input-resource-description" />
           <div className="grid grid-cols-2 gap-2">
             <Select value={formData.pillar} onValueChange={(v) => setFormData({ ...formData, pillar: v })}>
-              <SelectTrigger data-testid="select-pillar"><SelectValue placeholder="Pillar" /></SelectTrigger>
+              <SelectTrigger data-testid="select-category"><SelectValue placeholder="Category" /></SelectTrigger>
               <SelectContent>
-                {["community", "confidence", "resilience", "readiness", "wellness"].map((p) => (
-                  <SelectItem key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>
+                {["jobs", "housing", "childcare", "transportation", "health", "money", "legal", "education"].map((c) => (
+                  <SelectItem key={c} value={c}>{categoryLabels[c]}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -154,17 +161,17 @@ export default function ResourcesPage() {
           </div>
         )}
 
-        <div className="flex gap-1.5 overflow-x-auto md:flex-wrap" data-testid="pillar-filters">
-          {pillars.map((p) => (
+        <div className="flex gap-1.5 overflow-x-auto md:flex-wrap" data-testid="category-filters">
+          {categories.map((c) => (
             <button
-              key={p}
-              onClick={() => setPillarFilter(p)}
+              key={c}
+              onClick={() => setCategoryFilter(c)}
               className={`text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors ${
-                pillarFilter === p ? "bg-[#34737A] text-white" : "bg-[#F1EFEF] text-[#302D2E]"
+                categoryFilter === c ? "bg-[#34737A] text-white" : "bg-[#F1EFEF] text-[#302D2E]"
               }`}
-              data-testid={`button-pillar-${p}`}
+              data-testid={`button-category-${c}`}
             >
-              {p.charAt(0).toUpperCase() + p.slice(1)}
+              {c === "all" ? "All" : categoryLabels[c]}
             </button>
           ))}
         </div>
@@ -178,8 +185,8 @@ export default function ResourcesPage() {
             <div key={r.id} className="bg-white rounded-xl p-4" data-testid={`resource-card-${r.id}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: pillarColors[r.pillar] || "#34737A" }}>
-                    {r.pillar}
+                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: categoryColors[r.pillar] || "#34737A" }}>
+                    {categoryLabels[r.pillar] || r.pillar}
                   </span>
                   <h3 className="text-sm font-semibold text-[#302D2E] mt-0.5">{r.name}</h3>
                   <p className="text-xs text-[#868180] mt-1 leading-relaxed line-clamp-3">{r.description}</p>

@@ -1,0 +1,78 @@
+# Resources Page — Replace Pillar Categories with Practical Categories
+
+**Checkpoint before running: "pre-resource-categories"**
+
+Replace the five pillar-based filter categories (Community, Confidence, Resilience, Readiness, Wellness) on the Resources page with eight practical categories. Update the database, filters, resource cards, admin forms, and seed data.
+
+---
+
+## New Categories
+
+| Category | Color | Description |
+|---|---|---|
+| Jobs | #5DA592 | Job training, resume help, interview prep, employer partners |
+| Housing | #34737A | Rental assistance, deposits, housing navigation |
+| Childcare | #EEBBA7 | Daycare, subsidized programs, after-school options |
+| Transportation | #B8876F | Bus passes, ride programs, church-provided transport |
+| Health | #D32027 | SUD services, therapy, health screenings, NA/AA |
+| Money | #979DB6 | Banking, budgeting, financial literacy, benefits |
+| Legal | #34737A | Custody, expungement, family court, Medi-Cal |
+| Education | #5DA592 | GED/diploma, college enrollment, workforce development |
+
+---
+
+## What Changes
+
+**Resources page filter row:** Replace the five pillar pills with: All, Jobs, Housing, Childcare, Transportation, Health, Money, Legal, Education. Horizontally scrollable if they don't all fit on screen.
+
+**Resource cards:** The pillar label on each card (currently showing "WELLNESS", "RESILIENCE", etc.) now shows the new category name in the category's color.
+
+**Database:** Update the pillar enum (or whatever field stores the category) on the resources table to use the eight new values: jobs, housing, childcare, transportation, health, money, legal, education. Remove the old five values.
+
+**Admin forms:** The "Pillar" dropdown on the resource creation/edit form becomes "Category" with the eight new options.
+
+**Seed data resources — reassign and expand to cover all eight categories:**
+
+Jobs:
+- Mulvaney's Career Pathway Program — Restaurant industry job training (existing)
+- Modern Aviation Job Training — Aviation ground crew and operations (existing)
+- Sacramento Works Job Center — Job search assistance, resume workshops, interview prep
+
+Housing:
+- SJP Housing Navigation — Rental assistance up to $15,000/month, security deposits, housing search support
+- Sacramento Housing Alliance — Affordable housing listings and tenant rights resources
+
+Childcare:
+- Sacramento County Child Care Resource — Subsidized childcare referrals and enrollment assistance
+- Child Action Inc. — After-school programs and emergency childcare support
+
+Transportation:
+- SacRT Bus Pass Program — Discounted monthly bus passes for program participants
+- Church Partner Transportation — Rides to appointments and job interviews through local church partners
+
+Health:
+- UC Davis Health Behavioral Wellness — Free/low-cost counseling, substance use support, psychiatric care (existing)
+- SUD Recovery & NA/AA Meetings — On-campus substance use services, therapy, and daily meeting access
+- WellSpace Health Recovery Services — Outpatient substance use recovery, mental health counseling
+
+Money:
+- SAFE Credit Union — On-site bank account opening and financial services (existing)
+- Money Matters Financial Literacy — Budgeting, credit building, savings goals coursework
+
+Legal:
+- Family Services & Advocacy — Custody navigation, child welfare advocacy, family reunification support
+- Sacramento County Legal Aid — Free legal assistance for expungement, family court, and benefits enrollment
+
+Education:
+- SJP High School Diploma Program — On-campus GED and diploma classes
+- Los Rios Community College Enrollment — College enrollment support and course registration assistance
+
+Tag each resource to appropriate stages (Client, Alumni, or both) as makes sense.
+
+---
+
+## Do Not Change
+
+- Resources page layout, card design, sort order, or visibility rules
+- Any other page
+- The My Journey categories on the Home page (those are separate)
