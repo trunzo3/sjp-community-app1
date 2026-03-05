@@ -1,0 +1,341 @@
+# Mood Check-In Feature — Build Prompt for Replit
+
+## Context
+
+This is an existing mobile-first React + TypeScript + Tailwind app built on Node/Express with PostgreSQL and Drizzle ORM. The app is a private community platform for Saint John's Program for Real Change. The current bottom nav has 5 tabs: Home, Community, Resources, Events, Profile. The Profile page (`/profile`) currently shows an editable bio, the user's post history, and links to admin or story features depending on role.
+
+Full tech stack and schema details are in the PRD already loaded in this project.
+
+---
+
+## What to Build
+
+### 1. Rename "Profile" to "Me"
+
+- In `bottom-nav.tsx`, change the Profile tab label from "Profile" to "Me"
+- Update the icon if desired (the User icon from lucide-react is fine, or use `CircleUser`)
+- The route stays `/profile` — only the display label changes
+- Update any other references to "Profile" in page headers or breadcrumbs
+
+### 2. Restructure the Me Page
+
+The `/profile` page becomes a personal hub with sections. Keep all existing profile content (bio, post history, role-based links) but reorganize the page into sections:
+
+**Section 1: Profile card** — Name, avatar, role badge, bio (existing, keep as-is)
+
+**Section 2: Mood Check-In** — New feature (details below). Show either:
+- A "Check in today" card if the user hasn't checked in today
+- A summary of today's check-in if they have, with a small "My Colors" link
+
+**Section 3: My Colors** — A 90-day mood history visualization (details below)
+
+**Section 4: My Posts** — The existing post history, moved down
+
+**Section 5: Role-based links** — Admin panel, Share Story, Survey (existing, keep as-is)
+
+The Mood Check-In and My Colors sections are visible to ALL roles (client, alumni, staff, admin). Everyone gets to use this feature.
+
+---
+
+## 3. Database: New Table `mood_checkins`
+
+Add to `shared/schema.ts`:
+
+```
+mood_checkins table:
+  id            UUID, primary key
+  userId        UUID, FK → users.id, not null
+  coreEmotion   Text, not null          (e.g. "peaceful", "hopeful", "heavy", "restless", "strong")
+  midEmotion    Text, not null          (e.g. "calm", "content", "relieved", "resting")
+  outerEmotion  Text, not null          (e.g. "centered", "still", "grounded", "at_ease")
+  coreColor     Text, not null          (hex color of the core emotion)
+  midColor      Text, not null          (hex color of the mid emotion)
+  outerColor    Text, not null          (hex color of the outer emotion)
+  outerLabel    Text, not null          (display label, e.g. "Centered")
+  journalEntry  Text, nullable          (optional private journal text)
+  checkedInAt   Timestamp, not null, default now()
+```
+
+Add a unique constraint on `(userId, date(checkedInAt))` — one check-in per user per calendar day. If a user checks in again the same day, update the existing record (upsert).
+
+**Data retention:** Store indefinitely. The data is tiny and the longitudinal record is valuable. The frontend controls how much to display.
+
+---
+
+## 4. API Endpoints
+
+All endpoints require `requireAuth` middleware. Mood data is strictly private — users can only access their own records.
+
+```
+GET    /api/mood/today          → Returns today's check-in for the logged-in user, or null
+POST   /api/mood                → Create or update today's check-in
+         Body: { coreEmotion, midEmotion, outerEmotion, coreColor, midColor, outerColor, outerLabel, journalEntry? }
+         Returns: the created/updated record
+GET    /api/mood/history        → Returns the logged-in user's check-ins for the last 90 days
+         Returns: Array of check-in records, ordered by date descending
+```
+
+**Privacy enforcement:** These endpoints must ONLY return data for the authenticated user. No staff or admin override. Mood data is never visible to anyone else, period. Do not add mood data to any admin panel or reporting view.
+
+---
+
+## 5. The Mood Check-In Flow
+
+This is a 3-step progressive drill-down. The user starts broad and gets specific. Each step is its own screen state with a crossfade transition between steps.
+
+### Step 0: Core Emotions
+Display 5 large tappable cards, one per core emotion. Each card shows:
+- A filled circle in the core emotion's color (prominent, 48-52px)
+- The emotion label in that color
+- A subtitle line showing the 4 mid-level words joined by " · "
+
+The 5 core emotions and their colors:
+- **Peaceful** — `#3B82F6` (blue)
+- **Hopeful** — `#FACC15` (yellow)
+- **Heavy** — `#8B5CF6` (violet)
+- **Restless** — `#EF4444` (red)
+- **Strong** — `#22C55E` (green)
+
+### Step 1: Mid-Level Emotions
+Display a 2x2 grid of cards. Each card shows:
+- A smaller color circle in that mid-emotion's unique shade
+- The mid-emotion label in its color
+- A subtitle showing the 4 outer words
+
+**Each mid-level option has its own distinct shade within the parent hue family.** This is critical — they should NOT all be the same color. See the full color taxonomy below.
+
+A breadcrumb chip at the top shows the selected core emotion in its color.
+
+### Step 2: Outer / Precise Emotions
+Display a single-column list of 4 options. Each shows:
+- A thick left border in that word's unique color
+- A small color dot (16px)
+- The word label
+
+**Each outer word has its own unique shade**, slightly different from its siblings. See taxonomy below.
+
+Breadcrumb chips show Core → Mid with their respective colors.
+
+### Step 3: Journal + Save
+Display:
+- A summary card with the outer emotion's specific color as the full background. White text (or dark text on yellow). Shows "Today you're feeling [word]" and a 3-dot color trail showing Core → Mid → Outer colors.
+- An optional journal prompt: "Want to say more? Tap to write…" as a dashed-border ghost button. On tap, expands to a textarea. Placeholder: "Whatever's on your mind. This is just for you."
+- A save button in the outer emotion's color
+- Copy below the button: "No journal needed — just tap Save"
+
+After save, show a confirmation with the color circle, the word, the 3-dot trail, journal text if entered, and "This is yours. Nobody else sees it." Offer two buttons: "New Check-In" and "View My Colors".
+
+### Global UI Elements
+
+**Back button** in the header on steps 1-3, colored to match the active emotion.
+
+**"Private · Only You"** badge in the top right corner on every step.
+
+**Progress dots** — 4 dots below the header. Filled dots use the active color. Step 0 dots can use a rainbow gradient.
+
+---
+
+## 6. The Complete Color Taxonomy
+
+Every emotion word at every level has its own unique hex color. This is the full mapping. Use these exact values.
+
+### Peaceful (Blue family)
+
+**Core: Peaceful** `#3B82F6`
+
+| Mid | Color | Outer | Color |
+|-----|-------|-------|-------|
+| Calm | `#60A5FA` | Centered | `#93C5FD` |
+| | | Still | `#7DB8FC` |
+| | | Grounded | `#BFDBFE` |
+| | | At Ease | `#A8CFFB` |
+| Content | `#3B82F6` | Satisfied | `#5B9BF7` |
+| | | Grateful | `#2563EB` |
+| | | Comfortable | `#4A90F5` |
+| | | Settled | `#6BA6F8` |
+| Relieved | `#2563EB` | Lighter | `#3A7AED` |
+| | | Free | `#1D4ED8` |
+| | | Unburdened | `#4B85EE` |
+| | | Breathing | `#2D6CE5` |
+| Resting | `#1E40AF` | Quiet | `#2850BF` |
+| | | Gentle | `#1E3A9E` |
+| | | Soft | `#3560CF` |
+| | | Slow | `#1A3494` |
+
+### Hopeful (Yellow family)
+
+**Core: Hopeful** `#FACC15`
+
+| Mid | Color | Outer | Color |
+|-----|-------|-------|-------|
+| Optimistic | `#FDE047` | Looking Forward | `#FEF08A` |
+| | | Believing | `#FDE86B` |
+| | | Trusting | `#FEF3A2` |
+| | | Open | `#FDE55A` |
+| Excited | `#FACC15` | Energized | `#FBD53E` |
+| | | Eager | `#F9C20A` |
+| | | Alive | `#FBDA52` |
+| | | Buzzing | `#F5B800` |
+| Proud | `#EAB308` | Accomplished | `#F0C030` |
+| | | Worthy | `#D4A006` |
+| | | Capable | `#E8B820` |
+| | | Showing Up | `#C89500` |
+| Joyful | `#F59E0B` | Happy | `#FBBF24` |
+| | | Light | `#F8B018` |
+| | | Laughing | `#FBC94D` |
+| | | Warm | `#F09000` |
+
+### Heavy (Violet family)
+
+**Core: Heavy** `#8B5CF6`
+
+| Mid | Color | Outer | Color |
+|-----|-------|-------|-------|
+| Sad | `#A78BFA` | Hurting | `#C4B5FD` |
+| | | Tearful | `#B8A4FC` |
+| | | Missing Someone | `#D4CAFE` |
+| | | Lonely | `#AD95FB` |
+| Overwhelmed | `#8B5CF6` | Drowning | `#9B72F7` |
+| | | Too Much | `#7C3AED` |
+| | | Shut Down | `#A580F8` |
+| | | Foggy | `#8E62F5` |
+| Ashamed | `#7C3AED` | Embarrassed | `#8950EF` |
+| | | Not Enough | `#6D28D9` |
+| | | Exposed | `#9462F0` |
+| | | Small | `#7438E0` |
+| Numb | `#6D28D9` | Empty | `#7934E2` |
+| | | Flat | `#5B21B6` |
+| | | Disconnected | `#8040E8` |
+| | | Going Through Motions | `#6425CC` |
+
+### Restless (Red family)
+
+**Core: Restless** `#EF4444`
+
+| Mid | Color | Outer | Color |
+|-----|-------|-------|-------|
+| Anxious | `#F87171` | Racing | `#FCA5A5` |
+| | | Tight | `#F98B8B` |
+| | | On Edge | `#FBB5B5` |
+| | | Can't Sit Still | `#F89898` |
+| Frustrated | `#EF4444` | Stuck | `#F26060` |
+| | | Blocked | `#E83A3A` |
+| | | Impatient | `#F47070` |
+| | | Annoyed | `#F05050` |
+| Angry | `#DC2626` | Burning | `#E53E3E` |
+| | | Bitter | `#C81E1E` |
+| | | Fed Up | `#D33030` |
+| | | Guarded | `#B91C1C` |
+| Scared | `#B91C1C` | Afraid | `#C72828` |
+| | | Unsafe | `#A31818` |
+| | | Panicked | `#D03232` |
+| | | Threatened | `#991B1B` |
+
+### Strong (Green family)
+
+**Core: Strong** `#22C55E`
+
+| Mid | Color | Outer | Color |
+|-----|-------|-------|-------|
+| Determined | `#4ADE80` | Focused | `#86EFAC` |
+| | | Driven | `#6EE7A0` |
+| | | Committed | `#A2F4BE` |
+| | | Ready | `#5AE390` |
+| Brave | `#22C55E` | Courageous | `#38D06E` |
+| | | Standing Tall | `#16A34A` |
+| | | Facing It | `#45D87A` |
+| | | Speaking Up | `#2ABC60` |
+| Resilient | `#16A34A` | Bouncing Back | `#22B358` |
+| | | Getting Through | `#0E8A3C` |
+| | | Still Here | `#2DBE62` |
+| | | Surviving | `#159244` |
+| Connected | `#15803D` | Supported | `#1A9048` |
+| | | Belonging | `#0F6B30` |
+| | | Seen | `#209A50` |
+| | | Held | `#126228` |
+
+---
+
+## 7. My Colors — 90-Day History View
+
+This section appears on the Me page below the check-in card, and is also accessible from the post-save confirmation screen.
+
+### Color Strip
+A horizontal strip showing the last 90 days. Each day is a small colored cell using the outerColor of that day's check-in. Days with no check-in show as a neutral light gray (`#E5E1DE`). Most recent day is on the right. The strip should be in a scrollable container if needed, or rendered as a calendar grid (7 columns for days of the week, ~13 rows). The calendar grid is preferred because it shows weekly patterns and is more compact.
+
+### Calendar Grid Layout
+- 7 columns (Sun–Sat), labeled at top
+- Each cell is a small rounded square (~36px)
+- Filled with the outerColor if a check-in exists, `#E5E1DE` if not
+- Tapping a colored cell shows a small tooltip or inline detail: the date, the emotion label, and the 3-dot color trail
+- Current day has a subtle border or ring to indicate "today"
+- Scroll vertically if more than ~5 weeks are visible
+
+### Timeline List (below the grid)
+A reverse-chronological list of recent check-ins (last 14 days). Each entry shows:
+- A 3-dot vertical color trail (Core → Mid → Outer)
+- The outer emotion label in its color
+- The date
+- A color swatch (rounded square) in the outer color
+
+This list should be collapsible or "show more" to avoid making the page too long.
+
+---
+
+## 8. Text Contrast Helper
+
+Several emotion colors are light (especially yellows and light greens/blues). Use this logic for text-on-color decisions:
+
+```typescript
+function textOnColor(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (r * 0.299 + g * 0.587 + b * 0.114) > 160 ? "#302D2E" : "#FFFFFF";
+}
+```
+
+Use this everywhere a color is used as a background for text — summary cards, breadcrumb chips, save buttons, calendar cells with labels, etc.
+
+---
+
+## 9. Seed Data
+
+Add seed data for mood check-ins so the history view isn't empty on demo. Create ~14 days of check-ins for 2-3 of the seed users, varying across all 5 core emotions. Make the data feel realistic — not random, but showing patterns (a rough few days followed by some hopeful ones, etc.).
+
+---
+
+## 10. Design Constraints
+
+- **Mobile-first.** The Me page, the check-in flow, and the history view must all work perfectly at 375px width.
+- **Typography:** Use the existing app font stack. Use `DM Serif Display` for emotion labels and headings within the mood feature if available, otherwise fall back to the app's heading font.
+- **The check-in flow should feel distinct** from the rest of the app — warmer, more personal, like a moment of pause. The vivid emotion colors are the primary design element. Cards should have subtle shadows and smooth transitions.
+- **Privacy is non-negotiable.** No mood data in the community feed, no mood data visible to staff or admin, no mood data in any admin panel, no mood data in any API endpoint that returns data about other users. This is strictly personal.
+- **Animations:** Crossfade between steps (opacity + translateY, ~250ms). Hover/tap states on cards should scale slightly and deepen the border color. The summary card on step 3 should have a prominent box-shadow in the emotion's color.
+
+---
+
+## 11. Files to Create or Modify
+
+**New files:**
+- `shared/schema.ts` — Add `moodCheckins` table definition
+- `server/routes.ts` — Add `/api/mood/*` endpoints
+- `server/storage.ts` — Add mood CRUD methods to `IStorage` and `DatabaseStorage`
+- `client/src/components/mood-checkin.tsx` — The check-in flow component
+- `client/src/components/mood-history.tsx` — The 90-day calendar + timeline component
+- `client/src/lib/mood-data.ts` — The complete emotion taxonomy (colors, labels, structure)
+- `server/seed.ts` — Add mood check-in seed data
+
+**Modified files:**
+- `client/src/components/bottom-nav.tsx` — Rename "Profile" → "Me"
+- `client/src/pages/profile.tsx` — Restructure into sections, integrate mood components
+
+---
+
+## 12. Important Notes
+
+- The emotion word taxonomy (the specific words at each level) should be treated as a first draft. Saint John's clinical team needs to review and approve the language before this goes live with real users. Build the taxonomy as a standalone data file that's easy to edit without touching component code.
+- Store the full color taxonomy in `mood-data.ts` as a single structured object. The components should reference this file — never hardcode colors in JSX.
+- The journal textarea placeholder should read: "Whatever's on your mind. This is just for you."
+- The post-save message should read: "This is yours. Nobody else sees it."
+- If a user has already checked in today, the check-in card on the Me page should show their emotion word and color with an option to redo it (which updates the existing record).
