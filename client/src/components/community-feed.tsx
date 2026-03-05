@@ -45,9 +45,10 @@ async function fireWinConfetti() {
   frame();
 }
 
-export function CommunityFeed({ showPrivacyBanner = false }: { showPrivacyBanner?: boolean }) {
+export function CommunityFeed({ showPrivacyBanner = false, initialFilter }: { showPrivacyBanner?: boolean; initialFilter?: string }) {
   const { user } = useAuth();
-  const [filter, setFilter] = useState<string>("all");
+  const validFilters = ["all", "need", "win", "question", "milestone"];
+  const [filter, setFilter] = useState<string>(initialFilter && validFilters.includes(initialFilter) ? initialFilter : "all");
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState<typeof postTypes[number]>("update");
   const [milestoneSelection, setMilestoneSelection] = useState<MilestoneSelection | null>(null);

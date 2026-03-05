@@ -161,7 +161,7 @@ export default function ResourcesPage() {
           </div>
         )}
 
-        <div className="flex gap-1.5 overflow-x-auto md:flex-wrap" data-testid="category-filters">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide" data-testid="category-filters">
           {categories.map((c) => (
             <button
               key={c}

@@ -31,13 +31,24 @@ const postTypeColors: Record<string, { dot: string; label: string; bg: string }>
   update: { dot: "#34737A", label: "#34737A", bg: "#E8F0F1" },
 };
 
+const seeMoreFilterMap: Record<string, string> = {
+  need: "need",
+  win: "win",
+  question: "question",
+  update: "",
+};
+
 function HomeCategoryCard({ post }: { post: any }) {
+  const [, navigate] = useLocation();
   const colors = postTypeColors[post.postType] || postTypeColors.update;
   const { data: reactions } = useQuery<any[]>({
     queryKey: ["/api/reactions", post.id],
   });
   const reactionCount = reactions?.length || 0;
   const replyCount = post.replies?.length || 0;
+
+  const seeMoreFilter = seeMoreFilterMap[post.postType] ?? "";
+  const seeMoreHref = seeMoreFilter ? `/community?filter=${seeMoreFilter}` : "/community";
 
   return (
     <div className="bg-white rounded-xl overflow-hidden" data-testid={`home-post-${post.id}`}>
@@ -48,9 +59,14 @@ function HomeCategoryCard({ post }: { post: any }) {
             {post.postType}
           </span>
         </div>
-        <span className="text-[10px] text-[#C7C2BF]">
-          {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-        </span>
+        <button
+          onClick={() => navigate(seeMoreHref)}
+          className="text-[10px] font-medium flex items-center gap-0.5"
+          style={{ color: colors.label }}
+          data-testid={`link-see-more-${post.postType}`}
+        >
+          See more <ArrowRight className="w-3 h-3" />
+        </button>
       </div>
       <div className="p-4">
         <div className="flex items-start gap-3">
@@ -65,6 +81,9 @@ function HomeCategoryCard({ post }: { post: any }) {
               <span className="text-xs text-[#868180] flex items-center gap-1">
                 <CornerDownLeft className="w-3 h-3" />
                 {replyCount} {replyCount === 1 ? "Reply" : "Replies"}
+              </span>
+              <span className="text-[10px] text-[#C7C2BF] ml-auto">
+                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
               </span>
             </div>
           </div>
