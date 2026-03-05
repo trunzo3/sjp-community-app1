@@ -29,7 +29,8 @@ The platform is built with a React, TypeScript, Tailwind CSS frontend using `sha
 - **Alumni Survey**: Interval-based check-in forms to track key progress metrics (employment, housing, etc.).
 - **Reactions System**: Emoji reactions on community posts with toggle functionality and count display.
 - **My Journey Progress Dashboard**: Visual progress tracking for clients/alumni across predefined pillars, editable by staff/admin.
-- **Home Page Layout**: Structured sections (Hero Banner, My Journey, Stories of Change, Next Event, Community Feed) with distinct headers and content displays.
+- **Home Page Layout**: Structured sections (Hero Banner, Daily Affirmation, My Journey, Stories of Change, Next Event, Community Feed) with distinct headers and content displays.
+- **Daily Affirmation Card**: A static, date-based rotating affirmation card on the home screen (between hero banner and My Journey). Displays one quote per day tied to one of the five pillars (Community, Confidence, Resilience, Readiness, Wellness) with pillar-specific colors and icons. Data stored in `client/src/data/affirmations.ts` (content pending SJP review). No database or API needed — rotation is deterministic via date hashing on the frontend.
 - **Community Feed**: Supports various post types (update, win, question, need) with filtering and a pinned post feature. Milestone posts have a unique visual treatment and selection process.
 - **Event Detail Pages**: Dedicated pages for events displaying detailed information, venue photos, and host profiles.
 - **User Profile Photos**: Staff/admin can upload profile photos via a dedicated UI, with client-side processing and server-side storage.
