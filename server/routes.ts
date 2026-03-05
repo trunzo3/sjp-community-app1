@@ -285,6 +285,7 @@ export async function registerRoutes(
       safePlaces: z.string().nullable().optional(),
       copingStrategies: z.string().nullable().optional(),
       reasonsToKeepGoing: z.string().nullable().optional(),
+      helplineContacts: z.string().nullable().optional(),
     });
     const parsed = safetyPlanFields.safeParse(req.body);
     if (!parsed.success) {

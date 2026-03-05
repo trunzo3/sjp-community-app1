@@ -755,6 +755,7 @@ export class DatabaseStorage implements IStorage {
       if (data.safePlaces !== undefined) updateData.safePlaces = data.safePlaces;
       if (data.copingStrategies !== undefined) updateData.copingStrategies = data.copingStrategies;
       if (data.reasonsToKeepGoing !== undefined) updateData.reasonsToKeepGoing = data.reasonsToKeepGoing;
+      if (data.helplineContacts !== undefined) updateData.helplineContacts = data.helplineContacts;
       const [updated] = await db.update(safetyPlans).set(updateData).where(eq(safetyPlans.id, existing.id)).returning();
       return updated;
     }

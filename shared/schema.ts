@@ -295,6 +295,7 @@ export const safetyPlans = pgTable("safety_plans", {
   safePlaces: text("safe_places"),
   copingStrategies: text("coping_strategies"),
   reasonsToKeepGoing: text("reasons_to_keep_going"),
+  helplineContacts: text("helpline_contacts"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 

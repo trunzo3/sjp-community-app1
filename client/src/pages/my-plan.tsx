@@ -11,10 +11,10 @@ interface TrustedContact {
   phone: string;
 }
 
-const CRISIS_CONTACTS = [
-  { name: "National Crisis Line", phone: "988" },
-  { name: "National DV Hotline", phone: "1-800-799-7233" },
-];
+interface HelplineContact {
+  name: string;
+  phone: string;
+}
 
 function useSaveField(field: string) {
   const queryClient = useQueryClient();
@@ -169,6 +169,131 @@ function TrustedPeopleSection({ value }: { value: string }) {
   );
 }
 
+function HelplineSection({ value }: { value: string }) {
+  const [contacts, setContacts] = useState<HelplineContact[]>(() => {
+    try { return JSON.parse(value) || []; } catch { return []; }
+  });
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const save = useSaveField("helplineContacts");
+  const initialRef = useRef(value);
+
+  useEffect(() => {
+    if (value !== initialRef.current) {
+      try { setContacts(JSON.parse(value) || []); } catch { setContacts([]); }
+      initialRef.current = value;
+    }
+  }, [value]);
+
+  const saveContacts = (updated: HelplineContact[]) => {
+    save(updated.length > 0 ? JSON.stringify(updated) : null);
+  };
+
+  const handleAdd = () => {
+    const trimName = newName.trim();
+    const trimPhone = newPhone.trim();
+    if (!trimName || !trimPhone) return;
+    const updated = [...contacts, { name: trimName, phone: trimPhone }];
+    setContacts(updated);
+    saveContacts(updated);
+    setNewName("");
+    setNewPhone("");
+    setAdding(false);
+  };
+
+  const handleRemove = (index: number) => {
+    const updated = contacts.filter((_, i) => i !== index);
+    setContacts(updated);
+    saveContacts(updated);
+  };
+
+  return (
+    <div className="bg-[#FCF3EE] rounded-xl p-4" data-testid="section-helpline-contacts">
+      <h3 className="text-sm font-bold text-[#302D2E] mb-1">If I need help now</h3>
+      <p className="text-xs text-[#868180] mb-3">Numbers I can call when I need support right away.</p>
+
+      {contacts.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {contacts.map((contact, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between p-3 bg-white rounded-lg"
+              data-testid={`helpline-contact-${i}`}
+            >
+              <a
+                href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`}
+                className="flex-1 flex items-center justify-between min-w-0"
+                data-testid={`helpline-call-${i}`}
+              >
+                <span className="text-sm font-medium text-[#302D2E] truncate mr-2">{contact.name}</span>
+                <div className="flex items-center gap-1.5 text-[#34737A] shrink-0">
+                  <Phone className="w-3.5 h-3.5" />
+                  <span className="text-sm font-medium">{contact.phone}</span>
+                </div>
+              </a>
+              <button
+                onClick={() => handleRemove(i)}
+                className="ml-2 p-1 text-[#C7C2BF] hover:text-[#868180] shrink-0"
+                data-testid={`button-remove-helpline-${i}`}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {adding ? (
+        <div className="bg-white rounded-lg p-3 space-y-2" data-testid="helpline-add-form">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Name or organization"
+            className="w-full border border-[#E5E1DE] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#34737A]/30 focus:border-[#34737A] placeholder-[#C7C2BF]"
+            autoFocus
+            data-testid="input-helpline-name"
+          />
+          <input
+            type="tel"
+            value={newPhone}
+            onChange={(e) => setNewPhone(e.target.value)}
+            placeholder="Phone number"
+            className="w-full border border-[#E5E1DE] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#34737A]/30 focus:border-[#34737A] placeholder-[#C7C2BF]"
+            data-testid="input-helpline-phone"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleAdd}
+              disabled={!newName.trim() || !newPhone.trim()}
+              className="flex-1 py-2 rounded-lg text-sm font-medium text-white bg-[#34737A] disabled:opacity-40"
+              data-testid="button-save-helpline"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => { setAdding(false); setNewName(""); setNewPhone(""); }}
+              className="flex-1 py-2 rounded-lg text-sm font-medium text-[#868180] bg-white border border-[#E5E1DE]"
+              data-testid="button-cancel-helpline"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : contacts.length < 5 ? (
+        <button
+          onClick={() => setAdding(true)}
+          className="flex items-center gap-1.5 text-xs text-[#34737A] font-medium"
+          data-testid="button-add-helpline"
+        >
+          <Plus className="w-3.5 h-3.5" /> Add a number
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export default function MyPlanPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
@@ -246,26 +371,7 @@ export default function MyPlanPage() {
           value={planData?.reasonsToKeepGoing || ""}
         />
 
-        <div className="bg-[#FCF3EE] rounded-xl p-4" data-testid="section-crisis-contacts">
-          <h3 className="text-sm font-bold text-[#302D2E] mb-1">If I need help now</h3>
-          <p className="text-xs text-[#868180] mb-3">These are always here for you.</p>
-          <div className="space-y-2">
-            {CRISIS_CONTACTS.map((contact) => (
-              <a
-                key={contact.phone}
-                href={`tel:${contact.phone.replace(/-/g, "")}`}
-                className="flex items-center justify-between p-3 bg-white rounded-lg"
-                data-testid={`crisis-contact-${contact.phone.replace(/-/g, "")}`}
-              >
-                <span className="text-sm font-medium text-[#302D2E]">{contact.name}</span>
-                <div className="flex items-center gap-1.5 text-[#34737A]">
-                  <Phone className="w-3.5 h-3.5" />
-                  <span className="text-sm font-medium">{contact.phone}</span>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
+        <HelplineSection value={planData?.helplineContacts || "[]"} />
       </div>
     </div>
   );
