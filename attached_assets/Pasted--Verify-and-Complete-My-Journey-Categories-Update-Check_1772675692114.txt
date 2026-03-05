@@ -1,0 +1,61 @@
+# Verify and Complete — My Journey Categories Update
+
+**Checkpoint before running: "pre-journey-verify"**
+
+A previous prompt to update the My Journey system may not have fully completed. Check each item below. If it's already done, skip it. If it's missing or broken, fix it.
+
+---
+
+## Check 1: Database
+
+The user_progress table should have six category values: journey, employment, housing, finance, parenting, community. Each stores an integer from 0 to the category's max — NOT 0-100 percentages. Verify the enum or column values are correct. If the old five pillars (community, confidence, resilience, readiness, wellness) are still in the schema, migrate to the new six.
+
+## Check 2: Slider Max Values
+
+Each category has a specific maximum number of sessions:
+- Journey: 104
+- Employment: 11
+- Housing: 8
+- Finance: 8
+- Parenting: 12
+- Community: 4
+
+In the Admin Panel > Users progress sliders AND in the client self-edit view, each slider's max must match these numbers. The slider should step in increments of 1 (whole numbers only). Verify sliders are not still using 0-100.
+
+## Check 3: Overall Percentage Calculation
+
+The overall percentage in the large My Journey ring on the Home page = (sum of all six current values) / 147 × 100, rounded to the nearest whole number. 147 is the total of all six maximums. Verify this calculation is correct and not still averaging five percentages.
+
+## Check 4: Client Self-Edit
+
+When a client taps the My Journey card on the Home page, it should open an edit view with six sliders showing category name, current value, and max (e.g., "Employment: 3 / 11"). Save button commits changes. Cancel returns to Home page. No role dropdown, no stage dropdown, no graduation date in this view. If this feature does not exist yet, build it.
+
+## Check 5: Seed Data
+
+Verify these users have correct progress values:
+- Angela (Client): Journey 8, Employment 1, Housing 1, Finance 1, Parenting 2, Community 1
+- Destiny (Client): Journey 52, Employment 5, Housing 4, Finance 4, Parenting 6, Community 3
+- Maria (Client): Journey 88, Employment 9, Housing 7, Finance 7, Parenting 10, Community 4
+- Monica (Alumni): All categories at their max values
+- Tasha (Alumni): All categories at their max values
+- Denise (Alumni): All categories at their max values
+
+If seed data still uses the old five pillars or old values, replace with the above.
+
+## Check 6: Icons and Colors
+
+Six circles on the Home page My Journey card, each with a clean SVG line icon:
+- Journey — #34737A (dark teal) — path/road icon
+- Employment — #5DA592 (sage green) — briefcase icon
+- Housing — #D32027 (Saint John's Red) — house icon
+- Finance — #979DB6 (dusty lavender) — dollar sign icon
+- Parenting — #EEBBA7 (peach) — heart icon
+- Community — #B8876F (warm brown) — people icon
+
+If icons are still emoji or still showing the old five pillars, replace them.
+
+---
+
+## Do Not Change
+
+Anything that is already working correctly. Only fix what is missing or broken.
