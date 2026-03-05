@@ -96,12 +96,12 @@ declare module "express-session" {
   }
 }
 
-function stripPasswords(obj: any): any {
-  if (Array.isArray(obj)) return obj.map(stripPasswords);
+function stripPrivateFields(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(stripPrivateFields);
   if (obj instanceof Date) return obj;
   if (obj && typeof obj === "object") {
-    const { password, ...rest } = obj;
-    return Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, stripPasswords(v)]));
+    const { password, currentStreak, longestStreak, ...rest } = obj;
+    return Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, stripPrivateFields(v)]));
   }
   return obj;
 }
@@ -186,7 +186,7 @@ export async function registerRoutes(
 
   app.get("/api/users", requireStaffOrAdmin, async (_req, res) => {
     const allUsers = await storage.getAllUsers();
-    const safe = allUsers.map(({ password, ...u }) => u);
+    const safe = allUsers.map(({ password, currentStreak, longestStreak, ...u }) => u);
     res.json(safe);
   });
 
@@ -213,7 +213,7 @@ export async function registerRoutes(
     if (Object.keys(body).length === 0) return res.status(400).json({ message: "No valid fields to update" });
     const updated = await storage.updateUser(req.params.id, body);
     if (!updated) return res.status(404).json({ message: "User not found" });
-    const { password: _, ...safeUser } = updated;
+    const { password: _, currentStreak: _cs, longestStreak: _ls, ...safeUser } = updated;
     res.json(safeUser);
   });
 
@@ -254,7 +254,7 @@ export async function registerRoutes(
         try { fs.unlinkSync(finalPath); } catch {}
         return res.status(404).json({ message: "User not found" });
       }
-      const { password: _, ...safeUser } = updated;
+      const { password: _, currentStreak: _cs, longestStreak: _ls, ...safeUser } = updated;
       res.json(safeUser);
     } catch {
       try { if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path); } catch {}
@@ -263,15 +263,46 @@ export async function registerRoutes(
     }
   });
 
+  async function recordActivity(userId: string) {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const { isNew } = await storage.upsertActivity(userId, today);
+      if (isNew) {
+        await storage.calculateAndUpdateStreak(userId);
+      }
+    } catch (e) {
+      console.error("Activity tracking error:", e);
+    }
+  }
+
+  app.post("/api/activity", requireAuth, async (req, res) => {
+    await recordActivity(req.session.userId!);
+    res.json({ ok: true });
+  });
+
+  app.get("/api/streak/acknowledgment", requireAuth, async (req, res) => {
+    const ack = await storage.getUnshownAcknowledgment(req.session.userId!);
+    res.json(ack);
+  });
+
+  app.post("/api/streak/acknowledgment/:id/dismiss", requireAuth, async (req, res) => {
+    const ack = await storage.getUnshownAcknowledgment(req.session.userId!);
+    if (!ack || ack.id !== req.params.id) {
+      return res.status(404).json({ message: "Acknowledgment not found" });
+    }
+    await storage.markAcknowledgmentShown(req.params.id);
+    res.json({ ok: true });
+  });
+
   app.get("/api/posts", requireAuth, async (req, res) => {
     const filter = req.query.filter as string | undefined;
     const postsData = await storage.getPosts(filter);
-    res.json(stripPasswords(postsData));
+    res.json(stripPrivateFields(postsData));
   });
 
   app.get("/api/posts/user/:userId", requireAuth, async (req, res) => {
     const postsData = await storage.getPostsByUser(req.params.userId);
-    res.json(stripPasswords(postsData));
+    res.json(stripPrivateFields(postsData));
   });
 
   app.post("/api/posts", requireAuth, async (req, res) => {
@@ -288,6 +319,7 @@ export async function registerRoutes(
       postData.milestoneCategory = milestoneCategory;
     }
     const post = await storage.createPost(postData);
+    recordActivity(req.session.userId!);
     res.json(post);
   });
 
@@ -299,6 +331,7 @@ export async function registerRoutes(
 
   app.post("/api/replies", requireAuth, async (req, res) => {
     const reply = await storage.createReply({ ...req.body, authorId: req.session.userId });
+    recordActivity(req.session.userId!);
     res.json(reply);
   });
 
@@ -379,6 +412,7 @@ export async function registerRoutes(
         };
       }
     }
+    recordActivity(req.session.userId!);
     res.json({ ...enriched, host });
   });
 
@@ -462,7 +496,7 @@ export async function registerRoutes(
 
   app.get("/api/stories/featured", requireAuth, async (_req, res) => {
     const featuredStories = await storage.getFeaturedStories();
-    res.json(stripPasswords(featuredStories));
+    res.json(stripPrivateFields(featuredStories));
   });
 
   app.get("/api/stories/pending-count", requireAuth, async (_req, res) => {
@@ -472,7 +506,7 @@ export async function registerRoutes(
 
   app.get("/api/admin/stories", requireStaffOrAdmin, async (_req, res) => {
     const allStories = await storage.getAllShareableStories();
-    res.json(stripPasswords(allStories));
+    res.json(stripPrivateFields(allStories));
   });
 
   app.get("/api/stories/user/:userId", requireAuth, async (req, res) => {
@@ -548,12 +582,13 @@ export async function registerRoutes(
       }
     }
     const reaction = await storage.createReaction({ postId, userId: req.session.userId!, reactionType });
+    recordActivity(req.session.userId!);
     res.json(reaction);
   });
 
   app.get("/api/admin/surveys", requireStaffOrAdmin, async (_req, res) => {
     const allSurveys = await storage.getAllSurveys();
-    res.json(stripPasswords(allSurveys));
+    res.json(stripPrivateFields(allSurveys));
   });
 
   app.get("/api/surveys/user/:userId", requireAuth, async (req, res) => {
@@ -583,7 +618,7 @@ export async function registerRoutes(
     if (graduationDate !== undefined) updateData.graduationDate = graduationDate;
     const updated = await storage.updateUser(req.params.id, updateData);
     if (!updated) return res.status(404).json({ message: "User not found" });
-    const { password: _, ...safeUser } = updated;
+    const { password: _, currentStreak: _cs, longestStreak: _ls, ...safeUser } = updated;
     res.json(safeUser);
   });
 

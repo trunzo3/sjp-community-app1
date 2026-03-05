@@ -3,6 +3,7 @@ import { eq, desc, and, sql, gte } from "drizzle-orm";
 import {
   users, posts, replies, resources, events, stories, reactions, surveys, userProgress, venueLocations,
   aiFaqs, aiTrustedAnswers, aiCrisisConfig, aiQueryLogs, aiDocuments, aiDocumentChunks,
+  userActivity, streakAcknowledgments,
   type User, type InsertUser,
   type Post, type InsertPost,
   type Reply, type InsertReply,
@@ -19,6 +20,7 @@ import {
   type AiQueryLog, type InsertAiQueryLog,
   type AiDocument, type InsertAiDocument,
   type AiDocumentChunk, type InsertAiDocumentChunk,
+  type StreakAcknowledgment,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -106,6 +108,11 @@ export interface IStorage {
   deleteDocumentChunks(documentId: string): Promise<boolean>;
   searchDocumentChunksByVector(queryEmbedding: number[], limit?: number): Promise<(AiDocumentChunk & { documentName: string; similarity: number })[]>;
   getActiveDocumentChunks(): Promise<(AiDocumentChunk & { documentName: string })[]>;
+
+  upsertActivity(userId: string, date: string): Promise<{ isNew: boolean }>;
+  calculateAndUpdateStreak(userId: string): Promise<{ currentStreak: number; longestStreak: number; newMilestone: number | null }>;
+  getUnshownAcknowledgment(userId: string): Promise<StreakAcknowledgment | null>;
+  markAcknowledgmentShown(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -600,6 +607,76 @@ export class DatabaseStorage implements IStorage {
       createdAt: r.created_at,
       documentName: r.document_name,
     }));
+  }
+
+  async upsertActivity(userId: string, date: string): Promise<{ isNew: boolean }> {
+    const existing = await db.select().from(userActivity).where(
+      and(eq(userActivity.userId, userId), eq(userActivity.activityDate, date))
+    );
+    if (existing.length > 0) return { isNew: false };
+    await db.insert(userActivity).values({ userId, activityDate: date });
+    return { isNew: true };
+  }
+
+  async calculateAndUpdateStreak(userId: string): Promise<{ currentStreak: number; longestStreak: number; newMilestone: number | null }> {
+    const activities = await db.select({ activityDate: userActivity.activityDate })
+      .from(userActivity)
+      .where(eq(userActivity.userId, userId))
+      .orderBy(desc(userActivity.activityDate));
+
+    if (activities.length === 0) {
+      await db.update(users).set({ currentStreak: 0, longestStreak: 0 }).where(eq(users.id, userId));
+      return { currentStreak: 0, longestStreak: 0, newMilestone: null };
+    }
+
+    const dates = activities.map(a => a.activityDate);
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+    if (dates[0] !== today && dates[0] !== yesterday) {
+      const currentStreak = dates[0] === today ? 1 : 0;
+      const user = await this.getUser(userId);
+      const longestStreak = Math.max(user?.longestStreak || 0, currentStreak);
+      await db.update(users).set({ currentStreak, longestStreak }).where(eq(users.id, userId));
+      return { currentStreak, longestStreak, newMilestone: null };
+    }
+
+    let streak = 1;
+    for (let i = 1; i < dates.length; i++) {
+      const curr = new Date(dates[i - 1] + "T00:00:00Z");
+      const prev = new Date(dates[i] + "T00:00:00Z");
+      const diffDays = (curr.getTime() - prev.getTime()) / 86400000;
+      if (diffDays === 1) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    const user = await this.getUser(userId);
+    const longestStreak = Math.max(user?.longestStreak || 0, streak);
+    await db.update(users).set({ currentStreak: streak, longestStreak }).where(eq(users.id, userId));
+
+    const milestones = [3, 7, 14, 30, 60, 90, 180, 365];
+    let newMilestone: number | null = null;
+    if (milestones.includes(streak)) {
+      await db.insert(streakAcknowledgments).values({ userId, streakDays: streak, shown: false });
+      newMilestone = streak;
+    }
+
+    return { currentStreak: streak, longestStreak, newMilestone };
+  }
+
+  async getUnshownAcknowledgment(userId: string): Promise<StreakAcknowledgment | null> {
+    const [ack] = await db.select().from(streakAcknowledgments)
+      .where(and(eq(streakAcknowledgments.userId, userId), eq(streakAcknowledgments.shown, false)))
+      .orderBy(desc(streakAcknowledgments.createdAt))
+      .limit(1);
+    return ack || null;
+  }
+
+  async markAcknowledgmentShown(id: string): Promise<void> {
+    await db.update(streakAcknowledgments).set({ shown: true }).where(eq(streakAcknowledgments.id, id));
   }
 }
 

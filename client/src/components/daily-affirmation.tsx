@@ -1,5 +1,6 @@
 import { getDailyAffirmation, type Pillar } from "@/data/affirmations";
 import { Users, Award, Leaf, Compass, Heart } from "lucide-react";
+import { trackActivity } from "@/lib/activity";
 
 const pillarConfig: Record<Pillar, { label: string; color: string; bg: string; icon: typeof Users }> = {
   community:  { label: "Community",  color: "#34737A", bg: "rgba(52, 115, 122, 0.08)",  icon: Users },
@@ -16,8 +17,9 @@ export function DailyAffirmation() {
 
   return (
     <div
-      className="rounded-xl px-5 py-5"
+      className="rounded-xl px-5 py-5 cursor-pointer"
       style={{ backgroundColor: config.bg }}
+      onClick={() => trackActivity()}
       data-testid="daily-affirmation-card"
     >
       <p

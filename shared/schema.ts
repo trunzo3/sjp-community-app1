@@ -37,6 +37,8 @@ export const users = pgTable("users", {
   bio: text("bio"),
   avatarColor: text("avatar_color").notNull().default("#607D8B"),
   photoUrl: text("photo_url"),
+  currentStreak: integer("current_streak").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -208,6 +210,22 @@ export const aiDocumentChunks = pgTable("ai_document_chunks", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const userActivity = pgTable("user_activity", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  activityDate: date("activity_date").notNull(),
+}, (table) => [
+  uniqueIndex("user_activity_user_date_idx").on(table.userId, table.activityDate),
+]);
+
+export const streakAcknowledgments = pgTable("streak_acknowledgments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  streakDays: integer("streak_days").notNull(),
+  shown: boolean("shown").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertPostSchema = createInsertSchema(posts).omit({ id: true, createdAt: true });
 export const insertReplySchema = createInsertSchema(replies).omit({ id: true, createdAt: true });
@@ -239,6 +257,14 @@ export type UserProgress = typeof userProgress.$inferSelect;
 export type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;
 export type VenueLocation = typeof venueLocations.$inferSelect;
 export type InsertVenueLocation = z.infer<typeof insertVenueLocationSchema>;
+
+export const insertUserActivitySchema = createInsertSchema(userActivity).omit({ id: true });
+export const insertStreakAcknowledgmentSchema = createInsertSchema(streakAcknowledgments).omit({ id: true, createdAt: true });
+
+export type UserActivity = typeof userActivity.$inferSelect;
+export type InsertUserActivity = z.infer<typeof insertUserActivitySchema>;
+export type StreakAcknowledgment = typeof streakAcknowledgments.$inferSelect;
+export type InsertStreakAcknowledgment = z.infer<typeof insertStreakAcknowledgmentSchema>;
 
 export const insertAiFaqSchema = createInsertSchema(aiFaqs).omit({ id: true, createdAt: true });
 export const insertAiTrustedAnswerSchema = createInsertSchema(aiTrustedAnswers).omit({ id: true, createdAt: true });

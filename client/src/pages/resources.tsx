@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
+import { trackActivity } from "@/lib/activity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -187,12 +188,12 @@ export default function ResourcesPage() {
                   )}
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
                     {r.phone && (
-                      <a href={`tel:${r.phone}`} className="flex items-center gap-1 text-xs text-[#34737A] font-medium" data-testid={`link-phone-${r.id}`}>
+                      <a href={`tel:${r.phone}`} onClick={() => trackActivity()} className="flex items-center gap-1 text-xs text-[#34737A] font-medium" data-testid={`link-phone-${r.id}`}>
                         <Phone className="w-3 h-3" /> {r.phone}
                       </a>
                     )}
                     {r.websiteUrl && (
-                      <a href={r.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-[#34737A] font-medium" data-testid={`link-website-${r.id}`}>
+                      <a href={r.websiteUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackActivity()} className="flex items-center gap-1 text-xs text-[#34737A] font-medium" data-testid={`link-website-${r.id}`}>
                         <Globe className="w-3 h-3" /> Website
                       </a>
                     )}

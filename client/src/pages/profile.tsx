@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
+import { trackActivity } from "@/lib/activity";
 import { AvatarCircle } from "@/components/avatar-circle";
 import { PostCard } from "@/components/post-card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,8 @@ export default function ProfilePage() {
   const [processingPhoto, setProcessingPhoto] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { trackActivity(); }, []);
 
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
   const isAlumni = user?.role === "alumni";

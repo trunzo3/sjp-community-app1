@@ -1,0 +1,76 @@
+REPLIT PROMPT: Engagement Streak Acknowledgment
+Add a private, personal streak tracking system that recognizes when a user has been consistently active in the app. This feature is entirely private, never visible to other users or staff, and is designed around encouragement rather than pressure. No gaming mechanics, no public leaderboards, no penalty for broken streaks.
+
+WHAT COUNTS AS AN ACTIVE DAY
+A day is counted as active when the authenticated user performs any intentional interaction within the app during that calendar day. This includes:
+Tapping the daily affirmation card
+Posting to the community feed
+Reacting to any post
+Replying to any post
+Tapping into an event detail page
+Tapping into a resource
+Visiting their profile page
+Passive actions do not count. Simply having the app open in a browser tab, page load events, and scroll events should not trigger an active day. Only the explicit interactions listed above register activity.
+
+SCHEMA CHANGES
+Add a new table user_activity with the following structure:
+id — UUID, primary key
+userId — UUID, FK to users
+activityDate — Date (not timestamp, just the calendar date)
+Add a unique constraint on (userId, activityDate) so that multiple interactions on the same day only create one record. When any of the qualifying interactions above occur, the API should upsert a record for today's date for that user. If a record for today already exists, do nothing. This keeps writes cheap and the table clean.
+Add a longestStreak (integer, default 0) and currentStreak (integer, default 0) field to the users table. These are recalculated server-side whenever a new activity record is written. A streak is a consecutive sequence of calendar days with at least one activity record. If today and yesterday both have records, the streak is live. If yesterday has no record, the current streak resets to 1 starting from today. Longest streak updates if current streak exceeds it.
+Update shared/schema.ts, server/storage.ts, and server/routes.ts accordingly.
+
+STREAK MILESTONES
+When a new activity record is written and the current streak calculation hits one of the following thresholds exactly, trigger a one-time acknowledgment to be shown to that user on their next home screen load:
+3 days
+7 days
+14 days
+30 days
+60 days
+90 days
+180 days
+365 days
+Store pending acknowledgments in a new table streak_acknowledgments:
+id — UUID, primary key
+userId — UUID, FK to users
+streakDays — integer
+shown — boolean, default false
+createdAt — timestamp
+When the home screen loads, the API checks for any unshown acknowledgments for the current user. If one exists, return it with the home screen payload and mark it as shown.
+
+HOME SCREEN DISPLAY
+When the home screen receives an unshown acknowledgment, display a single soft modal or inline banner above the affirmation card. It should feel like a quiet moment, not a celebration explosion.
+Use the following copy for each milestone, marked as // CONTENT PENDING SJP REVIEW:
+3 days — "You have shown up three days in a row. That matters."
+7 days — "One week of showing up for yourself. Keep going."
+14 days — "Two weeks. You keep coming back, and that is something."
+30 days — "Thirty days. You have built something real."
+60 days — "Two months of showing up. You are building a habit that belongs to you."
+90 days — "Ninety days. That is the same courage it takes to hit any milestone. You did this."
+180 days — "Six months of coming back. This community is lucky to have you in it."
+365 days — "One year. You showed up for yourself three hundred and sixty-five times. That is extraordinary."
+The acknowledgment should have a gentle dismiss button. Once dismissed it does not appear again. The modal or banner should use the primary teal color palette and feel consistent with the rest of the app.
+
+WHAT NEVER HAPPENS
+The current streak count is never displayed publicly or to staff
+If a streak breaks, nothing is shown to the user. No broken streak indicator, no sad state, no counter showing how many days since last visit
+No push notifications or reminders to maintain a streak
+No comparison to other users
+If the same milestone is hit again after a streak breaks and rebuilds, the acknowledgment fires again. There is no "you already got this one." Every time they build to 7 days, it is worth saying something.
+
+DO NOT CHANGE
+Any existing API endpoints beyond adding the activity upsert call to qualifying interactions
+Feed, resources, events, or profile behavior beyond adding the activity tracking call
+Any admin panel functionality
+Any other home screen element beyond the acknowledgment display logic
+
+ACCEPTANCE CRITERIA
+Any qualifying interaction writes or upserts an activity record for today
+Multiple interactions on the same day produce only one activity record
+Streak calculates correctly across consecutive and non-consecutive days
+Correct acknowledgment copy appears on the home screen after hitting each milestone
+Acknowledgment is shown once and only once per milestone hit, unless the streak breaks and rebuilds to that number
+Nothing is shown when a streak breaks
+All new data is private to the individual user and not exposed through any staff or admin API endpoint
+

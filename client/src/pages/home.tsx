@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 import { getDueSurveyInterval } from "@/pages/survey";
 import { MyJourney } from "@/components/my-journey";
 import { DailyAffirmation } from "@/components/daily-affirmation";
+import { StreakAcknowledgment } from "@/components/streak-acknowledgment";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 type StoryWithAuthor = {
@@ -197,6 +198,8 @@ export default function HomePage() {
           <p className="text-white/40 text-xs mt-3 font-medium">Building community. Changing lives.</p>
         </div>
       </div>
+
+      <StreakAcknowledgment />
 
       <DailyAffirmation />
 
