@@ -864,12 +864,13 @@ function SurveysTab() {
   );
 }
 
-const progressPillars = [
-  { key: "community", label: "Community", color: "#34737A" },
-  { key: "confidence", label: "Confidence", color: "#979DB6" },
-  { key: "resilience", label: "Resilience", color: "#D32027" },
-  { key: "readiness", label: "Readiness", color: "#5DA592" },
-  { key: "wellness", label: "Wellness", color: "#EEBBA7" },
+const progressCategories = [
+  { key: "journey", label: "Journey", color: "#34737A", max: 104 },
+  { key: "employment", label: "Employment", color: "#5DA592", max: 11 },
+  { key: "housing", label: "Housing", color: "#D32027", max: 8 },
+  { key: "finance", label: "Finance", color: "#979DB6", max: 8 },
+  { key: "parenting", label: "Parenting", color: "#EEBBA7", max: 12 },
+  { key: "community", label: "Community", color: "#B8876F", max: 4 },
 ];
 
 function UsersTab() {
@@ -893,8 +894,8 @@ function UsersTab() {
         stage: editData.stage,
         graduationDate: editData.graduationDate || null,
       });
-      for (const [pillar, progress] of Object.entries(progressValues)) {
-        await apiRequest("PUT", `/api/admin/progress/${editUserId}`, { pillar, progress });
+      for (const [category, progress] of Object.entries(progressValues)) {
+        await apiRequest("PUT", `/api/admin/progress/${editUserId}`, { category, progress });
       }
     },
     onSuccess: () => {
@@ -912,15 +913,15 @@ function UsersTab() {
     setProgressValues({});
   }
 
-  function getProgressValue(pillar: string): number {
-    if (progressValues[pillar] !== undefined) return progressValues[pillar];
-    const entry = editUserProgress?.find((p: any) => p.pillar === pillar);
+  function getProgressValue(cat: string): number {
+    if (progressValues[cat] !== undefined) return progressValues[cat];
+    const entry = editUserProgress?.find((p: any) => p.category === cat);
     return entry?.progress ?? 0;
   }
 
-  function setProgress(pillar: string, value: number) {
-    const clamped = Math.max(0, Math.min(100, value));
-    setProgressValues({ ...progressValues, [pillar]: clamped });
+  function setProgress(cat: string, value: number, max: number) {
+    const clamped = Math.max(0, Math.min(max, value));
+    setProgressValues({ ...progressValues, [cat]: clamped });
   }
 
   return (
@@ -963,22 +964,23 @@ function UsersTab() {
                     <Input type="date" value={editData.graduationDate} onChange={(e) => setEditData({ ...editData, graduationDate: e.target.value })} data-testid="admin-input-graduation-date" />
                   </div>
                   <div>
-                    <label className="text-xs text-[#868180] mb-1.5 block">Pillar Progress</label>
+                    <label className="text-xs text-[#868180] mb-1.5 block">Category Progress</label>
                     <div className="space-y-1.5">
-                      {progressPillars.map((p) => (
+                      {progressCategories.map((p) => (
                         <div key={p.key} className="flex items-center gap-2">
                           <span className="text-[10px] font-semibold w-20" style={{ color: p.color }}>{p.label}</span>
                           <Input
                             type="number"
                             min={0}
-                            max={100}
+                            max={p.max}
                             value={getProgressValue(p.key)}
-                            onChange={(e) => setProgress(p.key, parseInt(e.target.value) || 0)}
+                            onChange={(e) => setProgress(p.key, parseInt(e.target.value) || 0, p.max)}
                             className="h-7 text-xs w-16 text-center"
                             data-testid={`admin-input-progress-${p.key}`}
                           />
+                          <span className="text-[10px] text-[#C7C2BF] w-6">/{p.max}</span>
                           <div className="flex-1 h-1.5 rounded-full bg-[#F1EFEF] overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${getProgressValue(p.key)}%`, backgroundColor: p.color }} />
+                            <div className="h-full rounded-full transition-all" style={{ width: `${Math.round((getProgressValue(p.key) / p.max) * 100)}%`, backgroundColor: p.color }} />
                           </div>
                         </div>
                       ))}

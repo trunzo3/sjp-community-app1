@@ -65,7 +65,7 @@ export interface IStorage {
   createSurvey(survey: InsertSurvey): Promise<Survey>;
 
   getProgressByUser(userId: string): Promise<UserProgress[]>;
-  upsertProgress(userId: string, pillar: string, progress: number): Promise<UserProgress>;
+  upsertProgress(userId: string, category: string, progress: number): Promise<UserProgress>;
 
   getEvent(id: string): Promise<Event | undefined>;
   getStaffUsers(): Promise<User[]>;
@@ -350,19 +350,19 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(userProgress).where(eq(userProgress.userId, userId));
   }
 
-  async upsertProgress(userId: string, pillar: string, progress: number): Promise<UserProgress> {
+  async upsertProgress(userId: string, category: string, progress: number): Promise<UserProgress> {
     const existing = await db.select().from(userProgress).where(
-      and(eq(userProgress.userId, userId), eq(userProgress.pillar, pillar as any))
+      and(eq(userProgress.userId, userId), eq(userProgress.category, category as any))
     );
     if (existing.length > 0) {
       const [updated] = await db.update(userProgress)
         .set({ progress })
-        .where(and(eq(userProgress.userId, userId), eq(userProgress.pillar, pillar as any)))
+        .where(and(eq(userProgress.userId, userId), eq(userProgress.category, category as any)))
         .returning();
       return updated;
     }
     const [created] = await db.insert(userProgress)
-      .values({ userId, pillar: pillar as any, progress })
+      .values({ userId, category: category as any, progress })
       .returning();
     return created;
   }

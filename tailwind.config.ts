@@ -96,10 +96,15 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "burst-radial": {
+          "0%": { opacity: "1", transform: "translate(0, 0) scale(1)" },
+          "100%": { opacity: "0", transform: "translate(var(--burst-x, 0), var(--burst-y, -14px)) scale(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "burst-radial": "burst-radial 300ms ease-out forwards",
       },
     },
   },

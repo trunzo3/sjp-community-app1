@@ -597,11 +597,36 @@ export async function registerRoutes(
     res.json(progress);
   });
 
+  const categoryMaxSessions: Record<string, number> = {
+    journey: 104, employment: 11, housing: 8, finance: 8, parenting: 12, community: 4,
+  };
+
+  function validateProgressInput(category: unknown, progress: unknown): { error?: string; cat?: string; val?: number } {
+    if (!category || typeof category !== "string") return { error: "category is required" };
+    const max = categoryMaxSessions[category];
+    if (max === undefined) return { error: "invalid category" };
+    const val = Number(progress);
+    if (progress === undefined || progress === null || !Number.isInteger(val)) return { error: "progress must be an integer" };
+    if (val < 0 || val > max) return { error: `progress must be 0-${max}` };
+    return { cat: category, val };
+  }
+
   app.put("/api/admin/progress/:userId", requireStaffOrAdmin, async (req, res) => {
-    const { pillar, progress } = req.body;
-    if (!pillar || progress === undefined) return res.status(400).json({ message: "pillar and progress required" });
-    if (progress < 0 || progress > 100) return res.status(400).json({ message: "progress must be 0-100" });
-    const result = await storage.upsertProgress(req.params.userId, pillar, progress);
+    const { category, progress } = req.body;
+    const v = validateProgressInput(category, progress);
+    if (v.error) return res.status(400).json({ message: v.error });
+    const result = await storage.upsertProgress(req.params.userId, v.cat!, v.val!);
+    res.json(result);
+  });
+
+  app.put("/api/progress/self", requireAuth, async (req, res) => {
+    const currentUser = await storage.getUser(req.session.userId!);
+    if (!currentUser) return res.status(401).json({ message: "Not authenticated" });
+    if (currentUser.role !== "client") return res.status(403).json({ message: "Only clients can edit their own progress" });
+    const { category, progress } = req.body;
+    const v = validateProgressInput(category, progress);
+    if (v.error) return res.status(400).json({ message: v.error });
+    const result = await storage.upsertProgress(req.session.userId!, v.cat!, v.val!);
     res.json(result);
   });
 

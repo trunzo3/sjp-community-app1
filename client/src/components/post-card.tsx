@@ -5,6 +5,7 @@ import { MessageCircle, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AvatarCircle } from "./avatar-circle";
+import { ReactionBar } from "./reaction-bar";
 import { MILESTONE_CATEGORY_STYLES } from "./milestone-picker";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -58,14 +59,6 @@ const roleBadgeColors: Record<string, string> = {
   admin: "bg-[#34737A] text-white",
 };
 
-const reactionEmojis: Record<string, string> = {
-  heart: "❤️",
-  clap: "👏",
-  pray: "🙏",
-  fire: "🔥",
-  star: "⭐",
-  smile: "😊",
-};
 
 function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -75,7 +68,6 @@ export function PostCard({ post, isPinnedSection = false }: { post: PostType; is
   const { user } = useAuth();
   const [showReplies, setShowReplies] = useState(false);
   const [replyText, setReplyText] = useState("");
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
   const queryClient = useQueryClient();
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
 
@@ -102,22 +94,6 @@ export function PostCard({ post, isPinnedSection = false }: { post: PostType; is
     },
   });
 
-  const reactMutation = useMutation({
-    mutationFn: async (reactionType: string) => {
-      await apiRequest("POST", "/api/reactions", { postId: post.id, reactionType });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reactions", post.id] });
-      setShowReactionPicker(false);
-    },
-  });
-
-  const reactionCounts = (postReactions || []).reduce<Record<string, number>>((acc, r) => {
-    acc[r.reactionType] = (acc[r.reactionType] || 0) + 1;
-    return acc;
-  }, {});
-
-  const userReaction = postReactions?.find(r => r.userId === user?.id);
 
   const isMilestone = post.postType === "milestone" && post.milestoneCategory;
   const milestoneStyle = isMilestone ? MILESTONE_CATEGORY_STYLES[post.milestoneCategory!] || MILESTONE_CATEGORY_STYLES["Something else worth celebrating"] : null;
@@ -182,59 +158,14 @@ export function PostCard({ post, isPinnedSection = false }: { post: PostType; is
             <p className="text-sm text-[#302D2E] mt-1.5 leading-relaxed">{post.content}</p>
           ) : null}
 
-          {Object.keys(reactionCounts).length > 0 && (
-            <div className="flex items-center gap-1.5 mt-2 flex-wrap" data-testid={`reactions-display-${post.id}`}>
-              {Object.entries(reactionCounts).map(([type, count]) => (
-                <button
-                  key={type}
-                  onClick={() => reactMutation.mutate(type)}
-                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-colors ${
-                    userReaction?.reactionType === type
-                      ? "bg-[#34737A]/10 border border-[#34737A]/30"
-                      : "bg-[#F1EFEF] border border-transparent"
-                  }`}
-                  data-testid={`reaction-badge-${type}-${post.id}`}
-                >
-                  <span className="text-sm">{reactionEmojis[type]}</span>
-                  <span className="text-[10px] font-medium text-[#868180]">{count}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="mt-2">
+            <ReactionBar postId={post.id} reactions={postReactions || []} currentUserId={user?.id || ""} />
+          </div>
 
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-3 mt-1">
             <span className="text-xs text-[#C7C2BF]">
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
             </span>
-            <div className="relative">
-              <button
-                onClick={() => setShowReactionPicker(!showReactionPicker)}
-                className="text-xs text-[#868180] flex items-center gap-1 transition-colors"
-                data-testid={`button-react-${post.id}`}
-              >
-                <span className="text-sm">😊</span>
-                React
-              </button>
-              {showReactionPicker && (
-                <div
-                  className="absolute bottom-full left-0 mb-1 flex gap-1 bg-white rounded-xl shadow-lg border border-[#C7C2BF] p-1.5 z-10"
-                  data-testid={`reaction-picker-${post.id}`}
-                >
-                  {Object.entries(reactionEmojis).map(([type, emoji]) => (
-                    <button
-                      key={type}
-                      onClick={() => reactMutation.mutate(type)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F1EFEF] transition-colors text-lg ${
-                        userReaction?.reactionType === type ? "bg-[#34737A]/10" : ""
-                      }`}
-                      data-testid={`reaction-option-${type}-${post.id}`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
             <button
               onClick={() => setShowReplies(!showReplies)}
               className="text-xs text-[#868180] flex items-center gap-1 transition-colors"

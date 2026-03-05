@@ -279,20 +279,20 @@ export async function seedDatabase() {
     await storage.createSurvey(s);
   }
 
-  const pillars = ["community", "confidence", "resilience", "readiness", "wellness"] as const;
+  const categories = ["journey", "employment", "housing", "finance", "parenting", "community"] as const;
   const progressData: Record<string, number[]> = {
-    destiny: [80, 65, 50, 35, 70],
-    angela: [30, 20, 15, 10, 25],
-    keisha: [25, 15, 20, 10, 30],
-    maria: [90, 75, 70, 80, 85],
-    monica: [100, 100, 100, 100, 100],
-    tasha: [100, 100, 100, 100, 100],
-    denise: [100, 100, 100, 100, 100],
+    angela: [8, 1, 1, 1, 2, 1],
+    keisha: [8, 1, 1, 1, 2, 1],
+    destiny: [52, 5, 4, 4, 6, 3],
+    maria: [88, 9, 7, 7, 10, 4],
+    monica: [104, 11, 8, 8, 12, 4],
+    tasha: [104, 11, 8, 8, 12, 4],
+    denise: [104, 11, 8, 8, 12, 4],
   };
 
   for (const [name, values] of Object.entries(progressData)) {
-    for (let i = 0; i < pillars.length; i++) {
-      await storage.upsertProgress(createdUsers[name], pillars[i], values[i]);
+    for (let i = 0; i < categories.length; i++) {
+      await storage.upsertProgress(createdUsers[name], categories[i], values[i]);
     }
   }
 

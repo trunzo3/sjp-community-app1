@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { AvatarCircle } from "@/components/avatar-circle";
 import { PostCard } from "@/components/post-card";
-import { BookOpen, Calendar, MessageCircle, ArrowRight, CornerDownLeft } from "lucide-react";
+import { BookOpen, Calendar, MessageCircle, ArrowRight, CornerDownLeft, Heart } from "lucide-react";
 import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -58,8 +58,8 @@ function HomeCategoryCard({ post }: { post: any }) {
             <span className="text-sm font-semibold text-[#302D2E]">{post.author.firstName}</span>
             <p className="text-sm text-[#302D2E] mt-1 leading-relaxed">{post.content}</p>
             <div className="flex items-center gap-4 mt-2">
-              <span className="text-xs text-[#D32027] flex items-center gap-1 font-medium">
-                ❤️ {reactionCount}
+              <span className="text-xs text-[#E8956D] flex items-center gap-1 font-medium">
+                <Heart className="w-3 h-3" fill="#E8956D" /> {reactionCount > 0 ? reactionCount : ""}
               </span>
               <span className="text-xs text-[#868180] flex items-center gap-1">
                 <CornerDownLeft className="w-3 h-3" />
