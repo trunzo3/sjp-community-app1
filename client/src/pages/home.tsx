@@ -9,7 +9,6 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { getDueSurveyInterval } from "@/pages/survey";
-import { MyJourney } from "@/components/my-journey";
 import { DailyAffirmation } from "@/components/daily-affirmation";
 import { StreakAcknowledgment } from "@/components/streak-acknowledgment";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -221,8 +220,6 @@ export default function HomePage() {
       <StreakAcknowledgment />
 
       <DailyAffirmation />
-
-      <MyJourney />
 
       {isAlumni && dueInterval && (
         <div className="bg-[#FEF3C7] rounded-xl p-4" data-testid="survey-card">

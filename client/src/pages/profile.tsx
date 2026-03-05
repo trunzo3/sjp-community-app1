@@ -9,7 +9,8 @@ import { MoodCheckinFlow } from "@/components/mood-checkin-flow";
 import { MyColors } from "@/components/my-colors";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X, Camera, Palette, ShieldCheck } from "lucide-react";
+import { MyJourney } from "@/components/my-journey";
+import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X, Camera, Palette, ShieldCheck, Route } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -34,6 +35,7 @@ export default function ProfilePage() {
   const [showMyPosts, setShowMyPosts] = useState(false);
   const [showCheckinFlow, setShowCheckinFlow] = useState(false);
   const [showMyColors, setShowMyColors] = useState(false);
+  const [showMyJourney, setShowMyJourney] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const [photoError, setPhotoError] = useState("");
@@ -396,6 +398,29 @@ export default function ProfilePage() {
       )}
 
       <div className="space-y-2 mb-4">
+        {isClientOrAlumni && (
+          <>
+            <button
+              className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
+              onClick={() => setShowMyJourney(!showMyJourney)}
+              data-testid="button-my-journey"
+            >
+              <div className="w-9 h-9 rounded-lg bg-[#34737A]/10 flex items-center justify-center">
+                <Route className="w-4 h-4 text-[#34737A]" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[#302D2E]">My Journey</p>
+                <p className="text-xs text-[#868180]">Six Categories for Real Change</p>
+              </div>
+            </button>
+            {showMyJourney && (
+              <div className="px-1">
+                <MyJourney />
+              </div>
+            )}
+          </>
+        )}
+
         <button
           className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
           onClick={() => setShowMyPosts(!showMyPosts)}
