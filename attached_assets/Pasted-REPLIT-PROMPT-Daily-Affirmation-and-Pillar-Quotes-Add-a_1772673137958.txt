@@ -1,0 +1,78 @@
+REPLIT PROMPT: Daily Affirmation and Pillar Quotes
+Add a daily affirmation card to the home screen that rotates through a curated set of short quotes and reflections, each tied to one of the five Saint John's Foundations for Real Change pillars: Community, Confidence, Resilience, Readiness, and Wellness.
+
+WHERE IT LIVES
+Place the affirmation card on the home screen directly below the welcome banner and above the Stories of Change carousel. It should be present for all user roles: clients, alumni, staff, and admin.
+
+HOW IT WORKS
+One affirmation displays per day, the same one for all users on that day
+Rotation is date-based: use the current date to deterministically select from the pool, so the quote is consistent for everyone throughout the day and changes at midnight
+The card shows the quote, the pillar it belongs to, and the pillar's icon
+Include a small "pillar label" beneath the quote in muted text, for example "Resilience" with its icon, so users gradually learn the framework through daily exposure
+No user interaction required. No likes, no saves, no sharing. It is a moment, not a feature.
+The card should feel warm and grounded, not like a motivational poster. Gentle typography, soft background tint using the pillar's existing color from the design system
+
+PILLAR COLOR AND ICON MAPPING
+Use the existing design system colors already defined for each pillar:
+Community — Teal #34737A, icon: Users Confidence — Peach #EEBBA7, icon: Sunrise or Award Resilience — Sage green #5DA592, icon: Leaf or TrendingUp Readiness — Dusty lavender #979DB6, icon: CheckCircle or Compass Wellness — Amber #C8882A, icon: Heart or Sun
+All icons from lucide-react, already in the stack.
+
+QUOTE CONTENT
+Seed the following quotes. These are a first pass written to align with Saint John's language and values. They must be reviewed and approved by Saint John's before the app goes to real users. Mark them clearly in the code with a comment: // CONTENT PENDING SJP REVIEW.
+Community
+"You are not here alone. Every woman in this community is rooting for you."
+"The strongest thing you can do is let someone in."
+"Community is not just where you live. It is who shows up for you."
+"When one of us rises, we all rise."
+"You belong here. That is not something you have to earn."
+Confidence
+"You have already done the hardest thing. You asked for help."
+"The woman you are becoming is worth every hard step."
+"You do not have to have it all figured out. You just have to keep going."
+"Your story is not over. It is just getting started."
+"You are not starting from scratch. You are starting from experience."
+Resilience
+"You have survived every hard day so far. Today is no different."
+"Strength does not mean nothing hurt. It means you kept going anyway."
+"Hard days are part of the journey, not the end of it."
+"Every time you got back up, you were building something. Keep building."
+"You are not the crisis that brought you here. You are what you do next."
+Readiness
+"Small steps count. One thing today is enough."
+"You do not have to see the whole staircase. Just take the next step."
+"Preparation is an act of hope. You are preparing because you believe in your future."
+"Every skill you learn here is yours forever. No one can take it."
+"You are getting ready for a life that is waiting for you."
+Wellness
+"Rest is not giving up. It is how you keep going."
+"Taking care of yourself is not selfish. It is necessary."
+"Your body and your mind have been through a lot. They deserve your kindness."
+"Healing is not linear. Every day you try is a good day."
+"You deserve to feel well. That is not a luxury. It is your right."
+
+SCHEMA AND DATA STORAGE
+No database table needed. Store the quote pool as a static JSON array in the codebase, for example in client/src/data/affirmations.ts. Each entry should include:
+{
+  pillar: "resilience",
+  quote: "...",
+  attribution: null
+}
+Attribution is null for now. If Saint John's wants to attribute quotes to staff, alumni, or external figures later, the field is ready.
+The daily rotation logic lives on the frontend. Use new Date().toDateString() hashed or converted to a numeric index modulo the total quote count to select the day's quote. No API call needed.
+
+DO NOT CHANGE
+The welcome banner above the card
+The Stories of Change carousel below it
+Any other home screen element
+The pillar filtering system in the Resources section, which uses the same pillar names and should remain independent of this feature
+
+ACCEPTANCE CRITERIA
+Affirmation card appears on the home screen for all users
+Quote changes each day and is consistent for all users on the same day
+Correct pillar color, tint, and icon display for each quote
+Pillar name is visible but secondary to the quote text
+Card is readable and well-proportioned on a 390px screen
+Static data file is clearly commented as pending SJP content review
+
+One flag worth passing to Anthony: the quotes above are placeholder copy written to match Saint John's voice and values as closely as possible from the transcripts and website. But the clinical and program team should have final say on what goes in front of clients. This is an easy swap once they sign off since it is a static data file, no database migration required.
+
