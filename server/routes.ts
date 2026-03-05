@@ -263,6 +263,45 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/mood/today", requireAuth, async (req, res) => {
+    const checkin = await storage.getTodayMoodCheckin(req.session.userId!);
+    res.json(checkin);
+  });
+
+  app.post("/api/mood", requireAuth, async (req, res) => {
+    const { coreEmotion, midEmotion, outerEmotion, coreColor, midColor, outerColor, outerLabel, journalEntry } = req.body;
+    if (!coreEmotion || !midEmotion || !outerEmotion || !coreColor || !midColor || !outerColor || !outerLabel) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    const hexPattern = /^#[0-9A-Fa-f]{6}$/;
+    if (!hexPattern.test(coreColor) || !hexPattern.test(midColor) || !hexPattern.test(outerColor)) {
+      return res.status(400).json({ message: "Invalid color format" });
+    }
+    if (typeof outerLabel !== "string" || outerLabel.length > 50) {
+      return res.status(400).json({ message: "Invalid outer label" });
+    }
+    if (journalEntry && (typeof journalEntry !== "string" || journalEntry.length > 2000)) {
+      return res.status(400).json({ message: "Journal entry too long (max 2000 characters)" });
+    }
+    const checkin = await storage.upsertMoodCheckin(req.session.userId!, {
+      userId: req.session.userId!,
+      coreEmotion: String(coreEmotion).slice(0, 50),
+      midEmotion: String(midEmotion).slice(0, 50),
+      outerEmotion: String(outerEmotion).slice(0, 50),
+      coreColor,
+      midColor,
+      outerColor,
+      outerLabel,
+      journalEntry: journalEntry?.trim() || null,
+    });
+    res.json(checkin);
+  });
+
+  app.get("/api/mood/history", requireAuth, async (req, res) => {
+    const history = await storage.getMoodHistory(req.session.userId!, 90);
+    res.json(history);
+  });
+
   async function recordActivity(userId: string) {
     try {
       const today = new Date().toISOString().split("T")[0];

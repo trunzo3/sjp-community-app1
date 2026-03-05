@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { Home, Users, BookOpen, Calendar, User, Shield } from "lucide-react";
+import { Home, Users, BookOpen, Calendar, CircleUser, Shield } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import sjpLogo from "@assets/FF_SJP_Logos_Digital_Primary_SJP_FullColorWhiteText_1772578179749.png";
 
@@ -8,7 +8,7 @@ const tabs = [
   { path: "/community", label: "Community", icon: Users },
   { path: "/resources", label: "Resources", icon: BookOpen },
   { path: "/events", label: "Events", icon: Calendar },
-  { path: "/profile", label: "Profile", icon: User },
+  { path: "/profile", label: "Me", icon: CircleUser },
 ];
 
 export function DesktopSidebar() {

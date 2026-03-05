@@ -5,13 +5,17 @@ import { apiRequest } from "@/lib/queryClient";
 import { trackActivity } from "@/lib/activity";
 import { AvatarCircle } from "@/components/avatar-circle";
 import { PostCard } from "@/components/post-card";
+import { MoodCheckinFlow } from "@/components/mood-checkin-flow";
+import { MyColors } from "@/components/my-colors";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X, Camera } from "lucide-react";
+import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X, Camera, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { processAvatarImage } from "@/lib/image-utils";
+import { textOnColor } from "@/data/mood-taxonomy";
+import type { MoodCheckin } from "@shared/schema";
 
 const roleBadgeColors: Record<string, string> = {
   client: "bg-[#34737A] text-white",
@@ -28,17 +32,24 @@ export default function ProfilePage() {
   const [editingBio, setEditingBio] = useState(false);
   const [bio, setBio] = useState(user?.bio || "");
   const [showMyPosts, setShowMyPosts] = useState(false);
+  const [showCheckinFlow, setShowCheckinFlow] = useState(false);
+  const [showMyColors, setShowMyColors] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const [photoError, setPhotoError] = useState("");
   const [processingPhoto, setProcessingPhoto] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const myColorsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { trackActivity(); }, []);
 
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
   const isAlumni = user?.role === "alumni";
+
+  const { data: todayCheckin, isLoading: checkinLoading } = useQuery<MoodCheckin | null>({
+    queryKey: ["/api/mood/today"],
+  });
 
   const { data: myPosts, isLoading: postsLoading } = useQuery<any[]>({
     queryKey: ["/api/posts/user", user?.id || ""],
@@ -138,11 +149,31 @@ export default function ProfilePage() {
     await logout();
   };
 
+  const handleCheckinComplete = (checkin: MoodCheckin) => {
+    setShowCheckinFlow(false);
+    setShowMyColors(true);
+    setTimeout(() => {
+      myColorsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
   if (!user) return null;
+
+  if (showCheckinFlow) {
+    return (
+      <div className="max-w-[600px] md:mx-0">
+        <MoodCheckinFlow
+          onComplete={handleCheckinComplete}
+          onClose={() => setShowCheckinFlow(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[600px] md:mx-0">
       <div className="h-[3px] bg-[#EEBBA7] -mx-4 md:mx-0 md:rounded-full mb-4" />
+
       <div className="bg-[#FCF3EE] rounded-xl p-5 mb-4" data-testid="profile-header">
         <div className="flex items-start gap-4">
           <div className="flex flex-col items-center gap-1">
@@ -291,7 +322,106 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      <div className="mb-4" data-testid="mood-checkin-section">
+        {checkinLoading ? (
+          <div className="bg-white rounded-xl p-4 flex justify-center">
+            <Loader2 className="w-5 h-5 animate-spin text-[#34737A]" />
+          </div>
+        ) : todayCheckin ? (
+          <div className="bg-white rounded-xl p-4" data-testid="mood-today-summary">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-[#302D2E]">Today's Check-In</h3>
+              <button
+                onClick={() => setShowMyColors(!showMyColors)}
+                className="text-xs text-[#34737A] font-medium flex items-center gap-1"
+                data-testid="button-my-colors-link"
+              >
+                <Palette className="w-3 h-3" /> My Colors
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: todayCheckin.outerColor }}
+              >
+                <span className="text-lg" style={{ color: textOnColor(todayCheckin.outerColor) }}>
+                  {todayCheckin.outerLabel.charAt(0)}
+                </span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold" style={{ color: todayCheckin.outerColor }}>
+                  {todayCheckin.outerLabel}
+                </p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  {[todayCheckin.coreColor, todayCheckin.midColor, todayCheckin.outerColor].map((c, i) => (
+                    <div key={i} className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCheckinFlow(true)}
+                className="text-xs text-[#868180] font-medium px-3 py-1.5 rounded-lg border border-[#E5E1DE]"
+                data-testid="button-update-checkin"
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowCheckinFlow(true)}
+            className="w-full bg-white rounded-xl p-5 text-left shadow-sm hover:shadow-md transition-shadow"
+            data-testid="button-start-checkin"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-1">
+                {["#3B82F6", "#FACC15", "#8B5CF6", "#EF4444", "#22C55E"].map((c) => (
+                  <div key={c} className="w-6 h-6 rounded-full border-2 border-white" style={{ backgroundColor: c }} />
+                ))}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[#302D2E]">Check in today</p>
+                <p className="text-xs text-[#868180]">How are you feeling right now?</p>
+              </div>
+            </div>
+          </button>
+        )}
+      </div>
+
+      {showMyColors && (
+        <div ref={myColorsRef} className="mb-4">
+          <MyColors />
+        </div>
+      )}
+
       <div className="space-y-2 mb-4">
+        <button
+          className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
+          onClick={() => setShowMyPosts(!showMyPosts)}
+          data-testid="button-my-posts"
+        >
+          <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+            <FileText className="w-4 h-4 text-blue-600" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-[#302D2E]">My Posts</p>
+            <p className="text-xs text-[#868180]">See your community posts</p>
+          </div>
+        </button>
+
+        {showMyPosts && (
+          <div className="space-y-3 px-1">
+            {postsLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
+            ) : (
+              <>
+                {myPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
+                {myPosts?.length === 0 && <p className="text-center text-sm text-[#C7C2BF] py-4">No posts yet.</p>}
+              </>
+            )}
+          </div>
+        )}
+
         {isAlumni && (
           <button
             className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
@@ -331,20 +461,6 @@ export default function ProfilePage() {
 
         <button
           className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
-          onClick={() => setShowMyPosts(!showMyPosts)}
-          data-testid="button-my-posts"
-        >
-          <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
-            <FileText className="w-4 h-4 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[#302D2E]">My Posts</p>
-            <p className="text-xs text-[#868180]">See your community posts</p>
-          </div>
-        </button>
-
-        <button
-          className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
           onClick={handleLogout}
           data-testid="button-sign-out"
         >
@@ -354,20 +470,6 @@ export default function ProfilePage() {
           <p className="text-sm font-semibold text-[#302D2E]">Sign Out</p>
         </button>
       </div>
-
-      {showMyPosts && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-bold text-[#302D2E]">Your Posts</h2>
-          {postsLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#34737A]" /></div>
-          ) : (
-            <>
-              {myPosts?.map((post: any) => <PostCard key={post.id} post={post} />)}
-              {myPosts?.length === 0 && <p className="text-center text-sm text-[#C7C2BF] py-4">No posts yet.</p>}
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }

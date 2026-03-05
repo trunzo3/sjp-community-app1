@@ -3,7 +3,7 @@ import { eq, desc, and, sql, gte } from "drizzle-orm";
 import {
   users, posts, replies, resources, events, stories, reactions, surveys, userProgress, venueLocations,
   aiFaqs, aiTrustedAnswers, aiCrisisConfig, aiQueryLogs, aiDocuments, aiDocumentChunks,
-  userActivity, streakAcknowledgments,
+  userActivity, streakAcknowledgments, moodCheckins,
   type User, type InsertUser,
   type Post, type InsertPost,
   type Reply, type InsertReply,
@@ -21,6 +21,7 @@ import {
   type AiDocument, type InsertAiDocument,
   type AiDocumentChunk, type InsertAiDocumentChunk,
   type StreakAcknowledgment,
+  type MoodCheckin, type InsertMoodCheckin,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -113,6 +114,10 @@ export interface IStorage {
   calculateAndUpdateStreak(userId: string): Promise<{ currentStreak: number; longestStreak: number; newMilestone: number | null }>;
   getUnshownAcknowledgment(userId: string): Promise<StreakAcknowledgment | null>;
   markAcknowledgmentShown(id: string): Promise<void>;
+
+  getTodayMoodCheckin(userId: string): Promise<MoodCheckin | null>;
+  upsertMoodCheckin(userId: string, data: InsertMoodCheckin): Promise<MoodCheckin>;
+  getMoodHistory(userId: string, days: number): Promise<MoodCheckin[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -677,6 +682,60 @@ export class DatabaseStorage implements IStorage {
 
   async markAcknowledgmentShown(id: string): Promise<void> {
     await db.update(streakAcknowledgments).set({ shown: true }).where(eq(streakAcknowledgments.id, id));
+  }
+
+  async getTodayMoodCheckin(userId: string): Promise<MoodCheckin | null> {
+    const [checkin] = await db.select().from(moodCheckins)
+      .where(and(
+        eq(moodCheckins.userId, userId),
+        sql`date(${moodCheckins.checkedInAt}) = CURRENT_DATE`
+      ));
+    return checkin || null;
+  }
+
+  async upsertMoodCheckin(userId: string, data: InsertMoodCheckin): Promise<MoodCheckin> {
+    const res = await db.execute(sql`
+      INSERT INTO mood_checkins (user_id, core_emotion, mid_emotion, outer_emotion, core_color, mid_color, outer_color, outer_label, journal_entry, checked_in_at)
+      VALUES (${userId}, ${data.coreEmotion}, ${data.midEmotion}, ${data.outerEmotion}, ${data.coreColor}, ${data.midColor}, ${data.outerColor}, ${data.outerLabel}, ${data.journalEntry ?? null}, NOW())
+      ON CONFLICT (user_id, date(checked_in_at))
+      DO UPDATE SET
+        core_emotion = EXCLUDED.core_emotion,
+        mid_emotion = EXCLUDED.mid_emotion,
+        outer_emotion = EXCLUDED.outer_emotion,
+        core_color = EXCLUDED.core_color,
+        mid_color = EXCLUDED.mid_color,
+        outer_color = EXCLUDED.outer_color,
+        outer_label = EXCLUDED.outer_label,
+        journal_entry = EXCLUDED.journal_entry,
+        checked_in_at = NOW()
+      RETURNING *
+    `);
+    const rows = (res as any).rows || res;
+    const r = Array.isArray(rows) ? rows[0] : rows;
+    return {
+      id: r.id,
+      userId: r.user_id,
+      coreEmotion: r.core_emotion,
+      midEmotion: r.mid_emotion,
+      outerEmotion: r.outer_emotion,
+      coreColor: r.core_color,
+      midColor: r.mid_color,
+      outerColor: r.outer_color,
+      outerLabel: r.outer_label,
+      journalEntry: r.journal_entry,
+      checkedInAt: r.checked_in_at,
+    };
+  }
+
+  async getMoodHistory(userId: string, days: number): Promise<MoodCheckin[]> {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    return db.select().from(moodCheckins)
+      .where(and(
+        eq(moodCheckins.userId, userId),
+        gte(moodCheckins.checkedInAt, since)
+      ))
+      .orderBy(desc(moodCheckins.checkedInAt));
   }
 }
 

@@ -1,12 +1,12 @@
 import { useLocation, Link } from "wouter";
-import { Home, Users, BookOpen, Calendar, User } from "lucide-react";
+import { Home, Users, BookOpen, Calendar, CircleUser } from "lucide-react";
 
 const tabs = [
   { path: "/", label: "Home", icon: Home },
   { path: "/community", label: "Community", icon: Users },
   { path: "/resources", label: "Resources", icon: BookOpen },
   { path: "/events", label: "Events", icon: Calendar },
-  { path: "/profile", label: "Profile", icon: User },
+  { path: "/profile", label: "Me", icon: CircleUser },
 ];
 
 export function BottomNav() {

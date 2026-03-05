@@ -267,6 +267,26 @@ export type InsertUserActivity = z.infer<typeof insertUserActivitySchema>;
 export type StreakAcknowledgment = typeof streakAcknowledgments.$inferSelect;
 export type InsertStreakAcknowledgment = z.infer<typeof insertStreakAcknowledgmentSchema>;
 
+export const moodCheckins = pgTable("mood_checkins", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  coreEmotion: text("core_emotion").notNull(),
+  midEmotion: text("mid_emotion").notNull(),
+  outerEmotion: text("outer_emotion").notNull(),
+  coreColor: text("core_color").notNull(),
+  midColor: text("mid_color").notNull(),
+  outerColor: text("outer_color").notNull(),
+  outerLabel: text("outer_label").notNull(),
+  journalEntry: text("journal_entry"),
+  checkedInAt: timestamp("checked_in_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("mood_checkins_user_date_idx").on(table.userId, sql`date(${table.checkedInAt})`),
+]);
+
+export const insertMoodCheckinSchema = createInsertSchema(moodCheckins).omit({ id: true, checkedInAt: true });
+export type MoodCheckin = typeof moodCheckins.$inferSelect;
+export type InsertMoodCheckin = z.infer<typeof insertMoodCheckinSchema>;
+
 export const insertAiFaqSchema = createInsertSchema(aiFaqs).omit({ id: true, createdAt: true });
 export const insertAiTrustedAnswerSchema = createInsertSchema(aiTrustedAnswers).omit({ id: true, createdAt: true });
 export const insertAiCrisisConfigSchema = createInsertSchema(aiCrisisConfig).omit({ id: true, updatedAt: true });

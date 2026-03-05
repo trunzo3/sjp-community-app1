@@ -36,6 +36,7 @@ The platform is built with a React, TypeScript, Tailwind CSS frontend using `sha
 - **Community Feed**: Supports various post types (update, win, question, need) with filtering and a pinned post feature. Milestone posts have a unique visual treatment and selection process.
 - **Event Detail Pages**: Dedicated pages for events displaying detailed information, venue photos, and host profiles.
 - **User Profile Photos**: Staff/admin can upload profile photos via a dedicated UI, with client-side processing and server-side storage.
+- **Mood Check-In**: Private mood tracking feature available to all roles. 3-step progressive drill-down: Core (5 emotions) → Mid (4 per core) → Outer (4 per mid), each with unique colors from a 100-color taxonomy. Includes optional private journal entry. Data stored in `mood_checkins` table with upsert (one per user per day). Privacy enforced at API level — no admin/staff visibility. "Me" page (renamed from "Profile") shows check-in card and "My Colors" 90-day calendar grid history. Color taxonomy defined in `client/src/data/mood-taxonomy.ts`. Components: `mood-checkin-flow.tsx` (3-step flow), `my-colors.tsx` (calendar grid + timeline).
 
 ## External Dependencies
 - **PostgreSQL**: Primary database.

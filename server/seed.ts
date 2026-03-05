@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { storage } from "./storage";
 import { db } from "./db";
-import { users, venueLocations, aiFaqs, aiTrustedAnswers, aiCrisisConfig } from "@shared/schema";
+import { users, venueLocations, aiFaqs, aiTrustedAnswers, aiCrisisConfig, moodCheckins } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 function daysAgo(n: number): Date {
@@ -300,6 +300,61 @@ export async function seedDatabase() {
     for (let i = 0; i < categories.length; i++) {
       await storage.upsertProgress(createdUsers[name], categories[i], values[i]);
     }
+  }
+
+  const moodSeedData = [
+    { userId: createdUsers.angela, coreEmotion: "restless", midEmotion: "anxious", outerEmotion: "racing", coreColor: "#EF4444", midColor: "#F87171", outerColor: "#FCA5A5", outerLabel: "Racing", daysBack: 13 },
+    { userId: createdUsers.angela, coreEmotion: "restless", midEmotion: "anxious", outerEmotion: "tight", coreColor: "#EF4444", midColor: "#F87171", outerColor: "#F98B8B", outerLabel: "Tight", daysBack: 12 },
+    { userId: createdUsers.angela, coreEmotion: "heavy", midEmotion: "overwhelmed", outerEmotion: "too_much", coreColor: "#8B5CF6", midColor: "#8B5CF6", outerColor: "#7C3AED", outerLabel: "Too Much", daysBack: 11 },
+    { userId: createdUsers.angela, coreEmotion: "heavy", midEmotion: "sad", outerEmotion: "lonely", coreColor: "#8B5CF6", midColor: "#A78BFA", outerColor: "#AD95FB", outerLabel: "Lonely", daysBack: 10 },
+    { userId: createdUsers.angela, coreEmotion: "peaceful", midEmotion: "relieved", outerEmotion: "breathing", coreColor: "#3B82F6", midColor: "#2563EB", outerColor: "#2D6CE5", outerLabel: "Breathing", daysBack: 9 },
+    { userId: createdUsers.angela, coreEmotion: "peaceful", midEmotion: "calm", outerEmotion: "grounded", coreColor: "#3B82F6", midColor: "#60A5FA", outerColor: "#BFDBFE", outerLabel: "Grounded", daysBack: 7 },
+    { userId: createdUsers.angela, coreEmotion: "hopeful", midEmotion: "optimistic", outerEmotion: "believing", coreColor: "#FACC15", midColor: "#FDE047", outerColor: "#FDE86B", outerLabel: "Believing", daysBack: 6 },
+    { userId: createdUsers.angela, coreEmotion: "hopeful", midEmotion: "optimistic", outerEmotion: "open", coreColor: "#FACC15", midColor: "#FDE047", outerColor: "#FDE55A", outerLabel: "Open", daysBack: 5 },
+    { userId: createdUsers.angela, coreEmotion: "strong", midEmotion: "brave", outerEmotion: "facing_it", coreColor: "#22C55E", midColor: "#22C55E", outerColor: "#45D87A", outerLabel: "Facing It", daysBack: 4 },
+    { userId: createdUsers.angela, coreEmotion: "strong", midEmotion: "determined", outerEmotion: "ready", coreColor: "#22C55E", midColor: "#4ADE80", outerColor: "#5AE390", outerLabel: "Ready", daysBack: 3 },
+    { userId: createdUsers.angela, coreEmotion: "peaceful", midEmotion: "content", outerEmotion: "grateful", coreColor: "#3B82F6", midColor: "#3B82F6", outerColor: "#2563EB", outerLabel: "Grateful", daysBack: 2 },
+    { userId: createdUsers.angela, coreEmotion: "strong", midEmotion: "resilient", outerEmotion: "still_here", coreColor: "#22C55E", midColor: "#16A34A", outerColor: "#2DBE62", outerLabel: "Still Here", daysBack: 1 },
+
+    { userId: createdUsers.monica, coreEmotion: "strong", midEmotion: "resilient", outerEmotion: "bouncing_back", coreColor: "#22C55E", midColor: "#16A34A", outerColor: "#22B358", outerLabel: "Bouncing Back", daysBack: 13 },
+    { userId: createdUsers.monica, coreEmotion: "hopeful", midEmotion: "proud", outerEmotion: "accomplished", coreColor: "#FACC15", midColor: "#EAB308", outerColor: "#F0C030", outerLabel: "Accomplished", daysBack: 12 },
+    { userId: createdUsers.monica, coreEmotion: "hopeful", midEmotion: "joyful", outerEmotion: "happy", coreColor: "#FACC15", midColor: "#F59E0B", outerColor: "#FBBF24", outerLabel: "Happy", daysBack: 11 },
+    { userId: createdUsers.monica, coreEmotion: "peaceful", midEmotion: "content", outerEmotion: "satisfied", coreColor: "#3B82F6", midColor: "#3B82F6", outerColor: "#5B9BF7", outerLabel: "Satisfied", daysBack: 10 },
+    { userId: createdUsers.monica, coreEmotion: "strong", midEmotion: "connected", outerEmotion: "supported", coreColor: "#22C55E", midColor: "#15803D", outerColor: "#1A9048", outerLabel: "Supported", daysBack: 8 },
+    { userId: createdUsers.monica, coreEmotion: "hopeful", midEmotion: "proud", outerEmotion: "showing_up", coreColor: "#FACC15", midColor: "#EAB308", outerColor: "#C89500", outerLabel: "Showing Up", daysBack: 7 },
+    { userId: createdUsers.monica, coreEmotion: "restless", midEmotion: "frustrated", outerEmotion: "stuck", coreColor: "#EF4444", midColor: "#EF4444", outerColor: "#F26060", outerLabel: "Stuck", daysBack: 6 },
+    { userId: createdUsers.monica, coreEmotion: "peaceful", midEmotion: "calm", outerEmotion: "centered", coreColor: "#3B82F6", midColor: "#60A5FA", outerColor: "#93C5FD", outerLabel: "Centered", daysBack: 5 },
+    { userId: createdUsers.monica, coreEmotion: "strong", midEmotion: "brave", outerEmotion: "courageous", coreColor: "#22C55E", midColor: "#22C55E", outerColor: "#38D06E", outerLabel: "Courageous", daysBack: 4 },
+    { userId: createdUsers.monica, coreEmotion: "hopeful", midEmotion: "joyful", outerEmotion: "warm", coreColor: "#FACC15", midColor: "#F59E0B", outerColor: "#F09000", outerLabel: "Warm", daysBack: 2 },
+    { userId: createdUsers.monica, coreEmotion: "strong", midEmotion: "connected", outerEmotion: "seen", coreColor: "#22C55E", midColor: "#15803D", outerColor: "#209A50", outerLabel: "Seen", daysBack: 1 },
+
+    { userId: createdUsers.destiny, coreEmotion: "heavy", midEmotion: "overwhelmed", outerEmotion: "drowning", coreColor: "#8B5CF6", midColor: "#8B5CF6", outerColor: "#9B72F7", outerLabel: "Drowning", daysBack: 14 },
+    { userId: createdUsers.destiny, coreEmotion: "heavy", midEmotion: "sad", outerEmotion: "hurting", coreColor: "#8B5CF6", midColor: "#A78BFA", outerColor: "#C4B5FD", outerLabel: "Hurting", daysBack: 13 },
+    { userId: createdUsers.destiny, coreEmotion: "restless", midEmotion: "scared", outerEmotion: "afraid", coreColor: "#EF4444", midColor: "#B91C1C", outerColor: "#C72828", outerLabel: "Afraid", daysBack: 12 },
+    { userId: createdUsers.destiny, coreEmotion: "heavy", midEmotion: "numb", outerEmotion: "going_through_motions", coreColor: "#8B5CF6", midColor: "#6D28D9", outerColor: "#6425CC", outerLabel: "Going Through Motions", daysBack: 11 },
+    { userId: createdUsers.destiny, coreEmotion: "restless", midEmotion: "anxious", outerEmotion: "on_edge", coreColor: "#EF4444", midColor: "#F87171", outerColor: "#FBB5B5", outerLabel: "On Edge", daysBack: 10 },
+    { userId: createdUsers.destiny, coreEmotion: "peaceful", midEmotion: "resting", outerEmotion: "quiet", coreColor: "#3B82F6", midColor: "#1E40AF", outerColor: "#2850BF", outerLabel: "Quiet", daysBack: 8 },
+    { userId: createdUsers.destiny, coreEmotion: "strong", midEmotion: "brave", outerEmotion: "standing_tall", coreColor: "#22C55E", midColor: "#22C55E", outerColor: "#16A34A", outerLabel: "Standing Tall", daysBack: 7 },
+    { userId: createdUsers.destiny, coreEmotion: "hopeful", midEmotion: "excited", outerEmotion: "alive", coreColor: "#FACC15", midColor: "#FACC15", outerColor: "#FBDA52", outerLabel: "Alive", daysBack: 5 },
+    { userId: createdUsers.destiny, coreEmotion: "strong", midEmotion: "determined", outerEmotion: "focused", coreColor: "#22C55E", midColor: "#4ADE80", outerColor: "#86EFAC", outerLabel: "Focused", daysBack: 4 },
+    { userId: createdUsers.destiny, coreEmotion: "hopeful", midEmotion: "proud", outerEmotion: "worthy", coreColor: "#FACC15", midColor: "#EAB308", outerColor: "#D4A006", outerLabel: "Worthy", daysBack: 3 },
+    { userId: createdUsers.destiny, coreEmotion: "peaceful", midEmotion: "content", outerEmotion: "comfortable", coreColor: "#3B82F6", midColor: "#3B82F6", outerColor: "#4A90F5", outerLabel: "Comfortable", daysBack: 2 },
+    { userId: createdUsers.destiny, coreEmotion: "strong", midEmotion: "resilient", outerEmotion: "getting_through", coreColor: "#22C55E", midColor: "#16A34A", outerColor: "#0E8A3C", outerLabel: "Getting Through", daysBack: 1 },
+  ];
+
+  for (const m of moodSeedData) {
+    const checkedInAt = daysAgo(m.daysBack);
+    await db.insert(moodCheckins).values({
+      userId: m.userId,
+      coreEmotion: m.coreEmotion,
+      midEmotion: m.midEmotion,
+      outerEmotion: m.outerEmotion,
+      coreColor: m.coreColor,
+      midColor: m.midColor,
+      outerColor: m.outerColor,
+      outerLabel: m.outerLabel,
+      checkedInAt,
+    });
   }
 
   console.log("Seed data inserted successfully.");
