@@ -1,0 +1,62 @@
+REPLIT PROMPT: Micro-Reaction Animations
+The app already has a fully functional reaction system. The reactions table supports five types: heart, clap, pray, fire, star. The API endpoints for adding, switching, and removing reactions are in place. This prompt adds the visual treatment and animation layer only. No schema changes, no API changes.
+
+CURRENT STATE
+Reactions currently render as functional but visually flat. The goal is to make each reaction feel like a small moment of human warmth without being loud or game-like. This is a community of women supporting each other through real difficulty. The animations should feel gentle and affirming, not like a social media dopamine loop.
+
+REACTION ICONS AND COLORS
+Replace any existing reaction icons with the following. Use lucide-react for all icons.
+Heart — Heart icon, color #E8956D (peach) Clap — HandMetal or ThumbsUp icon, color #34737A (primary teal) Pray — Hands or Star icon — if lucide does not have a hands/prayer icon use Sparkles, color #979DB6 (dusty lavender) Fire — Flame icon, color #C8882A (amber) Star — Star icon, color #B8A832 (warm yellow)
+Each reaction button should display:
+The icon in its assigned color when active (selected by the current user)
+The icon in muted gray #C7C2BF when inactive
+The reaction count next to the icon in small text
+A subtle filled or tinted background pill when the reaction is the user's current selection
+
+ANIMATIONS
+All animations should be CSS or lightweight inline style transitions. Do not introduce a new animation library.
+On tap to add a reaction:
+The icon scales up briefly (scale 1.0 to 1.3 and back to 1.0) over approximately 200ms
+A small burst of 3 to 4 dots or small circles radiates outward from the icon and fades out over 300ms. These should be the reaction's assigned color. Keep this subtle, not a confetti explosion.
+The count increments with a brief upward slide transition
+On tap to remove a reaction (tapping your own active reaction):
+The icon scales down slightly (1.0 to 0.85 and back) over 150ms
+Color fades from active to muted gray
+Count decrements with a brief downward slide
+On tap to switch reactions (tapping a different reaction when one is already selected):
+The previously active reaction plays the remove animation
+The newly selected reaction plays the add animation
+Both happen simultaneously
+On first load:
+No animation. Reactions render in their current state without playing any entrance animation.
+
+REACTION BAR LAYOUT
+The reaction bar sits below each post card, unchanged in position. Display all five reactions in a single horizontal row. They should be evenly spaced and comfortable to tap on a mobile screen. Each tap target should be at least 44x44px to meet basic touch accessibility standards.
+Show the count for each reaction type. If a count is zero, show nothing next to the icon rather than a zero. An empty reaction bar with five faint gray icons and no counts reads as available and inviting rather than empty.
+
+SHARED COMPONENT
+If a shared reaction component does not already exist, create one now at client/src/components/reaction-bar.tsx. It should accept:
+postId (string)
+reactions (array of reaction objects from the API)
+currentUserId (string)
+onReactionChange (callback)
+Refactor all locations where reactions currently render to use this shared component. This keeps animation logic in one place.
+
+DO NOT CHANGE
+Any reaction API endpoints or database logic
+The post card layout, sizing, or any other card content
+The feed filtering or sorting behavior
+Any admin panel functionality
+Reply thread behavior
+
+ACCEPTANCE CRITERIA
+All five reaction types display with correct icons and assigned colors
+Active reaction (user's own) is visually distinct from inactive reactions
+Tapping an inactive reaction triggers the scale and burst animation
+Tapping your own active reaction removes it with the scale-down animation
+Switching reactions animates both the outgoing and incoming simultaneously
+Zero counts display as empty, not as a zero
+Reaction bar is comfortably tappable on a 390px screen with adequate touch targets
+No animation plays on initial page or feed load
+All animation is CSS-based or lightweight inline styles, no new dependencies
+

@@ -1,0 +1,64 @@
+# My Journey — New Categories + Client Self-Edit
+
+**Checkpoint before running: "pre-journey-categories"**
+
+Two changes to the My Journey progress system.
+
+---
+
+## 1. Replace the Five Pillars with Six Categories
+
+Remove Community, Confidence, Resilience, Readiness, Wellness. Replace with these six categories. Each slider is discrete steps from 0 to its max — not percentages.
+
+| Category | Max Sessions |
+|---|---|
+| Journey | 104 |
+| Employment | 11 |
+| Housing | 8 |
+| Finance | 8 |
+| Parenting | 12 |
+| Community | 4 |
+
+The overall percentage in the large ring = total completed sessions across all six categories divided by total possible (147), displayed as a percentage.
+
+Update everywhere these appear:
+- Home page My Journey card (six circles instead of five)
+- Admin Panel > Users > Pillar Progress sliders (replace with six sliders, each with its own max)
+- user_progress table (replace old enum values with: journey, employment, housing, finance, parenting, community. Progress field stores an integer from 0 to the category's max, not 0-100.)
+- Seed data for all users
+
+**Icons and colors for the six categories** (same clean SVG line icon style already in use):
+- **Journey** — #34737A (dark teal) — path/road icon
+- **Employment** — #5DA592 (sage green) — briefcase icon
+- **Housing** — #D32027 (Saint John's Red) — house icon
+- **Finance** — #979DB6 (dusty lavender) — dollar sign icon
+- **Parenting** — #EEBBA7 (peach) — heart icon
+- **Community** — #B8876F (warm brown) — people icon
+
+---
+
+## 2. Clients Can Edit Their Own Progress
+
+When a client taps the My Journey card on the Home page, it opens an edit view with six sliders. Each slider shows the category name, current value, and max (e.g., "Employment: 3 / 11"). Save button commits changes. Cancel returns to the Home page.
+
+Staff and Admin still edit any user's progress through Admin Panel > Users.
+
+Remove graduation date and role/stage dropdowns from the client-facing edit view. Those stay in the Admin Panel only.
+
+---
+
+## Seed Data
+
+Set plausible values for each user. Examples:
+- **Angela (Client, early):** Journey 8, Employment 1, Housing 1, Finance 1, Parenting 2, Community 1
+- **Destiny (Client, mid):** Journey 52, Employment 5, Housing 4, Finance 4, Parenting 6, Community 3
+- **Maria (Client, advanced):** Journey 88, Employment 9, Housing 7, Finance 7, Parenting 10, Community 4
+- **Monica (Alumni):** All maxed out
+- **Tasha (Alumni):** All maxed out
+- **Denise (Alumni):** All maxed out
+
+---
+
+## Do Not Change
+
+Any other feature, page, or layout. The My Journey card position on the Home page stays the same. The Admin Panel keeps all its existing functionality — just update the progress sliders to the new six categories.
