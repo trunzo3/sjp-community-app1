@@ -50,6 +50,7 @@ export function MyColors() {
   for (let i = 0; i < cells.length; i += 7) {
     weeks.push(cells.slice(i, i + 7));
   }
+  weeks.reverse();
 
   const recentCheckins = history.slice(0, 14);
 
