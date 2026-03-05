@@ -213,6 +213,31 @@ function HelplineSection({ value }: { value: string }) {
       <h3 className="text-sm font-bold text-[#302D2E] mb-1">If I need help now</h3>
       <p className="text-xs text-[#868180] mb-3">Numbers I can call when I need support right away.</p>
 
+      <div className="space-y-2 mb-3">
+        <a
+          href="tel:988"
+          className="flex items-center justify-between p-3 bg-white rounded-lg"
+          data-testid="crisis-contact-988"
+        >
+          <span className="text-sm font-medium text-[#302D2E]">National Crisis Line</span>
+          <div className="flex items-center gap-1.5 text-[#34737A]">
+            <Phone className="w-3.5 h-3.5" />
+            <span className="text-sm font-medium">988</span>
+          </div>
+        </a>
+        <a
+          href="tel:18007997233"
+          className="flex items-center justify-between p-3 bg-white rounded-lg"
+          data-testid="crisis-contact-18007997233"
+        >
+          <span className="text-sm font-medium text-[#302D2E]">National DV Hotline</span>
+          <div className="flex items-center gap-1.5 text-[#34737A]">
+            <Phone className="w-3.5 h-3.5" />
+            <span className="text-sm font-medium">1-800-799-7233</span>
+          </div>
+        </a>
+      </div>
+
       {contacts.length > 0 && (
         <div className="space-y-2 mb-3">
           {contacts.map((contact, i) => (
