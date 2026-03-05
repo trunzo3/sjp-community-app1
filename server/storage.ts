@@ -3,7 +3,7 @@ import { eq, desc, and, sql, gte } from "drizzle-orm";
 import {
   users, posts, replies, resources, events, stories, reactions, surveys, userProgress, venueLocations,
   aiFaqs, aiTrustedAnswers, aiCrisisConfig, aiQueryLogs, aiDocuments, aiDocumentChunks,
-  userActivity, streakAcknowledgments, moodCheckins,
+  userActivity, streakAcknowledgments, moodCheckins, safetyPlans,
   type User, type InsertUser,
   type Post, type InsertPost,
   type Reply, type InsertReply,
@@ -22,6 +22,7 @@ import {
   type AiDocumentChunk, type InsertAiDocumentChunk,
   type StreakAcknowledgment,
   type MoodCheckin, type InsertMoodCheckin,
+  type SafetyPlan, type InsertSafetyPlan,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -118,6 +119,9 @@ export interface IStorage {
   getTodayMoodCheckin(userId: string): Promise<MoodCheckin | null>;
   upsertMoodCheckin(userId: string, data: InsertMoodCheckin): Promise<MoodCheckin>;
   getMoodHistory(userId: string, days: number): Promise<MoodCheckin[]>;
+
+  getSafetyPlan(userId: string): Promise<SafetyPlan | null>;
+  upsertSafetyPlan(userId: string, data: Partial<InsertSafetyPlan>): Promise<SafetyPlan>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -736,6 +740,26 @@ export class DatabaseStorage implements IStorage {
         gte(moodCheckins.checkedInAt, since)
       ))
       .orderBy(desc(moodCheckins.checkedInAt));
+  }
+  async getSafetyPlan(userId: string): Promise<SafetyPlan | null> {
+    const [plan] = await db.select().from(safetyPlans).where(eq(safetyPlans.userId, userId));
+    return plan || null;
+  }
+
+  async upsertSafetyPlan(userId: string, data: Partial<InsertSafetyPlan>): Promise<SafetyPlan> {
+    const existing = await this.getSafetyPlan(userId);
+    if (existing) {
+      const updateData: Record<string, any> = { updatedAt: new Date() };
+      if (data.warningSigns !== undefined) updateData.warningSigns = data.warningSigns;
+      if (data.trustedPeople !== undefined) updateData.trustedPeople = data.trustedPeople;
+      if (data.safePlaces !== undefined) updateData.safePlaces = data.safePlaces;
+      if (data.copingStrategies !== undefined) updateData.copingStrategies = data.copingStrategies;
+      if (data.reasonsToKeepGoing !== undefined) updateData.reasonsToKeepGoing = data.reasonsToKeepGoing;
+      const [updated] = await db.update(safetyPlans).set(updateData).where(eq(safetyPlans.id, existing.id)).returning();
+      return updated;
+    }
+    const [created] = await db.insert(safetyPlans).values({ userId, ...data }).returning();
+    return created;
   }
 }
 

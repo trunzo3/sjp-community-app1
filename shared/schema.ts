@@ -287,6 +287,21 @@ export const insertMoodCheckinSchema = createInsertSchema(moodCheckins).omit({ i
 export type MoodCheckin = typeof moodCheckins.$inferSelect;
 export type InsertMoodCheckin = z.infer<typeof insertMoodCheckinSchema>;
 
+export const safetyPlans = pgTable("safety_plans", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").notNull().references(() => users.id).unique(),
+  warningSigns: text("warning_signs"),
+  trustedPeople: text("trusted_people"),
+  safePlaces: text("safe_places"),
+  copingStrategies: text("coping_strategies"),
+  reasonsToKeepGoing: text("reasons_to_keep_going"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSafetyPlanSchema = createInsertSchema(safetyPlans).omit({ id: true, updatedAt: true });
+export type SafetyPlan = typeof safetyPlans.$inferSelect;
+export type InsertSafetyPlan = z.infer<typeof insertSafetyPlanSchema>;
+
 export const insertAiFaqSchema = createInsertSchema(aiFaqs).omit({ id: true, createdAt: true });
 export const insertAiTrustedAnswerSchema = createInsertSchema(aiTrustedAnswers).omit({ id: true, createdAt: true });
 export const insertAiCrisisConfigSchema = createInsertSchema(aiCrisisConfig).omit({ id: true, updatedAt: true });

@@ -1,0 +1,272 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import { Loader2, Plus, X, Phone } from "lucide-react";
+import type { SafetyPlan } from "@shared/schema";
+
+interface TrustedContact {
+  name: string;
+  phone: string;
+}
+
+const CRISIS_CONTACTS = [
+  { name: "National Crisis Line", phone: "988" },
+  { name: "National DV Hotline", phone: "1-800-799-7233" },
+];
+
+function useSaveField(field: string) {
+  const queryClient = useQueryClient();
+  const savingRef = useRef(false);
+
+  const save = useCallback(async (value: string | null) => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    try {
+      await apiRequest("PUT", "/api/my-plan", { [field]: value });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-plan"] });
+    } catch {
+      try {
+        await apiRequest("PUT", "/api/my-plan", { [field]: value });
+        queryClient.invalidateQueries({ queryKey: ["/api/my-plan"] });
+      } catch {}
+    } finally {
+      savingRef.current = false;
+    }
+  }, [field, queryClient]);
+
+  return save;
+}
+
+function TextSection({ label, prompt, placeholder, field, value }: {
+  label: string;
+  prompt: string;
+  placeholder: string;
+  field: string;
+  value: string;
+}) {
+  const [text, setText] = useState(value);
+  const save = useSaveField(field);
+  const initialValueRef = useRef(value);
+
+  useEffect(() => {
+    if (value !== initialValueRef.current) {
+      setText(value);
+      initialValueRef.current = value;
+    }
+  }, [value]);
+
+  const handleBlur = () => {
+    if (text !== value) {
+      save(text || null);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl p-4 shadow-sm" data-testid={`section-${field}`}>
+      <h3 className="text-sm font-bold text-[#302D2E] mb-1">{label}</h3>
+      <p className="text-xs text-[#868180] mb-3">{prompt}</p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        className="w-full border border-[#E5E1DE] rounded-lg p-3 text-sm resize-none min-h-[80px] focus:outline-none focus:ring-2 focus:ring-[#34737A]/30 focus:border-[#34737A] placeholder-[#C7C2BF] bg-white"
+        data-testid={`input-${field}`}
+      />
+    </div>
+  );
+}
+
+function TrustedPeopleSection({ value }: { value: string }) {
+  const [contacts, setContacts] = useState<TrustedContact[]>(() => {
+    try { return JSON.parse(value) || []; } catch { return []; }
+  });
+  const save = useSaveField("trustedPeople");
+  const initialRef = useRef(value);
+
+  useEffect(() => {
+    if (value !== initialRef.current) {
+      try { setContacts(JSON.parse(value) || []); } catch { setContacts([]); }
+      initialRef.current = value;
+    }
+  }, [value]);
+
+  const saveContacts = (updated: TrustedContact[]) => {
+    const filtered = updated.filter(c => c.name.trim() || c.phone.trim());
+    save(filtered.length > 0 ? JSON.stringify(filtered) : null);
+  };
+
+  const handleBlur = () => {
+    saveContacts(contacts);
+  };
+
+  const addContact = () => {
+    if (contacts.length >= 8) return;
+    setContacts([...contacts, { name: "", phone: "" }]);
+  };
+
+  const removeContact = (index: number) => {
+    const updated = contacts.filter((_, i) => i !== index);
+    setContacts(updated);
+    saveContacts(updated);
+  };
+
+  const updateContact = (index: number, field: "name" | "phone", val: string) => {
+    const updated = [...contacts];
+    updated[index] = { ...updated[index], [field]: val };
+    setContacts(updated);
+  };
+
+  return (
+    <div className="bg-white rounded-xl p-4 shadow-sm" data-testid="section-trustedPeople">
+      <h3 className="text-sm font-bold text-[#302D2E] mb-1">People I trust</h3>
+      <p className="text-xs text-[#868180] mb-3">Who can I reach out to when I need support?</p>
+
+      <div className="space-y-2">
+        {contacts.map((contact, i) => (
+          <div key={i} className="flex items-center gap-2" data-testid={`contact-row-${i}`}>
+            <input
+              type="text"
+              value={contact.name}
+              onChange={(e) => updateContact(i, "name", e.target.value)}
+              onBlur={handleBlur}
+              placeholder="Name"
+              className="flex-1 border border-[#E5E1DE] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#34737A]/30 focus:border-[#34737A] placeholder-[#C7C2BF]"
+              data-testid={`input-contact-name-${i}`}
+            />
+            <input
+              type="tel"
+              value={contact.phone}
+              onChange={(e) => updateContact(i, "phone", e.target.value)}
+              onBlur={handleBlur}
+              placeholder="Phone"
+              className="flex-1 border border-[#E5E1DE] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#34737A]/30 focus:border-[#34737A] placeholder-[#C7C2BF]"
+              data-testid={`input-contact-phone-${i}`}
+            />
+            <button
+              onClick={() => removeContact(i)}
+              className="p-1 text-[#C7C2BF] hover:text-[#868180]"
+              data-testid={`button-remove-contact-${i}`}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {contacts.length < 8 && (
+        <button
+          onClick={addContact}
+          className="mt-3 flex items-center gap-1 text-xs text-[#34737A] font-medium"
+          data-testid="button-add-contact"
+        >
+          <Plus className="w-3.5 h-3.5" /> Add someone
+        </button>
+      )}
+    </div>
+  );
+}
+
+export default function MyPlanPage() {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+
+  const isClientOrAlumni = user?.role === "client" || user?.role === "alumni";
+
+  useEffect(() => {
+    if (user && !isClientOrAlumni) {
+      navigate("/profile");
+    }
+  }, [user, isClientOrAlumni, navigate]);
+
+  const { data: plan, isLoading } = useQuery<SafetyPlan | { exists: false }>({
+    queryKey: ["/api/my-plan"],
+    enabled: isClientOrAlumni,
+  });
+
+  if (!user || !isClientOrAlumni) return null;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-[600px] md:mx-0">
+        <div className="h-[3px] bg-[#EEBBA7] -mx-4 md:mx-0 md:rounded-full mb-4" />
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-[#34737A]" />
+        </div>
+      </div>
+    );
+  }
+
+  const hasPlan = plan && "id" in plan;
+  const planData = hasPlan ? plan as SafetyPlan : null;
+
+  return (
+    <div className="max-w-[600px] md:mx-0">
+      <div className="h-[3px] bg-[#EEBBA7] -mx-4 md:mx-0 md:rounded-full mb-4" />
+
+      <h1 className="text-xl font-bold text-[#302D2E] mb-1" data-testid="text-my-plan-title">My Plan</h1>
+      <p className="text-xs text-[#868180] mb-5 leading-relaxed" data-testid="text-privacy-statement">
+        This is yours. No one at Saint John's can see what you write here — not staff, not anyone. Fill in as much or as little as you want, whenever feels right.
+      </p>
+
+      <div className="space-y-4 mb-6">
+        <TextSection
+          label="My warning signs"
+          prompt="What do I notice in myself when I'm starting to struggle? This could be feelings, thoughts, or things I notice in my body."
+          placeholder="Write whatever comes to mind..."
+          field="warningSigns"
+          value={planData?.warningSigns || ""}
+        />
+
+        <TrustedPeopleSection value={planData?.trustedPeople || "[]"} />
+
+        <TextSection
+          label="Places that feel safe"
+          prompt="Where can I go to feel grounded or get some space when I need it?"
+          placeholder="These can be places on campus, nearby, or anywhere that comes to mind..."
+          field="safePlaces"
+          value={planData?.safePlaces || ""}
+        />
+
+        <TextSection
+          label="Things that help me cope"
+          prompt="What has helped me get through hard moments before?"
+          placeholder="Big things, small things — whatever has worked for you..."
+          field="copingStrategies"
+          value={planData?.copingStrategies || ""}
+        />
+
+        <TextSection
+          label="What I'm holding onto"
+          prompt="What are the reasons I keep going? What matters most to me right now?"
+          placeholder="This is just for you..."
+          field="reasonsToKeepGoing"
+          value={planData?.reasonsToKeepGoing || ""}
+        />
+
+        <div className="bg-[#FCF3EE] rounded-xl p-4" data-testid="section-crisis-contacts">
+          <h3 className="text-sm font-bold text-[#302D2E] mb-1">If I need help now</h3>
+          <p className="text-xs text-[#868180] mb-3">These are always here for you.</p>
+          <div className="space-y-2">
+            {CRISIS_CONTACTS.map((contact) => (
+              <a
+                key={contact.phone}
+                href={`tel:${contact.phone.replace(/-/g, "")}`}
+                className="flex items-center justify-between p-3 bg-white rounded-lg"
+                data-testid={`crisis-contact-${contact.phone.replace(/-/g, "")}`}
+              >
+                <span className="text-sm font-medium text-[#302D2E]">{contact.name}</span>
+                <div className="flex items-center gap-1.5 text-[#34737A]">
+                  <Phone className="w-3.5 h-3.5" />
+                  <span className="text-sm font-medium">{contact.phone}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

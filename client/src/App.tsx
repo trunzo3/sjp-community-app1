@@ -18,6 +18,7 @@ import ProfilePage from "@/pages/profile";
 import AdminPage from "@/pages/admin";
 import ShareStoryPage from "@/pages/share-story";
 import SurveyPage from "@/pages/survey";
+import MyPlanPage from "@/pages/my-plan";
 import { Loader2 } from "lucide-react";
 
 function AppContent() {
@@ -53,6 +54,7 @@ function AppContent() {
           <Route path="/admin" component={AdminPage} />
           <Route path="/share-story" component={ShareStoryPage} />
           <Route path="/survey" component={SurveyPage} />
+          <Route path="/my-plan" component={MyPlanPage} />
           <Route component={HomePage} />
         </Switch>
       </div>

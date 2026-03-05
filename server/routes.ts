@@ -1,7 +1,8 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import type { Express, Request, Response, NextFunction, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import session from "express-session";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -261,6 +262,40 @@ export async function registerRoutes(
       try { if (fs.existsSync(finalPath)) fs.unlinkSync(finalPath); } catch {}
       res.status(500).json({ message: "Something went wrong. Please try again." });
     }
+  });
+
+  const requireClientOrAlumni: RequestHandler = async (req, res, next) => {
+    if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
+    const user = await storage.getUser(req.session.userId);
+    if (!user || (user.role !== "client" && user.role !== "alumni")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    next();
+  };
+
+  app.get("/api/my-plan", requireAuth, requireClientOrAlumni, async (req, res) => {
+    const plan = await storage.getSafetyPlan(req.session.userId!);
+    res.json(plan || { exists: false });
+  });
+
+  app.put("/api/my-plan", requireAuth, requireClientOrAlumni, async (req, res) => {
+    const safetyPlanFields = z.object({
+      warningSigns: z.string().nullable().optional(),
+      trustedPeople: z.string().nullable().optional(),
+      safePlaces: z.string().nullable().optional(),
+      copingStrategies: z.string().nullable().optional(),
+      reasonsToKeepGoing: z.string().nullable().optional(),
+    });
+    const parsed = safetyPlanFields.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid request body" });
+    }
+    const data: Record<string, string | null> = {};
+    for (const [key, val] of Object.entries(parsed.data)) {
+      if (val !== undefined) data[key] = val;
+    }
+    const plan = await storage.upsertSafetyPlan(req.session.userId!, data);
+    res.json(plan);
   });
 
   app.get("/api/mood/today", requireAuth, async (req, res) => {

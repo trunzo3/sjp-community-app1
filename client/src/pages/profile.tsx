@@ -9,7 +9,7 @@ import { MoodCheckinFlow } from "@/components/mood-checkin-flow";
 import { MyColors } from "@/components/my-colors";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X, Camera, Palette } from "lucide-react";
+import { Pencil, LogOut, BookOpen, Shield, FileText, Loader2, Check, X, Camera, Palette, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -46,6 +46,7 @@ export default function ProfilePage() {
 
   const isStaffOrAdmin = user?.role === "staff" || user?.role === "admin";
   const isAlumni = user?.role === "alumni";
+  const isClientOrAlumni = user?.role === "client" || user?.role === "alumni";
 
   const { data: todayCheckin, isLoading: checkinLoading } = useQuery<MoodCheckin | null>({
     queryKey: ["/api/mood/today"],
@@ -422,6 +423,22 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {isClientOrAlumni && (
+          <button
+            className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
+            onClick={() => navigate("/my-plan")}
+            data-testid="button-my-plan"
+          >
+            <div className="w-9 h-9 rounded-lg bg-[#EEBBA7]/20 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-[#EEBBA7]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#302D2E]">My Plan</p>
+              <p className="text-xs text-[#868180]">Your private safety plan</p>
+            </div>
+          </button>
+        )}
+
         {isAlumni && (
           <button
             className="w-full bg-white rounded-xl p-4 flex items-center gap-3 text-left"
@@ -445,7 +462,7 @@ export default function ProfilePage() {
             data-testid="button-admin-panel"
           >
             <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-purple-600" />
+              <ShieldCheck className="w-4 h-4 text-purple-600" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-[#302D2E]">Admin Panel</p>

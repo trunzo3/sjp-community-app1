@@ -1,0 +1,190 @@
+# SJP Community App — My Plan Feature Build Prompt
+
+## What This Is
+
+Add a new private feature called **My Plan** to the SJP Community App. My Plan is a personal safety planning tool — a set of guided, private prompts a woman fills in on her own terms so she has a clear reference point when things get hard. It lives in the Me section of the app and is visible to clients and alumni only.
+
+**Privacy is the single non-negotiable constraint.** No staff member, admin, or other user can ever view, access, or be notified about any content a user writes in My Plan. This is enforced at the API level, not just the UI level. The API must reject any request to read another user's plan, with no exceptions, regardless of role.
+
+---
+
+## Database — Add 1 Table
+
+Add to `shared/schema.ts` following the existing Drizzle ORM and UUID conventions used throughout the schema.
+
+**Table: `safety_plans`**
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID | Primary key, default crypto UUID |
+| userId | UUID | FK → users.id, unique — one plan per user |
+| warningSigns | Text | Nullable |
+| trustedPeople | Text | Nullable — stored as JSON string, array of `{ name, phone }` objects |
+| safePlaces | Text | Nullable |
+| copingStrategies | Text | Nullable |
+| reasonsToKeepGoing | Text | Nullable |
+| updatedAt | Timestamp | Updated on every save |
+
+Unique constraint on `userId` — one plan per user, upserted on save. There is no creation date displayed to the user and no version history.
+
+---
+
+## API — Add to `server/routes.ts` and `server/storage.ts`
+
+Follow the existing IStorage interface and DatabaseStorage patterns exactly.
+
+### Endpoints
+
+| Method | Endpoint | Auth | Body | Returns |
+|---|---|---|---|---|
+| GET | /api/my-plan | Required | — | SafetyPlan or `{ exists: false }` |
+| PUT | /api/my-plan | Required | Partial plan fields | Upserted SafetyPlan |
+
+**Authorization rule — enforce server-side on both endpoints:**
+- A user may only GET or PUT their own plan. The userId is taken from `req.session.userId`, never from the request body or URL params.
+- Staff and admin roles have no special access. `requireStaffOrAdmin` does not apply here and should not be added.
+- If a request somehow attempts to write to another user's plan, return 403.
+
+The PUT endpoint upserts — if no plan exists for the user yet, it creates one. If one exists, it updates only the fields provided. `updatedAt` is always refreshed on PUT.
+
+---
+
+## Frontend — New Page
+
+**Route:** `/my-plan`  
+**File:** `client/src/pages/my-plan.tsx`  
+**Access:** Clients and alumni only. Staff and admin do not see the entry point and the route redirects them away.
+
+### Page header
+Follows the existing page pattern: colored top border, page title. Use the **peach accent color `#EEBBA7`** for the top border, consistent with the Profile page since this lives in the Me section.
+
+Page title: **My Plan**
+
+### Privacy statement
+Displayed at the top of the page, above any input sections, every time the page loads. Not dismissable. Not a modal. Just present, quietly.
+
+> *This is yours. No one at Saint John's can see what you write here — not staff, not anyone. Fill in as much or as little as you want, whenever feels right.*
+
+Style: small text, muted color (`#868180`), left-aligned, sitting just below the page title. No icon. No border. No card. Just the words.
+
+### Auto-save behavior
+Each section saves independently on blur (when the user taps out of a field). No save button. No "saved" toast notification. No unsaved changes indicator. Saving is silent and invisible. If a save fails due to a network error, retry once silently. Do not surface an error to the user for a transient failure — this is not a form submission.
+
+### Sections — render in this order
+
+Each section is a card (`bg-white`, rounded, subtle shadow, consistent with existing resource and event cards). Card contains a label, a prompt in muted text beneath the label, and the input below that.
+
+---
+
+**Section 1 — Warning Signs**
+
+Label: `My warning signs`  
+Prompt: *What do I notice in myself when I'm starting to struggle? This could be feelings, thoughts, or things I notice in my body.*  
+Input: Multiline textarea, no character limit, no row minimum. Placeholder: *Write whatever comes to mind...*
+
+---
+
+**Section 2 — Trusted People**
+
+Label: `People I trust`  
+Prompt: *Who can I reach out to when I need support?*  
+
+Input: Repeatable contact fields. Each contact has two fields side by side: `Name` (text input) and `Phone` (tel input). Below the last contact, a quiet add button: `+ Add someone`. Maximum 8 contacts. No minimum. Contacts save as a JSON array in the `trustedPeople` column.
+
+Do not validate phone number format. Accept whatever she types.
+
+---
+
+**Section 3 — Safe Places**
+
+Label: `Places that feel safe`  
+Prompt: *Where can I go to feel grounded or get some space when I need it?*  
+Input: Multiline textarea. Placeholder: *These can be places on campus, nearby, or anywhere that comes to mind...*
+
+---
+
+**Section 4 — What Helps**
+
+Label: `Things that help me cope`  
+Prompt: *What has helped me get through hard moments before?*  
+Input: Multiline textarea. Placeholder: *Big things, small things — whatever has worked for you...*
+
+---
+
+**Section 5 — What I'm Holding Onto**
+
+Label: `What I'm holding onto`  
+Prompt: *What are the reasons I keep going? What matters most to me right now?*  
+Input: Multiline textarea. Placeholder: *This is just for you...*
+
+---
+
+**Section 6 — If I Need Help Now** *(pre-filled, not editable by user)*
+
+Label: `If I need help now`  
+Prompt: *These are always here for you.*
+
+Render as a static card, visually distinct from the editable sections — a slightly warmer background tint, no input fields. Display the following contact entries as tappable rows. Each row has a name and a tap-to-call phone link.
+
+```
+National Crisis Line    — tel:988
+National DV Hotline     — tel:18007997233
+```
+
+The contacts are stored as static data in the component file, not in the database, and can be updated without a schema change.
+
+---
+
+## Entry Point — Me Section
+
+Add a **My Plan** entry to the Me section navigation. 
+
+- Icon: `shield` from lucide-react
+- Label: `My Plan`
+- Visible to clients and alumni only
+- Tapping navigates to `/my-plan`
+
+Do not add a badge, count, or any indicator on this entry. It should sit quietly alongside the other Me section items.
+
+---
+
+## What Not to Build
+
+- No completion percentage or progress indicator of any kind
+- No "last updated" timestamp displayed to the user
+- No staff-facing view, report, or admin panel entry for this data
+- No notification or prompt reminding users to fill it in
+- No sharing or export feature
+- No history or versioning
+
+---
+
+## Styling Reference
+
+Follow the existing design system exactly:
+
+| Token | Value |
+|---|---|
+| Page top border | `#EEBBA7` (peach, matching Profile) |
+| Primary button / active teal | `#34737A` |
+| Card background | `#FFFFFF` |
+| Page background | `#FFFBF9` |
+| Text primary | `#302D2E` |
+| Text secondary / prompts | `#868180` |
+| Text muted / placeholders | `#C7C2BF` |
+| Mobile max-width | 430px, centered |
+
+Textarea and input styling should match existing form fields in the app — consistent border radius, focus ring in primary teal, no custom scrollbars.
+
+---
+
+## Files to Create or Modify
+
+| File | Action |
+|---|---|
+| `shared/schema.ts` | Add `safety_plans` table definition |
+| `server/storage.ts` | Add `getSafetyPlan(userId)` and `upsertSafetyPlan(userId, data)` to IStorage and DatabaseStorage |
+| `server/routes.ts` | Add GET and PUT `/api/my-plan` routes |
+| `client/src/pages/my-plan.tsx` | Create new page |
+| `client/src/App.tsx` | Add `/my-plan` route |
+| Me section navigation component | Add My Plan entry point |
